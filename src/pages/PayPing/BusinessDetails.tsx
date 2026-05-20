@@ -1,11 +1,15 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Building2, Info } from 'lucide-react';
 import api from '../../api';
 
 const BusinessDetails = () => {
+    const location = useLocation();
     const navigate = useNavigate();
+    const data = location.state?.data
+
     const [formData, setFormData] = useState({
+        phone: data.phone,
         upiUrl: '',
         subscriptionAmount: '',
         expiryDate: '',
@@ -14,10 +18,12 @@ const BusinessDetails = () => {
         staticReviewTime: ''
     });
 
+    
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await api.post('/payping/business-details', formData);
+            await api.post(`/payping/accounts/business-details`, formData);
             navigate('/payping/add-customers');
         } catch (err) {
             alert("Failed to save details");
@@ -62,7 +68,7 @@ const BusinessDetails = () => {
                     <div>
                         <label className="block text-sm font-medium text-slate-400 mb-2">Expiry Date</label>
                         <input 
-                            type="date"
+                            type="number"
                             className="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl outline-none"
                             onChange={(e) => setFormData({...formData, expiryDate: e.target.value})}
                         />
@@ -72,7 +78,7 @@ const BusinessDetails = () => {
                     <div>
                         <label className="block text-sm font-medium text-slate-400 mb-2">Overdue Threshold Date</label>
                         <input 
-                            type="date"
+                            type="number"
                             className="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl outline-none"
                             onChange={(e) => setFormData({...formData, overdueDate: e.target.value})}
                         />

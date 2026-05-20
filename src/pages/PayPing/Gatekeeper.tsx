@@ -2,18 +2,55 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import api from '../../api';
+import ErrorBanner from '../../components/ErrorBanner'; // Import your custom error block
 
 const Gatekeeper = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [isVerified, setIsVerified] = useState(false);
     const [loading, setLoading] = useState(true);
+    
+    // NEW: Global error message state shared across all child views
+    const [globalError, setGlobalError] = useState<string>('');
 
+    // ==========================================
+    // EFFECT 1: CENTRALIZED NETWORK ERROR CAPTURE
+    // ==========================================
     useEffect(() => {
-        // 1. Check if we have already verified the setup in THIS browser session
+        const handleGlobalError = (event: Event) => {
+            const customEvent = event as CustomEvent<string>;
+            setGlobalError(customEvent.detail);
+            
+            // Optional: Automatically auto-dismiss the banner window after 7 seconds
+            setTimeout(() => setGlobalError(''), 20000);
+        };
+
+        const handleClearError = () => {
+            setGlobalError('');
+        };
+
+        const handleSessionExpiry = () => {
+            navigate('/', { replace: true });
+        };
+
+        // Bind listener strings matching your Axios Interceptor streams
+        window.addEventListener('PAYPING_SYSTEM_ERROR', handleGlobalError);
+        window.addEventListener('PAYPING_CLEAR_ERROR', handleClearError);
+        window.addEventListener('SESSION_EXPIRED', handleSessionExpiry);
+        
+        return () => {
+            window.removeEventListener('PAYPING_SYSTEM_ERROR', handleGlobalError);
+            window.removeEventListener('PAYPING_CLEAR_ERROR', handleClearError);
+            window.removeEventListener('SESSION_EXPIRED', handleSessionExpiry);
+        };
+    }, [navigate]);
+
+    // ==========================================
+    // EFFECT 2: PRE-EXISTING ONBOARDING ROUTE CHECKS
+    // ==========================================
+    useEffect(() => {
         const sessionVerified = sessionStorage.getItem('payping_setup_verified');
 
-        // 2. Logic: If verified and we aren't on a setup page, just show the content
         if (sessionVerified === 'true') {
             setIsVerified(true);
             setLoading(false);
@@ -24,31 +61,24 @@ const Gatekeeper = () => {
             try {
                 const res = await api.get('/payping/accounts/status');
                 const { hasAccount, hasWhatsapp, hasBusinessDetails, hasCustomers } = res.data || {};
-
-                // Capture where the user WANTED to go (e.g., /payping/settings)
                 const targetPath = location.pathname === '/payping' ? '/payping/dashboard' : location.pathname;
 
-                // The Onboarding Logic Chain
                 if (!hasAccount) {
                     navigate('/payping/onboard');
-                }else if (!hasWhatsapp) {
+                } else if (!hasWhatsapp) {
                     navigate('/payping/connect');
                 } else if (!hasBusinessDetails) {
                     navigate('/payping/business-details');
                 } else if (!hasCustomers) {
                     navigate('/payping/add-customers');
                 } else {
-                    // All satisfied! 
                     sessionStorage.setItem('payping_setup_verified', 'true');
                     setIsVerified(true);
-                    
-                    // If they came to /payping directly, send to dashboard. 
-                    // Otherwise, let them go to their specific intended URL.
                     navigate(targetPath, { replace: true });
                 }
             } catch (err) {
                 console.error("Setup check failed", err);
-                navigate('/'); // Kick back to IAM if backend fails
+                navigate('/'); 
             } finally {
                 setLoading(false);
             }
@@ -66,8 +96,17 @@ const Gatekeeper = () => {
         );
     }
 
-    // If verified, render the child routes (Dashboard, etc.)
-    return <Outlet />;
+    // ==========================================
+    // RENDER INTERCEPT: GLOBAL INJECTION LAYER
+    // ==========================================
+    return (
+        <div className="min-h-screen bg-slate-950 flex flex-col">
+            <ErrorBanner message={globalError} />
+            <div className="flex-1">
+                <Outlet />
+            </div>
+        </div>
+    );
 };
 
 export default Gatekeeper;
