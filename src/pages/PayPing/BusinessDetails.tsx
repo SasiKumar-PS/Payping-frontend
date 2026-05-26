@@ -23,16 +23,18 @@ const BusinessDetails = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await api.post(`/payping/accounts/business-details`, formData);
+            await api.post(`/payping/accounts/business-details`, formData, {
+                headers: { 'X-Trigger-Success': 'true' }
+            });
             navigate('/payping/add-customers');
         } catch (err) {
-            alert("Failed to save details");
+            console.error("Failed to save details:", err);
         }
     };
 
     return (
         <div className="min-h-screen bg-slate-950 text-white p-6 flex items-center justify-center">
-            <form onSubmit={handleSubmit} className="max-w-2xl w-full bg-slate-900 p-8 rounded-3xl border border-slate-800 space-y-6">
+            <form onSubmit={handleSubmit} className="max-w-2xl w-full bg-slate-900 p-8 rounded-3xl space-y-6 shadow-2xl">
                 <div className="flex items-center gap-3 mb-4">
                     <div className="p-2 bg-blue-500/10 rounded-lg">
                         <Building2 className="text-blue-500" />
@@ -101,7 +103,7 @@ const BusinessDetails = () => {
                 </div>
 
                 {/* Conditional Description for Review Types */}
-                <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 flex gap-3 italic">
+                <div className="bg-slate-950/30 p-4 rounded-xl flex gap-3 italic">
                     <Info className="w-5 h-5 text-slate-500 shrink-0" />
                     <p className="text-xs text-slate-400">
                         {formData.reviewType === 'Immediate' && "Notifications sent the moment a payment is detected."}

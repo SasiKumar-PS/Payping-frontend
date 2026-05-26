@@ -11,6 +11,8 @@ import Gatekeeper from './pages/PayPing/Gatekeeper';
 import BusinessDetails from './pages/PayPing/BusinessDetails';
 import Dashboard from './pages/PayPing/Dashboard';
 import Customers from './pages/PayPing/Customers';
+import MessageTemplates from './pages/PayPing/MessageTemplates';
+import AutoAlerts from './pages/PayPing/AutoAlerts';
 import ProtectedRoute from './components/ProtectedRoute';
 
 
@@ -36,6 +38,9 @@ function App() {
               <Route path="add-customers" element={<AddCustomers />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="customers" element={<Customers />} />
+              <Route path="message-templates" element={<MessageTemplates />} />
+              <Route path="auto-alerts" element={<AutoAlerts />} />
+              
               
               {/* Add any other payping sub-pages here */}
             </Route>

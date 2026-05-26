@@ -5,27 +5,33 @@ import { Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
 import api from '../../api';
 
 const PayPingConnect = () => {
-    const [qrCode, setQrCode] = useState<string | null>(null);
-    const [status, setStatus] = useState<'waiting' | 'ready' | 'connected'>('waiting');
-
     const location = useLocation();
     const navigate = useNavigate();
 
-    // Safely extract the forwarded registration data
-    const data = location.state?.data;
+    const [qrCode, setQrCode] = useState<string | null>(null);
+    const [status, setStatus] = useState<'waiting' | 'ready' | 'connected'>('waiting');
+    const [data, setData] = useState(location.state?.data || null);
+
 
     useEffect(() => {
-        // Defensive Check: If someone refreshes this page directly or state is missing, abort safely
-        if (!data || !data.phone) {
-            // need to fetch the current account data here
+        const getCurrentAccount = async () => {
+            const response = await api.get('/payping/accounts/getThis');
+            setData(response.data);
         }
 
+        // Defensive Check: If someone refreshes this page directly or state is missing, abort safely
+        if (!data || !data.phone) {
+            getCurrentAccount();
+        }
+    }, []);
+
+    useEffect(() => {
         const flow = async () => {
+            if (!data || !data.phone) return;
             try {
                 // 1. Start the connection instance
                 await api.post('/payping/whatsapp/init', { 
-                    phone: data.phone, 
-                    //businessName: data.businessName 
+                    phone: data.phone
                 });
 
                 // 2. Fetch the QR string (Blocks on backend until future completes)
@@ -62,20 +68,20 @@ const PayPingConnect = () => {
     }, [data, navigate]);
 
     // Render a helpful fallback UI if the route state data is missing
-    if (!data) {
-        return (
-            <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
-                <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 text-center max-w-sm w-full space-y-4">
-                    <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto" />
-                    <h3 className="text-xl font-bold">Session Missing</h3>
-                    <p className="text-sm text-slate-400">Please fill out your profile configurations before attempting to link a device.</p>
-                    <button onClick={() => navigate('/payping/onboard')} className="w-full bg-white text-black py-3 rounded-xl font-bold text-sm">
-                        Go to Onboarding
-                    </button>
-                </div>
-            </div>
-        );
-    }
+    // if (!data) {
+    //     return (
+    //         <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
+    //             <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 text-center max-w-sm w-full space-y-4">
+    //                 <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto" />
+    //                 <h3 className="text-xl font-bold">Session Missing</h3>
+    //                 <p className="text-sm text-slate-400">Please fill out your profile configurations before attempting to link a device.</p>
+    //                 <button onClick={() => navigate('/payping/onboard')} className="w-full bg-white text-black py-3 rounded-xl font-bold text-sm">
+    //                     Go to Onboarding
+    //                 </button>
+    //             </div>
+    //         </div>
+    //     );
+    // }
 
     return (
         <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6">

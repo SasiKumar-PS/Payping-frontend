@@ -2,18 +2,40 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
     Users, Upload, UserPlus, ArrowRight, Download, 
-    FileText, X, Check, AlertCircle, RefreshCw 
+    FileText, X, Check, AlertCircle, RefreshCw,
+    LayoutDashboard, ChevronLeft
 } from 'lucide-react';
 import api from '../../api';
+
+const compileDetailsToPayload = (list: { key: string; value: string }[]): Record<string, string[]> => {
+    const map: Record<string, string[]> = {};
+    list.forEach(item => {
+        const k = String(item.key || '').trim();
+        const v = String(item.value || '').trim();
+        if (!k) return;
+        if (map[k] === undefined) {
+            map[k] = [v];
+        } else {
+            map[k].push(v);
+        }
+    });
+    return map;
+};
 
 interface CustomerDTO {
     name: string;
     phone: string;
     amount: number;
     expiryDate: string;
+    additionalDetails?: Record<string, string[]>;
 }
 
-const AddCustomers = () => {
+interface AddCustomersProps {
+    isEmbedded?: boolean;
+    onGoBack?: () => void;
+}
+
+const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
     const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
     
@@ -37,6 +59,39 @@ const AddCustomers = () => {
         amount: 0,
         expiryDate: ''
     });
+
+    // Additional Details State
+    const [additionalDetailsList, setAdditionalDetailsList] = useState<{ key: string; value: string }[]>([]);
+    const [showDetailForm, setShowDetailForm] = useState<boolean>(false);
+    const [newDetailKey, setNewDetailKey] = useState<string>('');
+    const [newDetailVal, setNewDetailVal] = useState<string>('');
+    const [apiDetailsData, setApiDetailsData] = useState<Record<string, string> | null>(null);
+    const [loadingApiDetails, setLoadingApiDetails] = useState<boolean>(false);
+    const [detailsDropdownField, setDetailsDropdownField] = useState<'key' | 'value' | null>(null);
+
+    const fetchApiDetailsData = async () => {
+        if (apiDetailsData !== null || loadingApiDetails) return;
+        try {
+            setLoadingApiDetails(true);
+            const res = await api.get('/payping/accounts/getall-Additional-details');
+            setApiDetailsData(res.data || {});
+        } catch (err) {
+            console.error("Failed to load details reference data:", err);
+            setApiDetailsData({});
+        } finally {
+            setLoadingApiDetails(false);
+        }
+    };
+
+    const handleSaveNewDetailInline = () => {
+        const kStr = String(newDetailKey || '').trim();
+        const vStr = String(newDetailVal || '').trim();
+        if (!kStr || !vStr) return;
+        setAdditionalDetailsList(prev => [...prev, { key: kStr, value: vStr }]);
+        setShowDetailForm(false);
+        setNewDetailKey('');
+        setNewDetailVal('');
+    };
 
     // Lifecycle Hook: Load live account statistics
     useEffect(() => {
@@ -123,16 +178,22 @@ const AddCustomers = () => {
         e.preventDefault();
         setGlobalLoading(true);
 
+        const payload = {
+            ...manualForm,
+            additionalDetails: compileDetailsToPayload(additionalDetailsList)
+        };
+
         try {
             // Step A: Security Guard Interceptor Pre-Validation Check
-            const validationRes = await api.post('/payping/customers/canAdd', manualForm);
+            const validationRes = await api.post('/payping/customers/canAdd', payload);
             const validationMsg = validationRes.data;
 
             if (validationMsg === "success" || validationMsg.status === "success") {
                 // Step B: Structural safe insert transaction
-                await api.post('/payping/customers/add', manualForm);
+                await api.post('/payping/customers/add', payload);
                 setShowManualModal(false);
                 setManualForm({ name: '', phone: '', amount: 0, expiryDate: '' });
+                setAdditionalDetailsList([]);
                 await fetchCurrentCustomerCount();
             } else {
                 alert(`Pre-validation rejected entry: ${validationMsg.message || validationMsg}`);
@@ -202,14 +263,33 @@ const AddCustomers = () => {
                 </div>
 
                 {/* Navigation Terminal Workspace Dashboard Exit Action Button */}
-                <div className="border-t border-slate-800/60 pt-6">
-                    <button 
-                        onClick={() => navigate('/payping/dashboard')}
-                        className="w-full bg-white hover:bg-slate-200 text-black font-extrabold py-4 rounded-xl flex items-center justify-center transition-all duration-200 group shadow-lg shadow-white/5"
-                    >
-                        Launch Terminal Dashboard
-                        <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </button>
+                <div className="border-t border-slate-800/60 pt-6 space-y-3">
+                    {!isEmbedded ? (
+                        <button 
+                            onClick={() => navigate('/payping/dashboard')}
+                            className="w-full bg-white hover:bg-slate-200 text-black font-extrabold py-4 rounded-xl flex items-center justify-center transition-all duration-200 group shadow-lg shadow-white/5"
+                        >
+                            Launch Terminal Dashboard
+                            <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    ) : (
+                        <>
+                            <button 
+                                type="button"
+                                onClick={onGoBack}
+                                className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-300 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs transition-all"
+                            >
+                                <ChevronLeft className="w-4 h-4 text-slate-400" /> Go Back
+                            </button>
+                            <button 
+                                type="button"
+                                onClick={() => navigate('/payping/dashboard')}
+                                className="w-full bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-350 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs transition-all"
+                            >
+                                <LayoutDashboard className="w-4 h-4 text-slate-400" /> Return to Dashboard
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -416,6 +496,139 @@ const AddCustomers = () => {
                                     onChange={(e) => setManualForm({...manualForm, expiryDate: e.target.value})}
                                     className="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl focus:border-emerald-500 outline-none transition-colors text-slate-300 text-sm"
                                 />
+                            </div>
+
+                            {/* Additional Parameters Block */}
+                            <div className="space-y-3 border-t border-slate-800/60 pt-4">
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Additional Parameters</label>
+                                
+                                {additionalDetailsList.length > 0 ? (
+                                    <div className={`space-y-2 ${additionalDetailsList.length > 4 ? 'max-h-[220px] overflow-y-auto pr-1' : ''}`}>
+                                        {additionalDetailsList.map(({ key, value }, index) => (
+                                            <div 
+                                                key={`${key}-${value}-${index}`} 
+                                                className="flex items-center justify-between p-3.5 bg-slate-950 rounded-2xl shadow-sm border border-slate-900/40 text-xs hover:bg-slate-900/20 transition-all duration-150"
+                                            >
+                                                <span className="text-slate-400 font-semibold uppercase text-[10px] tracking-wider truncate pr-2 max-w-[150px]">{key}</span>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-slate-200 font-bold font-mono text-xs truncate max-w-[150px]">{value}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setAdditionalDetailsList(prev => prev.filter((_, i) => i !== index))}
+                                                        className="text-rose-500 hover:text-rose-450 hover:bg-rose-500/10 p-1 rounded transition-colors border-0 outline-none bg-transparent cursor-pointer shrink-0"
+                                                    >
+                                                        <X className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-4 bg-slate-950/40 rounded-2xl text-slate-500 text-xs italic border border-slate-800/30">
+                                        No additional parameters added.
+                                    </div>
+                                )}
+
+                                {/* Add Detail Form or Button */}
+                                {!showDetailForm ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => { fetchApiDetailsData(); setShowDetailForm(true); }}
+                                        className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-350 hover:text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+                                    >
+                                        + Add Additional Detail
+                                    </button>
+                                ) : (
+                                    <div className="p-4 bg-slate-950 rounded-2xl space-y-3 relative border border-slate-850 animate-in slide-in-from-bottom-2 duration-150">
+                                        <span className="text-[9px] font-bold text-slate-500 block uppercase tracking-wider mb-1">New Parameter Field</span>
+                                        <div className="grid grid-cols-2 gap-2.5">
+                                            {/* Key */}
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Detail Name"
+                                                    value={newDetailKey}
+                                                    onFocus={() => setDetailsDropdownField('key')}
+                                                    onBlur={() => setTimeout(() => setDetailsDropdownField(null), 200)}
+                                                    onChange={(e) => setNewDetailKey(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault();
+                                                            handleSaveNewDetailInline();
+                                                        }
+                                                    }}
+                                                    className="w-full bg-slate-900 border border-slate-800 p-2.5 rounded-xl text-xs text-white outline-none focus:border-emerald-500 transition-colors"
+                                                />
+                                                {detailsDropdownField === 'key' && apiDetailsData && (
+                                                    <div className="absolute left-0 right-0 mt-1 bg-slate-900 border border-slate-800 rounded-xl p-1 shadow-2xl z-50 max-h-32 overflow-y-auto">
+                                                        {Object.keys(apiDetailsData)
+                                                            .filter(k => k.toLowerCase().includes((newDetailKey || '').toLowerCase()))
+                                                            .map(k => (
+                                                                <button
+                                                                    key={k}
+                                                                    type="button"
+                                                                    onMouseDown={() => {
+                                                                        setNewDetailKey(k);
+                                                                        if (apiDetailsData[k]) setNewDetailVal(String(apiDetailsData[k]));
+                                                                    }}
+                                                                    className="w-full text-left px-2 py-1.5 text-xs hover:bg-slate-800 rounded text-slate-300 font-medium"
+                                                                >
+                                                                    {k}
+                                                                </button>
+                                                            ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {/* Value */}
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Value"
+                                                    value={newDetailVal}
+                                                    onFocus={() => { fetchApiDetailsData(); setDetailsDropdownField('value'); }}
+                                                    onBlur={() => setTimeout(() => setDetailsDropdownField(null), 200)}
+                                                    onChange={(e) => setNewDetailVal(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault();
+                                                            handleSaveNewDetailInline();
+                                                        }
+                                                    }}
+                                                    className="w-full bg-slate-900 border border-slate-800 p-2.5 rounded-xl text-xs text-white outline-none focus:border-emerald-500 transition-colors"
+                                                />
+                                                {detailsDropdownField === 'value' && apiDetailsData && newDetailKey && apiDetailsData[newDetailKey] && (
+                                                    <div className="absolute left-0 right-0 mt-1 bg-slate-900 border border-slate-800 rounded-xl p-1 shadow-2xl z-50 max-h-32 overflow-y-auto">
+                                                        <button
+                                                            key="suggested"
+                                                            type="button"
+                                                            onMouseDown={() => setNewDetailVal(String(apiDetailsData[newDetailKey]))}
+                                                            className="w-full text-left px-2 py-1.5 text-xs hover:bg-slate-800 rounded text-emerald-400 font-bold flex items-center justify-between"
+                                                        >
+                                                            <span>{String(apiDetailsData[newDetailKey])}</span>
+                                                            <span className="text-[8px] uppercase bg-emerald-500/10 text-emerald-500 px-1 py-0.5 rounded font-black">Suggested</span>
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowDetailForm(false)}
+                                                className="w-1/3 bg-slate-900 hover:bg-slate-850 text-slate-400 py-2 rounded-xl text-xs font-bold transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleSaveNewDetailInline}
+                                                className="w-2/3 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-xl text-xs font-bold transition-colors"
+                                            >
+                                                Save Parameter
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

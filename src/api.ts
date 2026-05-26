@@ -2,6 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
     baseURL: 'http://localhost:8080/api/v1/',
+    // baseURL: 'http://10.11.111.244:8080/api/v1/',
 });
 
 // The "Interceptor": Runs before every request
@@ -10,7 +11,7 @@ api.interceptors.request.use((config) => {
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
-    
+
     // to hide the error popup
     window.dispatchEvent(new CustomEvent('PAYPING_CLEAR_ERROR'));
 
@@ -22,13 +23,25 @@ api.interceptors.request.use((config) => {
 // ========================================================
 api.interceptors.response.use(
     (response) => {
-        if(response.status > 299){
+        if (response.status > 299) {
             showError(response.data, response.status);
+        } else if (['post', 'put', 'delete'].includes(response.config.method || '')) {
+            const triggerSuccess = response.config.headers && (
+                response.config.headers['X-Trigger-Success'] || 
+                response.config.headers['x-trigger-success']
+            );
+            if (triggerSuccess) {
+                // Extract a clean success message from the response data if present
+                const successMsg = response.data?.message || "Operation completed successfully!";
+                window.dispatchEvent(new CustomEvent('PAYPING_SYSTEM_SUCCESS', {
+                    detail: successMsg
+                }));
+            }
         }
         return response;
     },
     (error) => {
-        showError(error.response?.data?.error, error.response?.data?.status);
+        showError(error.response?.data?.error || error.response?.data?.message || "Unknown error occurred.", error.response?.data?.status);
         return Promise.reject(error);
     }
 );
@@ -42,8 +55,8 @@ function showError(errorMessage, status) {
     }
 
     // Broadcast the error message globally so any active page can catch it
-    window.dispatchEvent(new CustomEvent('PAYPING_SYSTEM_ERROR', { 
-        detail: errorMessage 
+    window.dispatchEvent(new CustomEvent('PAYPING_SYSTEM_ERROR', {
+        detail: errorMessage
     }));
 }
 
