@@ -206,25 +206,25 @@ const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white p-6 flex flex-col items-center justify-center animate-in fade-in duration-300 relative overflow-hidden">
+        <div className="min-h-screen bg-[#0f0f0f] text-white p-6 flex flex-col items-center justify-center animate-in fade-in duration-300 relative overflow-hidden">
 
             {/* Structural UI Container Card */}
-            <div className="max-w-xl w-full bg-slate-900 p-8 md:p-10 rounded-[2.5rem] border border-slate-800 shadow-2xl text-center z-10 space-y-8">
+            <div className="max-w-xl w-full bg-zinc-900 p-8 md:p-10 rounded-[2.5rem] border border-zinc-800 shadow-2xl text-center z-10 space-y-8">
                 
                 {/* Branding Core Context Header */}
                 <div className="space-y-3">
-                    <div className="inline-flex p-3.5 bg-blue-500/10 rounded-2xl border border-blue-500/20 text-blue-500 mx-auto">
+                    <div className="inline-flex p-3.5 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 text-indigo-500 mx-auto">
                         <Users className="w-8 h-8" />
                     </div>
                     <h2 className="text-3xl font-extrabold tracking-tight">Populate Directory</h2>
-                    <p className="text-sm text-slate-400 max-w-sm mx-auto">
+                    <p className="text-sm text-zinc-400 max-w-sm mx-auto">
                         Begin populating accounts to initiate tracking. Current ledger density:
                     </p>
                     
                     {/* Realtime Aggregation Dynamic Tag Counter */}
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-slate-950 border border-slate-800 rounded-full mt-1">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#0f0f0f] border border-zinc-800 rounded-full mt-1">
                         <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
-                        <span className="text-xs font-mono tracking-wider text-slate-400">
+                        <span className="text-xs font-mono tracking-wider text-zinc-400">
                             SYSTEM TOTAL: <span className="text-white font-bold">{totalCount}</span> CONSUMERS
                         </span>
                     </div>
@@ -236,38 +236,38 @@ const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
                     {/* Action Card Selector A: Bulk CSV Upload */}
                     <button 
                         onClick={() => setShowBulkModal(true)}
-                        className="flex flex-col items-center justify-center p-6 bg-slate-950/40 hover:bg-slate-950 border border-slate-800/80 hover:border-blue-500/50 rounded-3xl transition-all duration-300 group space-y-3 text-center"
+                        className="flex flex-col items-center justify-center p-6 bg-[#0f0f0f]/40 hover:bg-[#0f0f0f] border border-zinc-800/80 hover:border-indigo-500/50 rounded-3xl transition-all duration-300 group space-y-3 text-center"
                     >
-                        <div className="p-3 bg-blue-500/5 group-hover:bg-blue-500/10 rounded-xl text-blue-500 transition-colors">
+                        <div className="p-3 bg-indigo-500/5 group-hover:bg-indigo-500/10 rounded-xl text-indigo-500 transition-colors">
                             <Upload className="w-6 h-6" />
                         </div>
                         <div className="text-left w-full text-center">
-                            <h4 className="font-bold text-sm text-slate-200">Bulk Directory Ingest</h4>
-                            <p className="text-[11px] text-slate-500 mt-0.5">Parse structured spreadsheet matrices instantly.</p>
+                            <h4 className="font-bold text-sm text-zinc-200">Bulk Directory Ingest</h4>
+                            <p className="text-[11px] text-zinc-500 mt-0.5">Parse structured spreadsheet matrices instantly.</p>
                         </div>
                     </button>
 
                     {/* Action Card Selector B: Manual Ingestion Form */}
                     <button 
                         onClick={() => setShowManualModal(true)}
-                        className="flex flex-col items-center justify-center p-6 bg-slate-950/40 hover:bg-slate-950 border border-slate-800/80 hover:border-emerald-500/50 rounded-3xl transition-all duration-300 group space-y-3 text-center"
+                        className="flex flex-col items-center justify-center p-6 bg-[#0f0f0f]/40 hover:bg-[#0f0f0f] border border-zinc-800/80 hover:border-emerald-500/50 rounded-3xl transition-all duration-300 group space-y-3 text-center"
                     >
                         <div className="p-3 bg-emerald-500/5 group-hover:bg-emerald-500/10 rounded-xl text-emerald-500 transition-colors">
                             <UserPlus className="w-6 h-6" />
                         </div>
                         <div className="text-left w-full text-center">
-                            <h4 className="font-bold text-sm text-slate-200">Manual Direct Entry</h4>
-                            <p className="text-[11px] text-slate-500 mt-0.5">Input independent specific clients variables.</p>
+                            <h4 className="font-bold text-sm text-zinc-200">Manual Direct Entry</h4>
+                            <p className="text-[11px] text-zinc-500 mt-0.5">Input independent specific clients variables.</p>
                         </div>
                     </button>
                 </div>
 
                 {/* Navigation Terminal Workspace Dashboard Exit Action Button */}
-                <div className="border-t border-slate-800/60 pt-6 space-y-3">
+                <div className="border-t border-zinc-800/60 pt-6 space-y-3">
                     {!isEmbedded ? (
                         <button 
                             onClick={() => navigate('/payping/dashboard')}
-                            className="w-full bg-white hover:bg-slate-200 text-black font-extrabold py-4 rounded-xl flex items-center justify-center transition-all duration-200 group shadow-lg shadow-white/5"
+                            className="w-full bg-white hover:bg-zinc-200 text-black font-extrabold py-4 rounded-xl flex items-center justify-center transition-all duration-200 group shadow-lg shadow-white/5"
                         >
                             Launch Terminal Dashboard
                             <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -277,16 +277,16 @@ const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
                             <button 
                                 type="button"
                                 onClick={onGoBack}
-                                className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-300 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs transition-all"
+                                className="w-full bg-[#0f0f0f] hover:bg-zinc-900 border border-zinc-800 text-zinc-300 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs transition-all"
                             >
-                                <ChevronLeft className="w-4 h-4 text-slate-400" /> Go Back
+                                <ChevronLeft className="w-4 h-4 text-zinc-400" /> Go Back
                             </button>
                             <button 
                                 type="button"
                                 onClick={() => navigate('/payping/dashboard')}
-                                className="w-full bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-350 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs transition-all"
+                                className="w-full bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-350 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs transition-all"
                             >
-                                <LayoutDashboard className="w-4 h-4 text-slate-400" /> Return to Dashboard
+                                <LayoutDashboard className="w-4 h-4 text-zinc-400" /> Return to Dashboard
                             </button>
                         </>
                     )}
@@ -297,16 +297,16 @@ const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
             {/* POPUP OVERLAY WINDOW 1: ADVANCED BULK INGESTION CONTROL  */}
             {/* ======================================================== */}
             {showBulkModal && (
-                <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-                    <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-3xl max-h-[85vh] flex flex-col shadow-2xl scale-in-center animate-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 bg-[#0f0f0f]/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+                    <div className="bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-3xl max-h-[85vh] flex flex-col shadow-2xl scale-in-center animate-in zoom-in-95 duration-200">
                         
                         {/* Internal Header Modal Bar */}
-                        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+                        <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <Upload className="text-blue-500 w-5 h-5" />
+                                <Upload className="text-indigo-500 w-5 h-5" />
                                 <h3 className="font-bold text-lg">Batch Spreadsheet Processor</h3>
                             </div>
-                            <button onClick={closeAndResetBulkPipeline} className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 transition-colors">
+                            <button onClick={closeAndResetBulkPipeline} className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 transition-colors">
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
@@ -316,18 +316,18 @@ const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
                             {bulkStage === 'select' ? (
                                 <div className="space-y-6">
                                     {/* Action Sub-Block: Download Matrix Blueprint */}
-                                    <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-4">
+                                    <div className="bg-[#0f0f0f] border border-zinc-800 rounded-2xl p-4 flex items-center justify-between gap-4">
                                         <div className="flex items-start gap-3">
-                                            <FileText className="text-blue-400 w-8 h-8 shrink-0 mt-0.5" />
+                                            <FileText className="text-indigo-400 w-8 h-8 shrink-0 mt-0.5" />
                                             <div>
                                                 <h5 className="font-bold text-sm">System Scheme File Blueprint</h5>
-                                                <p className="text-xs text-slate-500 mt-0.5">Download the formatting layout matrix config before parsing system operations.</p>
+                                                <p className="text-xs text-zinc-500 mt-0.5">Download the formatting layout matrix config before parsing system operations.</p>
                                             </div>
                                         </div>
                                         <button 
                                             type="button" 
                                             onClick={downloadCsvTemplate}
-                                            className="px-4 py-2 bg-slate-900 hover:bg-slate-850 text-xs font-bold rounded-xl border border-slate-700 flex items-center gap-2 transition-colors shrink-0"
+                                            className="px-4 py-2 bg-zinc-900 hover:bg-zinc-850 text-xs font-bold rounded-xl border border-zinc-700 flex items-center gap-2 transition-colors shrink-0"
                                         >
                                             <Download className="w-3.5 h-3.5" /> Blueprint
                                         </button>
@@ -336,7 +336,7 @@ const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
                                     {/* Drop Area / Interactive Selection Block Target Window */}
                                     <div 
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="border-2 border-dashed border-slate-800 hover:border-blue-500/50 bg-slate-950/40 hover:bg-slate-950 p-8 rounded-2xl text-center cursor-pointer transition-all group space-y-3"
+                                        className="border-2 border-dashed border-zinc-800 hover:border-indigo-500/50 bg-[#0f0f0f]/40 hover:bg-[#0f0f0f] p-8 rounded-2xl text-center cursor-pointer transition-all group space-y-3"
                                     >
                                         <input 
                                             type="file" 
@@ -345,14 +345,14 @@ const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
                                             accept=".csv" 
                                             className="hidden" 
                                         />
-                                        <div className="p-3 bg-slate-900 rounded-full inline-block text-slate-400 group-hover:text-blue-500 transition-colors">
+                                        <div className="p-3 bg-zinc-900 rounded-full inline-block text-zinc-400 group-hover:text-indigo-500 transition-colors">
                                             <Upload className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-semibold text-slate-300">
+                                            <p className="text-sm font-semibold text-zinc-300">
                                                 {selectedFile ? selectedFile.name : "Select Operational CSV Matrix File"}
                                             </p>
-                                            <p className="text-xs text-slate-500 mt-1">Accepts system parsed raw plain text standard schemas up to 10MB</p>
+                                            <p className="text-xs text-zinc-500 mt-1">Accepts system parsed raw plain text standard schemas up to 10MB</p>
                                         </div>
                                     </div>
 
@@ -361,7 +361,7 @@ const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
                                             type="button"
                                             disabled={globalLoading}
                                             onClick={triggerFileCheck}
-                                            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl flex items-center justify-center transition-colors shadow-lg shadow-blue-600/10"
+                                            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl flex items-center justify-center transition-colors shadow-lg shadow-indigo-600/10"
                                         >
                                             {globalLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : "Verify Directory Integrity Alignment"}
                                         </button>
@@ -375,23 +375,23 @@ const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
                                         <p>Review the identified records parsed from your ledger matrix template below before committing mutations.</p>
                                     </div>
 
-                                    <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-950">
+                                    <div className="border border-zinc-800 rounded-2xl overflow-hidden bg-[#0f0f0f]">
                                         <table className="w-full text-left text-xs border-collapse">
                                             <thead>
-                                                <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 font-bold">
+                                                <tr className="bg-zinc-900 border-b border-zinc-800 text-zinc-400 font-bold">
                                                     <th className="p-3.5">TARGET NAME</th>
                                                     <th className="p-3.5">PHONE CONNECTION</th>
                                                     <th className="p-3.5">VALUATION PRICE</th>
                                                     <th className="p-3.5">CHRONO EXPIRY</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-slate-850 font-mono text-slate-300">
+                                            <tbody className="divide-y divide-slate-850 font-mono text-zinc-300">
                                                 {previewCustomers.map((c, idx) => (
-                                                    <tr key={idx} className="hover:bg-slate-900/40 transition-colors">
+                                                    <tr key={idx} className="hover:bg-zinc-900/40 transition-colors">
                                                         <td className="p-3.5 font-sans font-medium text-white">{c.name}</td>
-                                                        <td className="p-3.5 text-slate-400">{c.phone}</td>
-                                                        <td className="p-3.5 text-blue-400 font-semibold">₹{c.amount}</td>
-                                                        <td className="p-3.5 text-slate-500">{c.expiryDate}</td>
+                                                        <td className="p-3.5 text-zinc-400">{c.phone}</td>
+                                                        <td className="p-3.5 text-indigo-400 font-semibold">₹{c.amount}</td>
+                                                        <td className="p-3.5 text-zinc-500">{c.expiryDate}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -401,7 +401,7 @@ const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
                                     <div className="flex items-center gap-3 pt-2">
                                         <button 
                                             onClick={() => setBulkStage('select')}
-                                            className="w-1/3 border border-slate-700 hover:bg-slate-800 text-slate-300 font-bold py-3.5 rounded-xl transition-colors text-sm"
+                                            className="w-1/3 border border-zinc-700 hover:bg-zinc-800 text-zinc-300 font-bold py-3.5 rounded-xl transition-colors text-sm"
                                         >
                                             Re-select Matrix
                                         </button>
@@ -424,13 +424,13 @@ const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
             {/* POPUP OVERLAY WINDOW 2: CUSTOM DIRECT MANUAL ENTRY FORM  */}
             {/* ======================================================== */}
             {showManualModal && (
-                <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+                <div className="fixed inset-0 bg-[#0f0f0f]/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
                     <form 
                         onSubmit={executeManualCommit}
-                        className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl shadow-2xl scale-in-center animate-in zoom-in-95 duration-200 overflow-hidden"
+                        className="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-3xl shadow-2xl scale-in-center animate-in zoom-in-95 duration-200 overflow-hidden"
                     >
                         {/* Modal Header */}
-                        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+                        <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <UserPlus className="text-emerald-500 w-5 h-5" />
                                 <h3 className="font-bold text-lg">Direct Ingestion Console</h3>
@@ -438,7 +438,7 @@ const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
                             <button 
                                 type="button" 
                                 onClick={() => setShowManualModal(false)} 
-                                className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 transition-colors"
+                                className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 transition-colors"
                             >
                                 <X className="w-4 h-4" />
                             </button>
@@ -449,69 +449,69 @@ const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
                             
                             {/* Input Variable Block: Name */}
                             <div>
-                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Client Full Name</label>
+                                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5 ml-1">Client Full Name</label>
                                 <input 
                                     type="text" 
                                     required
                                     placeholder="Jane Doe"
                                     value={manualForm.name}
                                     onChange={(e) => setManualForm({...manualForm, name: e.target.value})}
-                                    className="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl focus:border-emerald-500 outline-none transition-colors placeholder:text-slate-700 text-sm"
+                                    className="w-full bg-[#0f0f0f] border border-zinc-800 p-3 rounded-xl focus:border-emerald-500 outline-none transition-colors placeholder:text-zinc-700 text-sm"
                                 />
                             </div>
 
                             {/* Input Variable Block: Phone */}
                             <div>
-                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">WhatsApp Matrix Vector Phone</label>
+                                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5 ml-1">WhatsApp Matrix Vector Phone</label>
                                 <input 
                                     type="text" 
                                     required
                                     placeholder="919876543210"
                                     value={manualForm.phone}
                                     onChange={(e) => setManualForm({...manualForm, phone: e.target.value})}
-                                    className="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl focus:border-emerald-500 outline-none transition-colors placeholder:text-slate-700 text-sm font-mono"
+                                    className="w-full bg-[#0f0f0f] border border-zinc-800 p-3 rounded-xl focus:border-emerald-500 outline-none transition-colors placeholder:text-zinc-700 text-sm font-mono"
                                 />
                             </div>
 
                             {/* Input Variable Block: Target Flat Fee Price Valuation */}
                             <div>
-                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Subscription Valuation Rate (₹)</label>
+                                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5 ml-1">Subscription Valuation Rate (₹)</label>
                                 <input 
                                     type="number" 
                                     required
                                     placeholder="2000"
                                     value={manualForm.amount || ''}
                                     onChange={(e) => setManualForm({...manualForm, amount: Number(e.target.value)})}
-                                    className="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl focus:border-emerald-500 outline-none transition-colors placeholder:text-slate-700 text-sm"
+                                    className="w-full bg-[#0f0f0f] border border-zinc-800 p-3 rounded-xl focus:border-emerald-500 outline-none transition-colors placeholder:text-zinc-700 text-sm"
                                 />
                             </div>
 
                             {/* Input Variable Block: Target Chronological Exp Date Deadline */}
                             <div>
-                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Chronological Expiry Milestone</label>
+                                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5 ml-1">Chronological Expiry Milestone</label>
                                 <input 
                                     type="date" 
                                     required
                                     value={manualForm.expiryDate}
                                     onChange={(e) => setManualForm({...manualForm, expiryDate: e.target.value})}
-                                    className="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl focus:border-emerald-500 outline-none transition-colors text-slate-300 text-sm"
+                                    className="w-full bg-[#0f0f0f] border border-zinc-800 p-3 rounded-xl focus:border-emerald-500 outline-none transition-colors text-zinc-300 text-sm"
                                 />
                             </div>
 
                             {/* Additional Parameters Block */}
-                            <div className="space-y-3 border-t border-slate-800/60 pt-4">
-                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Additional Parameters</label>
+                            <div className="space-y-3 border-t border-zinc-800/60 pt-4">
+                                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5 ml-1">Additional Parameters</label>
                                 
                                 {additionalDetailsList.length > 0 ? (
                                     <div className={`space-y-2 ${additionalDetailsList.length > 4 ? 'max-h-[220px] overflow-y-auto pr-1' : ''}`}>
                                         {additionalDetailsList.map(({ key, value }, index) => (
                                             <div 
                                                 key={`${key}-${value}-${index}`} 
-                                                className="flex items-center justify-between p-3.5 bg-slate-950 rounded-2xl shadow-sm border border-slate-900/40 text-xs hover:bg-slate-900/20 transition-all duration-150"
+                                                className="flex items-center justify-between p-3.5 bg-[#0f0f0f] rounded-2xl shadow-sm border border-zinc-900/40 text-xs hover:bg-zinc-900/20 transition-all duration-150"
                                             >
-                                                <span className="text-slate-400 font-semibold uppercase text-[10px] tracking-wider truncate pr-2 max-w-[150px]">{key}</span>
+                                                <span className="text-zinc-400 font-semibold uppercase text-[10px] tracking-wider truncate pr-2 max-w-[150px]">{key}</span>
                                                 <div className="flex items-center gap-3">
-                                                    <span className="text-slate-200 font-bold font-mono text-xs truncate max-w-[150px]">{value}</span>
+                                                    <span className="text-zinc-200 font-bold font-mono text-xs truncate max-w-[150px]">{value}</span>
                                                     <button
                                                         type="button"
                                                         onClick={() => setAdditionalDetailsList(prev => prev.filter((_, i) => i !== index))}
@@ -524,7 +524,7 @@ const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-4 bg-slate-950/40 rounded-2xl text-slate-500 text-xs italic border border-slate-800/30">
+                                    <div className="text-center py-4 bg-[#0f0f0f]/40 rounded-2xl text-zinc-500 text-xs italic border border-zinc-800/30">
                                         No additional parameters added.
                                     </div>
                                 )}
@@ -534,13 +534,13 @@ const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
                                     <button
                                         type="button"
                                         onClick={() => { fetchApiDetailsData(); setShowDetailForm(true); }}
-                                        className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-350 hover:text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+                                        className="w-full bg-[#0f0f0f] hover:bg-zinc-900 border border-zinc-800 text-zinc-350 hover:text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
                                     >
                                         + Add Additional Detail
                                     </button>
                                 ) : (
-                                    <div className="p-4 bg-slate-950 rounded-2xl space-y-3 relative border border-slate-850 animate-in slide-in-from-bottom-2 duration-150">
-                                        <span className="text-[9px] font-bold text-slate-500 block uppercase tracking-wider mb-1">New Parameter Field</span>
+                                    <div className="p-4 bg-[#0f0f0f] rounded-2xl space-y-3 relative border border-zinc-850 animate-in slide-in-from-bottom-2 duration-150">
+                                        <span className="text-[9px] font-bold text-zinc-500 block uppercase tracking-wider mb-1">New Parameter Field</span>
                                         <div className="grid grid-cols-2 gap-2.5">
                                             {/* Key */}
                                             <div className="relative">
@@ -557,10 +557,10 @@ const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
                                                             handleSaveNewDetailInline();
                                                         }
                                                     }}
-                                                    className="w-full bg-slate-900 border border-slate-800 p-2.5 rounded-xl text-xs text-white outline-none focus:border-emerald-500 transition-colors"
+                                                    className="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl text-xs text-white outline-none focus:border-emerald-500 transition-colors"
                                                 />
                                                 {detailsDropdownField === 'key' && apiDetailsData && (
-                                                    <div className="absolute left-0 right-0 mt-1 bg-slate-900 border border-slate-800 rounded-xl p-1 shadow-2xl z-50 max-h-32 overflow-y-auto">
+                                                    <div className="absolute left-0 right-0 mt-1 bg-zinc-900 border border-zinc-800 rounded-xl p-1 shadow-2xl z-50 max-h-32 overflow-y-auto">
                                                         {Object.keys(apiDetailsData)
                                                             .filter(k => k.toLowerCase().includes((newDetailKey || '').toLowerCase()))
                                                             .map(k => (
@@ -571,7 +571,7 @@ const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
                                                                         setNewDetailKey(k);
                                                                         if (apiDetailsData[k]) setNewDetailVal(String(apiDetailsData[k]));
                                                                     }}
-                                                                    className="w-full text-left px-2 py-1.5 text-xs hover:bg-slate-800 rounded text-slate-300 font-medium"
+                                                                    className="w-full text-left px-2 py-1.5 text-xs hover:bg-zinc-800 rounded text-zinc-300 font-medium"
                                                                 >
                                                                     {k}
                                                                 </button>
@@ -594,15 +594,15 @@ const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
                                                             handleSaveNewDetailInline();
                                                         }
                                                     }}
-                                                    className="w-full bg-slate-900 border border-slate-800 p-2.5 rounded-xl text-xs text-white outline-none focus:border-emerald-500 transition-colors"
+                                                    className="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl text-xs text-white outline-none focus:border-emerald-500 transition-colors"
                                                 />
                                                 {detailsDropdownField === 'value' && apiDetailsData && newDetailKey && apiDetailsData[newDetailKey] && (
-                                                    <div className="absolute left-0 right-0 mt-1 bg-slate-900 border border-slate-800 rounded-xl p-1 shadow-2xl z-50 max-h-32 overflow-y-auto">
+                                                    <div className="absolute left-0 right-0 mt-1 bg-zinc-900 border border-zinc-800 rounded-xl p-1 shadow-2xl z-50 max-h-32 overflow-y-auto">
                                                         <button
                                                             key="suggested"
                                                             type="button"
                                                             onMouseDown={() => setNewDetailVal(String(apiDetailsData[newDetailKey]))}
-                                                            className="w-full text-left px-2 py-1.5 text-xs hover:bg-slate-800 rounded text-emerald-400 font-bold flex items-center justify-between"
+                                                            className="w-full text-left px-2 py-1.5 text-xs hover:bg-zinc-800 rounded text-emerald-400 font-bold flex items-center justify-between"
                                                         >
                                                             <span>{String(apiDetailsData[newDetailKey])}</span>
                                                             <span className="text-[8px] uppercase bg-emerald-500/10 text-emerald-500 px-1 py-0.5 rounded font-black">Suggested</span>
@@ -615,7 +615,7 @@ const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
                                             <button
                                                 type="button"
                                                 onClick={() => setShowDetailForm(false)}
-                                                className="w-1/3 bg-slate-900 hover:bg-slate-850 text-slate-400 py-2 rounded-xl text-xs font-bold transition-colors"
+                                                className="w-1/3 bg-zinc-900 hover:bg-zinc-850 text-zinc-400 py-2 rounded-xl text-xs font-bold transition-colors"
                                             >
                                                 Cancel
                                             </button>
@@ -633,7 +633,7 @@ const AddCustomers = ({ isEmbedded = false, onGoBack }: AddCustomersProps) => {
                         </div>
 
                         {/* Modal Action Transaction Trigger Footer Bar */}
-                        <div className="p-6 border-t border-slate-800 bg-slate-950/40">
+                        <div className="p-6 border-t border-zinc-800 bg-[#0f0f0f]/40">
                             <button
                                 type="submit"
                                 disabled={globalLoading}

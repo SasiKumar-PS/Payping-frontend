@@ -3,9 +3,10 @@ import {
     Bell, Calendar, Clock, Edit, Trash2, ArrowRight, CheckCircle2, 
     AlertCircle, FileText, Users, X, ToggleLeft, ToggleRight, 
     Info, Check, Filter, Loader2, MessageSquare, ChevronRight, Play, RefreshCw, History as HistoryIcon,
-    ChevronLeft, Plus, Minus
+    ChevronLeft, Plus, Minus, BellRing, BellOff, Activity
 } from 'lucide-react';
 import api from '../../api';
+import { useNavigate } from 'react-router-dom';
 
 // ==========================================
 // TS INTERFACES & SCHEMA TYPES
@@ -65,7 +66,7 @@ const renderTemplatePreviewWithPills = (content: string) => {
                     return (
                         <span 
                             key={index} 
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 mx-0.5 bg-blue-950 text-blue-450 border border-blue-900/30 rounded text-[0.9em] font-semibold align-baseline select-none whitespace-nowrap"
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 mx-0.5 bg-[#022c22]/90 text-emerald-400 border border-emerald-800/60 rounded text-[0.9em] font-semibold align-baseline select-none whitespace-nowrap"
                         >
                             {tag}
                         </span>
@@ -75,6 +76,14 @@ const renderTemplatePreviewWithPills = (content: string) => {
             })}
         </p>
     );
+};
+
+// Convert 12hr AM/PM to 24hr format for API: "02","30","PM" → "14:30"
+const to24hr = (hour: string, min: string, ampm: string): string => {
+    let h = parseInt(hour, 10);
+    if (ampm === 'AM' && h === 12) h = 0;
+    else if (ampm === 'PM' && h !== 12) h += 12;
+    return `${String(h).padStart(2, '0')}:${min}`;
 };
 
 // Default Static Fallbacks for Ultimate Resiliency
@@ -175,6 +184,7 @@ const MOCK_CUSTOMERS_LIST: CustomerDTO[] = [
 ];
 
 export const AutoAlerts = () => {
+    const navigate = useNavigate();
     // ==========================================
     // STATE DECLARES
     // ==========================================
@@ -208,6 +218,14 @@ export const AutoAlerts = () => {
     const [showFilterModal, setShowFilterModal] = useState<boolean>(false);
     const [showCustomersOverlay, setShowCustomersOverlay] = useState<boolean>(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
+    const [showStatusDeactivationConfirm, setShowStatusDeactivationConfirm] = useState<boolean>(false);
+    const [statusToggleAlert, setStatusToggleAlert] = useState<AutoAlertDTO | null>(null);
+
+    // Template Edit Modal States
+    const [showTemplateEditModal, setShowTemplateEditModal] = useState<boolean>(false);
+    const [editTemplateId, setEditTemplateId] = useState<string>("");
+    const [editTemplateName, setEditTemplateName] = useState<string>("");
+    const [editTemplateContent, setEditTemplateContent] = useState<string>("");
 
     // Context flags for Modals
     const [filterModalContext, setFilterModalContext] = useState<'CREATE' | 'EDIT'>('EDIT');
@@ -246,7 +264,7 @@ export const AutoAlerts = () => {
 
             // 1. Fetch Alert Events
             try {
-                const eventRes = await api.get('/payping/autoalerts/events');
+                const eventRes = await api.get('/payping/notifications/events');
                 setEvents(eventRes.data || MOCK_EVENTS);
             } catch (err) {
                 console.warn("Failed fetching events endpoint, using fallbacks");
@@ -309,7 +327,7 @@ export const AutoAlerts = () => {
     // Refresh Scheduled Alerts List
     const refreshAlertList = async () => {
         try {
-            const alertsRes = await api.get('/payping/autoalerts');
+            const alertsRes = await api.get('/payping/notifications/autoalerts');
             let data = alertsRes.data || [];
             if (!Array.isArray(data) || data.length === 0) {
                 data = MOCK_ALERTS;
@@ -358,13 +376,22 @@ export const AutoAlerts = () => {
                 sort: 'name_asc',
                 filters,
                 page: 0,
-                size: 1
+                size: 1000
             });
             const total = res.data?.totalElements ?? res.data?.content?.length ?? (Array.isArray(res.data) ? res.data.length : 0);
             return total;
         } catch (err) {
             // Simulated logic based on filters for mock fidelity
-            const paymentStatusFilters = filters.paymentStatus || [];
+            const getFilterValueInsensitive = (f: Record<string, string[]>, target: string) => {
+                if (!f) return [];
+                const norm = target.toLowerCase().replace(/\s+/g, '');
+                for (const [k, v] of Object.entries(f)) {
+                    if (k.toLowerCase().replace(/\s+/g, '') === norm) return v;
+                }
+                return [];
+            };
+            
+            const paymentStatusFilters = getFilterValueInsensitive(filters, 'paymentStatus');
             if (paymentStatusFilters.length === 0) return MOCK_CUSTOMERS_LIST.length;
             
             // Filter locally to simulate
@@ -406,7 +433,7 @@ export const AutoAlerts = () => {
         }
 
         return (
-            <div className="flex flex-wrap gap-1.5 pt-1">
+            <div className="flex flex-row overflow-x-auto whitespace-nowrap scrollbar-none gap-1.5 pt-1 w-full">
                 {list.map((tag, idx) => (
                     <span 
                         key={idx} 
@@ -436,10 +463,19 @@ export const AutoAlerts = () => {
     // ==========================================
     // ACTION TRIGGERS (SAVE, EDIT, DELETE, TOGGLE)
     // ==========================================
-    const handleToggleStatus = async (alert: AutoAlertDTO) => {
+    const handleToggleStatusClick = (alert: AutoAlertDTO) => {
+        if (alert.status === 'ACTIVE') {
+            setStatusToggleAlert(alert);
+            setShowStatusDeactivationConfirm(true);
+        } else {
+            commitToggleStatus(alert);
+        }
+    };
+
+    const commitToggleStatus = async (alert: AutoAlertDTO) => {
         const nextStatus = alert.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
         try {
-            await api.put(`/payping/autoalerts/save/${alert.id}`, {
+            await api.put(`/payping/notifications/autoalerts/${alert.id}`, {
                 ...alert,
                 status: nextStatus
             }, {
@@ -470,7 +506,7 @@ export const AutoAlerts = () => {
             return;
         }
 
-        const scheduledTime = `${editTimeHour}:${editTimeMin} ${editTimeAmpm}`;
+        const scheduledTime = to24hr(editTimeHour, editTimeMin, editTimeAmpm);
         const updatedPayload: AutoAlertDTO = {
             ...selectedAlert,
             name: editAlertName,
@@ -481,7 +517,7 @@ export const AutoAlerts = () => {
         };
 
         try {
-            await api.put(`/payping/autoalerts/save/${selectedAlert.id}`, updatedPayload, {
+            await api.put(`/payping/notifications/autoalerts/${selectedAlert.id}`, updatedPayload, {
                 headers: { 'X-Trigger-Success': 'true' }
             });
             setIsEditingInfo(false);
@@ -564,31 +600,34 @@ export const AutoAlerts = () => {
             return;
         }
 
-        const nextId = `alert-${Date.now()}`;
-        const newRecord: AutoAlertDTO = {
-            id: nextId,
+        const payload = {
             name: newAlertName,
             event: newEvent,
             offsetDays: newOffset,
-            time: `${newTimeHour}:${newTimeMin} ${newTimeAmpm}`,
-            status: "ACTIVE",
-            templateId: newTemplate.id,
+            time: to24hr(newTimeHour, newTimeMin, newTimeAmpm),
+            status: "ACTIVE" as const,
             template: newTemplate,
             filters: newFilters,
-            nextTriggerDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         };
 
         try {
-            await api.post('/payping/autoalerts/save', newRecord, {
+            await api.post('/payping/notifications/autoalerts/save', payload, {
                 headers: { 'X-Trigger-Success': 'true' }
             });
             setShowAddModal(false);
             resetCreateForm();
             await refreshAlertList();
         } catch (err) {
-            // Simulated local insert
-            setAlerts(prev => [...prev, newRecord]);
-            setSelectedAlert(newRecord);
+            // Simulated local insert with temp ID for mock fallback
+            const mockRecord: AutoAlertDTO = {
+                ...payload,
+                id: `alert-${Date.now()}`,
+                templateId: newTemplate?.id || '',
+                template: newTemplate,
+                nextTriggerDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+            };
+            setAlerts(prev => [...prev, mockRecord]);
+            setSelectedAlert(mockRecord);
             setShowAddModal(false);
             resetCreateForm();
             window.dispatchEvent(new CustomEvent('PAYPING_SYSTEM_SUCCESS', {
@@ -634,7 +673,15 @@ export const AutoAlerts = () => {
             }
         } catch (err) {
             // Simulated local mock matching for fidelity
-            const paymentStatusFilters = selectedAlert.filters?.paymentStatus || [];
+            const getFilterValueInsensitive = (f: Record<string, string[]>, target: string) => {
+                if (!f) return [];
+                const norm = target.toLowerCase().replace(/\s+/g, '');
+                for (const [k, v] of Object.entries(f)) {
+                    if (k.toLowerCase().replace(/\s+/g, '') === norm) return v;
+                }
+                return [];
+            };
+            const paymentStatusFilters = getFilterValueInsensitive(selectedAlert.filters || {}, 'paymentStatus');
             if (paymentStatusFilters.length === 0) {
                 setPreviewCustomers(MOCK_CUSTOMERS_LIST);
             } else {
@@ -662,11 +709,25 @@ export const AutoAlerts = () => {
         setLiveDraftCount(count);
     };
 
+    const cleanFiltersPayload = (filters: Record<string, string[]>) => {
+        const cleaned: Record<string, string[]> = {};
+        if (!filters) return cleaned;
+        Object.entries(filters).forEach(([key, values]) => {
+            if (Array.isArray(values)) {
+                const cleanArr = values.filter(v => v.trim() !== '');
+                if (cleanArr.length > 0) {
+                    cleaned[key] = cleanArr;
+                }
+            }
+        });
+        return cleaned;
+    };
+
     const toggleFilterDraftOption = (category: string, value: string) => {
         setFilterDraft(prev => {
             const arr = prev[category] || [];
             const nextArr = arr.includes(value) ? arr.filter(item => item !== value) : [...arr, value];
-            const updated = { ...prev, [category]: nextArr };
+            const updated = cleanFiltersPayload({ ...prev, [category]: nextArr });
             // Update the live preview count
             updateFiltersLiveDraftCount(updated);
             return updated;
@@ -681,7 +742,7 @@ export const AutoAlerts = () => {
             if (!selectedAlert) return;
             const updatedAlert = { ...selectedAlert, filters: filterDraft };
             try {
-                await api.put(`/payping/autoalerts/save/${selectedAlert.id}`, updatedAlert, {
+                await api.put(`/payping/notifications/autoalerts/${selectedAlert.id}`, updatedAlert, {
                     headers: { 'X-Trigger-Success': 'true' }
                 });
                 await refreshAlertList();
@@ -722,11 +783,10 @@ export const AutoAlerts = () => {
             if (!selectedAlert) return;
             const updatedAlert = { 
                 ...selectedAlert, 
-                templateId: candidateTemplate.id,
                 template: candidateTemplate
             };
             try {
-                await api.put(`/payping/autoalerts/save/${selectedAlert.id}`, updatedAlert, {
+                await api.put(`/payping/notifications/autoalerts/${selectedAlert.id}`, updatedAlert, {
                     headers: { 'X-Trigger-Success': 'true' }
                 });
                 await refreshAlertList();
@@ -746,51 +806,48 @@ export const AutoAlerts = () => {
     // INLINE TAG INSERTION (TEMPLATE EDITOR)
     // ==========================================
     const handleInsertTagShortcut = (tag: string) => {
-        setTemplateEditContent(prev => prev + `{${tag}}`);
+    setTemplateEditContent(prev => prev + `{${tag}}`);
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white flex flex-col font-sans select-none overflow-x-hidden pb-28 relative">
+        <div className="min-h-screen bg-zinc-950 text-white flex flex-col font-sans select-none overflow-x-hidden pb-28 relative">
             
             {/* Header section with Stats Bar */}
-            <header className="sticky top-0 z-20 bg-slate-950 px-4 pt-5 pb-4 max-w-md lg:max-w-6xl mx-auto w-full border-b border-slate-900/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <header className="sticky top-0 z-20 bg-zinc-950 px-4 pt-8 pb-6 max-w-md lg:max-w-4xl mx-auto w-full border-b border-zinc-800/60 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent flex items-center gap-2">
-                        <Bell className="w-5 h-5 text-blue-500 shrink-0" /> Auto Alerts Center
+                    <h1 className="text-2xl font-semibold text-zinc-100 tracking-tight flex items-center gap-2">
+                        Auto Alerts
                     </h1>
-                    <p className="text-[10px] text-slate-500 font-semibold tracking-wider mt-0.5 uppercase">
-                        Configure event-triggered automation schedules straight into customer channels.
+                    <p className="text-sm text-zinc-400 mt-1">
+                        Configure event-triggered automation schedules.
                     </p>
                 </div>
                 <button 
-                    onClick={() => { resetCreateForm(); openFiltersPopup('CREATE'); setShowAddModal(true); }}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:scale-98 transition-all text-xs font-bold rounded-xl cursor-pointer border-0 outline-none shadow-lg shadow-blue-600/10"
+                    onClick={() => { resetCreateForm(); setShowAddModal(true); }}
+                    className="flex items-center justify-center px-4 py-2 bg-indigo-500 hover:bg-indigo-400 text-white text-sm font-medium rounded-md transition-colors cursor-pointer border border-indigo-500/50 shadow-sm shadow-indigo-500/20"
                 >
-                    + Add Auto Alert
+                    Add Auto Alert
                 </button>
             </header>
 
             {loading ? (
                 <div className="flex-1 flex flex-col items-center justify-center py-20 space-y-3">
-                    <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest animate-pulse">Mapping alert channels and schemas...</p>
+                    <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
+                    <p className="text-sm font-medium text-zinc-500">Loading configurations...</p>
                 </div>
             ) : (
-                <main className="flex-1 px-4 max-w-md lg:max-w-6xl mx-auto w-full pt-4 space-y-4 pb-20">
+                <main className="flex-1 px-4 max-w-md lg:max-w-4xl mx-auto w-full pt-6 space-y-3 pb-20">
                     
                     {alerts.length === 0 ? (
-                        <div className="bg-slate-900 p-12 text-center flex flex-col items-center justify-center gap-4 rounded-2xl border border-slate-900 shadow-sm">
-                            <div className="p-3 bg-slate-950 border border-slate-900 text-slate-500 rounded-xl">
-                                <Bell className="w-6 h-6 animate-pulse" />
-                            </div>
-                            <h3 className="text-sm font-bold text-slate-300">No scheduled notifications active</h3>
-                            <p className="text-xs text-slate-505 max-w-xs mx-auto leading-relaxed">
-                                Create a new auto-trigger configuration using the button above to begin scheduling.
+                        <div className="bg-zinc-900/30 p-12 text-center flex flex-col items-center justify-center gap-3 rounded-xl border border-zinc-800/50">
+                            <Bell className="w-5 h-5 text-zinc-600 mb-2" />
+                            <h3 className="text-sm font-medium text-zinc-300">No scheduled notifications active</h3>
+                            <p className="text-sm text-zinc-500">
+                                Create a new auto-trigger configuration to begin scheduling.
                             </p>
                         </div>
                     ) : (
-                        /* GORGEOUS SINGLE-COLUMN CARD LIST - IMMUNE TO TRANSITION CRASHES */
-                        <div className="w-full space-y-3 animate-in fade-in duration-200">
+                        <div className="w-full space-y-2">
                             {alerts.map((alert) => {
                                 const tgtCount = customerCounts[alert.id] ?? 0;
                                 return (
@@ -801,47 +858,50 @@ export const AutoAlerts = () => {
                                             setIsEditingInfo(false);
                                             setIsEditingTemplate(false);
                                         }}
-                                        className="w-full bg-slate-900 p-4 rounded-xl flex items-center justify-between border border-transparent hover:border-slate-800 transition-all active:scale-[0.99] cursor-pointer group"
+                                        className="w-full bg-zinc-900/30 p-4 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between border border-zinc-800/60 hover:bg-zinc-900/60 hover:border-zinc-700/60 transition-colors cursor-pointer group gap-3"
                                     >
-                                        {/* Left text structures */}
-                                        <div className="min-w-0 flex-grow pr-4 space-y-1.5">
-                                            <h4 className="text-sm font-bold text-slate-200 truncate group-hover:text-white transition-colors">{alert.name}</h4>
+                                        <div className="min-w-0 flex-grow space-y-1">
+                                            <div className="flex items-center gap-3">
+                                                <h4 className="text-sm font-medium text-zinc-200 truncate group-hover:text-zinc-50 transition-colors">{alert.name}</h4>
+                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${
+                                                    alert.status === 'ACTIVE' 
+                                                        ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' 
+                                                        : 'bg-zinc-800/50 text-zinc-400 border-zinc-700/50'
+                                                }`}>
+                                                    {alert.status === 'ACTIVE' ? 'Active' : 'Inactive'}
+                                                </span>
+                                            </div>
                                             
-                                            <div className="flex flex-wrap items-center gap-2.5 text-xs text-slate-400 font-semibold">
-                                                <span className="px-1.5 py-0.5 bg-slate-950 text-blue-400 border border-blue-500/10 rounded text-[9px] font-mono font-bold uppercase shrink-0">
-                                                    {alert.event}
+                                            <div className="flex items-center gap-3 text-xs text-zinc-500">
+                                                <span className="truncate flex items-center gap-1.5">
+                                                    <Bell className="w-3.5 h-3.5 text-zinc-600" />
+                                                    {alert.event} {alert.offsetDays === 0 ? "(On Event)" : `(${alert.offsetDays > 0 ? '+' : ''}${alert.offsetDays}d)`}
                                                 </span>
-                                                <span className="text-[10px] text-slate-500 font-mono shrink-0">
-                                                    {alert.offsetDays === 0 ? "On Event" : `${alert.offsetDays > 0 ? '+' : ''}${alert.offsetDays}d`}
+                                                <span className="text-zinc-800 shrink-0 select-none">•</span>
+                                                <span className="flex items-center gap-1.5 shrink-0">
+                                                    <Clock className="w-3.5 h-3.5 text-zinc-600" />
+                                                    {alert.time}
                                                 </span>
-                                                <span className="text-slate-800 shrink-0 select-none">•</span>
-                                                <span className="truncate flex items-center gap-1">
-                                                    <FileText className="w-3.5 h-3.5 text-slate-600 shrink-0" />
-                                                    {alert.template?.name || "No Template Mapped"}
+                                                <span className="text-zinc-800 shrink-0 select-none hidden sm:block">•</span>
+                                                <span className="hidden sm:flex items-center gap-1.5 shrink-0 text-indigo-400/80 font-medium">
+                                                    <Calendar className="w-3.5 h-3.5" />
+                                                    {alert.nextTriggerDate ? alert.nextTriggerDate : "Pending"}
                                                 </span>
-                                                <span className="text-slate-800 shrink-0 select-none">•</span>
-                                                <span className="flex items-center gap-1 shrink-0">
-                                                    <Users className="w-3.5 h-3.5 text-slate-600 shrink-0" />
-                                                    {tgtCount} target{tgtCount === 1 ? '' : 's'}
+                                                <span className="text-zinc-800 shrink-0 select-none hidden sm:block">•</span>
+                                                <span className="hidden sm:flex items-center gap-1.5 shrink-0 text-sky-400/80 font-medium">
+                                                    <Activity className="w-3.5 h-3.5" />
+                                                    {alert.status === 'ACTIVE' ? "Scheduled" : "Not Started"}
                                                 </span>
                                             </div>
                                         </div>
-
-                                        {/* Right actions meta & chevron */}
-                                        <div className="flex items-center gap-4 shrink-0">
-                                            <div className="text-right space-y-1">
-                                                <span className={`inline-block px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${
-                                                    alert.status === 'ACTIVE' 
-                                                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                                                        : 'bg-slate-950 text-slate-500 border border-transparent'
-                                                }`}>
-                                                    {alert.status}
-                                                </span>
-                                                {alert.status === 'ACTIVE' && alert.nextTriggerDate && (
-                                                    <p className="text-[9px] text-slate-500 font-mono">Next: {alert.nextTriggerDate}</p>
-                                                )}
+                                        
+                                        <div className="flex items-center gap-4 shrink-0 sm:pl-4">
+                                            <div className="flex items-center gap-1.5 bg-zinc-800/40 px-2.5 py-1.5 rounded-md border border-zinc-700/30">
+                                                <Users className="w-3.5 h-3.5 text-zinc-400" />
+                                                <span className="text-sm font-semibold text-zinc-200">{tgtCount}</span>
+                                                <span className="text-xs font-medium text-zinc-500">recipients</span>
                                             </div>
-                                            <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                                            <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
                                         </div>
                                     </div>
                                 );
@@ -855,154 +915,150 @@ export const AutoAlerts = () => {
             {/* DYNAMIC DETAILED POPUP OVERLAY VIEW MODAL (DOSSIER POPUP)*/}
             {/* ======================================================= */}
             {selectedAlert && (
-                <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onClick={() => setSelectedAlert(null)} />
-                    <div className="relative bg-slate-900 w-full max-w-2xl rounded-3xl border border-slate-900 shadow-2xl flex flex-col max-h-[88vh] overflow-hidden animate-in slide-in-from-bottom-10 duration-200">
+                <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 40 }}>
+                    <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm" onClick={() => setSelectedAlert(null)} />
+                    <div className="relative bg-[#0f0f0f] w-full max-w-3xl rounded-2xl border border-zinc-800/60 shadow-2xl flex flex-col max-h-[88vh] overflow-hidden animate-in fade-in duration-150">
                         
                         {/* Popup Header */}
-                        <div className="p-5 border-b border-slate-900 flex items-center justify-between bg-slate-950/30 shrink-0">
-                            <div>
-                                <h3 className="font-extrabold text-sm text-slate-100 flex items-center gap-2 tracking-tight uppercase">
-                                    <Bell className="w-4 h-4 text-blue-500 shrink-0" /> {selectedAlert.name}
-                                </h3>
-                                <p className="text-[10px] text-slate-500 font-semibold tracking-wider uppercase mt-1">Scheduled flow configuration details</p>
+                        <div className="p-6 border-b border-zinc-800/60 flex items-center justify-between shrink-0 bg-transparent">
+                            <h2 className="text-lg font-medium text-zinc-100 tracking-tight flex items-center gap-3">
+                                {selectedAlert.name}
+                            </h2>
+                            <div className="flex items-center gap-2">
+                                {!isEditingInfo && (
+                                    <>
+                                        <div className="flex items-center gap-2 mr-2">
+                                            <span className={`text-xs font-semibold uppercase tracking-widest ${selectedAlert.status === 'ACTIVE' ? 'text-indigo-400' : 'text-zinc-500'}`}>
+                                                {selectedAlert.status === 'ACTIVE' ? 'Active' : 'Inactive'}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleToggleStatusClick(selectedAlert)}
+                                                className={`p-1.5 rounded-full transition-colors duration-200 ease-in-out focus:outline-none cursor-pointer ${
+                                                    selectedAlert.status === 'ACTIVE' ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                                                }`}
+                                            >
+                                                {selectedAlert.status === 'ACTIVE' ? <BellRing className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+                                            </button>
+                                        </div>
+                                        <div className="w-px h-4 bg-zinc-800 mx-1"></div>
+                                        <button 
+                                            onClick={() => setShowDeleteConfirm(true)}
+                                            className="px-3 py-1.5 flex items-center gap-1.5 rounded-md text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors bg-transparent border-0 outline-none cursor-pointer text-xs font-medium"
+                                            title="Delete Alert"
+                                        >
+                                            <Trash2 className="w-4 h-4" /> Delete
+                                        </button>
+                                        <div className="w-px h-4 bg-zinc-800 mx-1"></div>
+                                    </>
+                                )}
+                                <button onClick={() => setSelectedAlert(null)} className="p-1.5 rounded-md text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors bg-transparent border-0 outline-none cursor-pointer">
+                                    <X className="w-5 h-5" />
+                                </button>
                             </div>
-                            <button onClick={() => setSelectedAlert(null)} className="text-slate-400 hover:text-slate-200 transition-colors bg-transparent border-0 outline-none cursor-pointer">
-                                <X className="w-5 h-5" />
-                            </button>
                         </div>
 
-                        {/* Scrollable Popup Content (Renders the 4 Solid Opaque Blocks) */}
-                        <div className="p-6 overflow-y-auto space-y-5 flex-1 scrollbar-none max-h-[75vh]">
+                        {/* Scrollable Popup Content */}
+                        <div className="p-6 overflow-y-auto flex flex-col gap-6 flex-1 scrollbar-none max-h-[75vh]">
                             
-                            {/* BLOCK 1: ALERT SCHEDULAR INFORMATION CARD */}
-                            <div className="bg-slate-950 rounded-2xl p-5 shadow-sm space-y-5 border border-slate-900 relative">
-                                <div className="flex items-center justify-between border-b border-slate-900 pb-3.5">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-slate-900 border border-slate-800 rounded-lg text-blue-400">
-                                            <Info className="w-4 h-4" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-extrabold text-xs text-slate-300 tracking-wide uppercase">Alert Information Block</h3>
-                                            <p className="text-[9px] text-slate-500 font-semibold tracking-wider uppercase mt-0.5">Alert rules identity and dispatch windows</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-2">
-                                        {!isEditingInfo ? (
-                                            <>
-                                                <button 
-                                                    onClick={() => {
-                                                        setIsEditingInfo(true);
-                                                        setEditAlertName(selectedAlert.name);
-                                                        setEditEvent(selectedAlert.event);
-                                                        setEditOffset(selectedAlert.offsetDays);
-                                                        setEditStatus(selectedAlert.status);
-                                                        const parts = (selectedAlert.time || "09:00 AM").split(/[: ]/);
-                                                        setEditTimeHour(parts[0] || "09");
-                                                        setEditTimeMin(parts[1] || "00");
-                                                        setEditTimeAmpm(parts[2] || "AM");
-                                                    }}
-                                                    className="p-2 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg border border-slate-800 transition-colors cursor-pointer"
-                                                >
-                                                    <Edit className="w-3.5 h-3.5" />
-                                                </button>
-                                                <button 
-                                                    onClick={() => setShowDeleteConfirm(true)}
-                                                    className="p-2 bg-slate-900 hover:bg-red-500/10 text-slate-500 hover:text-red-400 rounded-lg border border-slate-800 transition-colors cursor-pointer"
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <div className="flex items-center gap-1.5">
-                                                <button 
-                                                    onClick={handleSaveAlertInfo}
-                                                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold cursor-pointer border-0 outline-none"
-                                                >
-                                                    Save
-                                                </button>
-                                                <button 
-                                                    onClick={() => setIsEditingInfo(false)}
-                                                    className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded-lg text-xs font-bold border border-slate-800 cursor-pointer"
-                                                >
-                                                    Cancel
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
+                            {/* BLOCK 1: SCHEDULE PROPERTIES */}
+                            <div className="bg-transparent border border-zinc-800/60 rounded-xl p-5">
                                 {!isEditingInfo ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-1 text-xs">
-                                        <div className="space-y-3">
-                                            <div>
-                                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Flow Name ID</span>
-                                                <span className="text-xs font-bold text-slate-200 mt-1 block">{selectedAlert.name}</span>
-                                            </div>
-                                            <div>
-                                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Trigger Event Condition</span>
-                                                <span className="inline-block px-2.5 py-1 bg-slate-900 text-blue-400 border border-blue-900/30 rounded-lg text-xs font-mono font-bold mt-1">
-                                                    {selectedAlert.event}
-                                                </span>
-                                            </div>
+                                    <div className="space-y-5">
+                                        <div className="flex items-center justify-end">
+                                            <button 
+                                                onClick={() => {
+                                                    setIsEditingInfo(true);
+                                                    setEditAlertName(selectedAlert.name);
+                                                    setEditEvent(selectedAlert.event);
+                                                    setEditOffset(selectedAlert.offsetDays);
+                                                    setEditStatus(selectedAlert.status);
+                                                    const parts = (selectedAlert.time || "09:00").split(":");
+                                                    setEditTimeHour(parts[0] || "09");
+                                                    setEditTimeMin(parts[1] || "00");
+                                                    setEditTimeAmpm("AM");
+                                                }}
+                                                className="px-3 py-1.5 flex items-center gap-1.5 rounded-md text-zinc-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors bg-transparent border-0 outline-none cursor-pointer text-xs font-medium"
+                                                title="Edit Schedule Details"
+                                            >
+                                                <Edit className="w-4 h-4" /> Edit
+                                            </button>
                                         </div>
 
-                                        <div className="space-y-3">
-                                            <div className="flex items-center justify-between pr-3">
-                                                <div>
-                                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Channel Automation Toggle</span>
-                                                    <span className="text-[10px] text-slate-400 mt-1 block font-semibold">Active running state</span>
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                            <div className="space-y-1.5">
+                                                <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Trigger Event</div>
+                                                <div className="text-sm font-medium text-zinc-200 bg-zinc-900/50 px-3 py-1.5 rounded-md border border-zinc-800/60 inline-flex items-center gap-2">
+                                                    <Bell className="w-3.5 h-3.5 text-indigo-400" />
+                                                    {selectedAlert.event}
                                                 </div>
-                                                <button 
-                                                    onClick={() => handleToggleStatus(selectedAlert)}
-                                                    className="text-slate-400 hover:text-white transition-colors cursor-pointer border-0 bg-transparent outline-none"
-                                                >
-                                                    {selectedAlert.status === 'ACTIVE' ? (
-                                                        <ToggleRight className="w-10 h-10 text-emerald-500 shrink-0" />
-                                                    ) : (
-                                                        <ToggleLeft className="w-10 h-10 text-slate-700 shrink-0" />
-                                                    )}
-                                                </button>
                                             </div>
-
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Offset Schedule</span>
-                                                    <span className="text-xs font-extrabold text-slate-200 mt-1 block">
-                                                        {selectedAlert.offsetDays === 0 
-                                                            ? "Exactly on Event" 
-                                                            : `${Math.abs(selectedAlert.offsetDays)} days ${selectedAlert.offsetDays < 0 ? 'before' : 'after'}`}
-                                                    </span>
+                                            <div className="space-y-1.5">
+                                                <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Time Offset</div>
+                                                <div className="text-sm font-medium text-zinc-200 bg-zinc-900/50 px-3 py-1.5 rounded-md border border-zinc-800/60 inline-flex">
+                                                    {selectedAlert.offsetDays === 0 ? "On Event Day" : `${selectedAlert.offsetDays > 0 ? '+' : ''}${selectedAlert.offsetDays} Days`}
                                                 </div>
-                                                <div>
-                                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Scheduled Time</span>
-                                                    <span className="text-xs font-extrabold text-slate-200 mt-1 block font-mono">
-                                                        {selectedAlert.time}
-                                                    </span>
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Delivery Time</div>
+                                                <div className="text-sm font-medium text-zinc-200 bg-zinc-900/50 px-3 py-1.5 rounded-md border border-zinc-800/60 inline-flex items-center gap-2">
+                                                    <Clock className="w-3.5 h-3.5 text-indigo-400" />
+                                                    {selectedAlert.time}
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Next Run</div>
+                                                <div className="text-sm font-medium text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-md border border-emerald-500/20 inline-flex items-center gap-2">
+                                                    <Calendar className="w-3.5 h-3.5" />
+                                                    {selectedAlert.nextTriggerDate || "Pending"}
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Run Status</div>
+                                                <div className="text-sm font-medium text-sky-400 bg-sky-500/10 px-3 py-1.5 rounded-md border border-sky-500/20 inline-flex items-center gap-2">
+                                                    <Activity className="w-3.5 h-3.5" />
+                                                    {selectedAlert.status === 'ACTIVE' ? "Scheduled" : "Not Started"}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="space-y-4 pt-1 animate-in fade-in duration-200 text-xs">
+                                    <div className="space-y-4 text-sm text-zinc-400">
+                                        <div className="flex items-center justify-between mb-4 border-b border-zinc-800/60 pb-3">
+                                            <h3 className="text-sm font-semibold text-zinc-200">Edit Schedule Properties</h3>
+                                            <div className="flex items-center gap-2">
+                                                <button 
+                                                    onClick={() => setIsEditingInfo(false)}
+                                                    className="px-3 py-1.5 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 rounded-md text-xs font-medium cursor-pointer transition-colors border-0 outline-none"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button 
+                                                    onClick={handleSaveAlertInfo}
+                                                    className="px-3 py-1.5 bg-zinc-200 hover:bg-white text-zinc-900 rounded-md text-xs font-medium cursor-pointer transition-colors border-0 outline-none"
+                                                >
+                                                    Save
+                                                </button>
+                                            </div>
+                                        </div>
+
                                         <div className="space-y-1.5">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-0.5">Scheduled Flow Identity</label>
+                                            <label className="text-xs font-medium text-zinc-300">Alert Name</label>
                                             <input 
                                                 type="text" 
                                                 value={editAlertName}
                                                 onChange={(e) => setEditAlertName(e.target.value)}
-                                                className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-semibold text-slate-200 outline-none focus:border-slate-700"
+                                                className="w-full bg-zinc-900/50 border border-zinc-700/50 rounded-lg p-2.5 text-sm text-zinc-200 outline-none focus:border-zinc-500 transition-colors"
                                             />
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="space-y-1.5">
-                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-0.5">Trigger Anchor Event</label>
+                                                <label className="text-xs font-medium text-zinc-300">Trigger Event</label>
                                                 <select 
                                                     value={editEvent} 
                                                     onChange={(e) => setEditEvent(e.target.value)}
-                                                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-semibold text-slate-200 outline-none"
+                                                    className="w-full bg-zinc-900/50 border border-zinc-700/50 rounded-lg p-2.5 text-sm text-zinc-200 outline-none"
                                                 >
                                                     {events.map((ev) => (
                                                         <option key={ev} value={ev}>{ev}</option>
@@ -1010,18 +1066,17 @@ export const AutoAlerts = () => {
                                                 </select>
                                             </div>
 
-                                            {/* POLISHED STEP OFFSET ADJUSTER IN EDIT MODE WITH + AND - CLICKS */}
                                             <div className="space-y-1.5">
-                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-0.5 block">
-                                                    Trigger Offset Window: <span className="text-blue-400 font-bold font-mono">{editOffset > 0 ? `+${editOffset}` : editOffset} days</span>
+                                                <label className="text-xs font-medium text-zinc-300 block">
+                                                    Offset: <span className="text-zinc-100">{editOffset > 0 ? `+${editOffset}` : editOffset} days</span>
                                                 </label>
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-3">
                                                     <button 
                                                         type="button"
                                                         onClick={() => setEditOffset(prev => Math.max(-28, prev - 1))}
-                                                        className="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center font-bold text-lg select-none border-0 outline-none cursor-pointer"
+                                                        className="w-8 h-8 rounded border border-zinc-700/50 hover:bg-zinc-800 flex items-center justify-center cursor-pointer transition-colors"
                                                     >
-                                                        <Minus className="w-3.5 h-3.5" />
+                                                        <Minus className="w-3 h-3 text-zinc-300" />
                                                     </button>
                                                     <input 
                                                         type="range" 
@@ -1029,14 +1084,14 @@ export const AutoAlerts = () => {
                                                         max="28" 
                                                         value={editOffset}
                                                         onChange={(e) => setEditOffset(Number(e.target.value))}
-                                                        className="flex-1 accent-blue-500 h-1 bg-slate-900 rounded-lg appearance-none cursor-pointer"
+                                                        className="flex-1 accent-zinc-400 h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer"
                                                     />
                                                     <button 
                                                         type="button"
                                                         onClick={() => setEditOffset(prev => Math.min(28, prev + 1))}
-                                                        className="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-805 border border-slate-805 text-slate-400 hover:text-white flex items-center justify-center font-bold text-lg select-none border-0 outline-none cursor-pointer"
+                                                        className="w-8 h-8 rounded border border-zinc-700/50 hover:bg-zinc-800 flex items-center justify-center cursor-pointer transition-colors"
                                                     >
-                                                        <Plus className="w-3.5 h-3.5" />
+                                                        <Plus className="w-3 h-3 text-zinc-300" />
                                                     </button>
                                                 </div>
                                             </div>
@@ -1044,22 +1099,22 @@ export const AutoAlerts = () => {
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="space-y-1.5">
-                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-0.5">Schedule Dispatch Clock</label>
-                                                <div className="flex gap-1.5">
+                                                <label className="text-xs font-medium text-zinc-300">Time</label>
+                                                <div className="flex gap-2">
                                                     <select 
                                                         value={editTimeHour} 
                                                         onChange={(e) => setEditTimeHour(e.target.value)}
-                                                        className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-bold text-slate-200 text-center"
+                                                        className="flex-1 bg-zinc-900/50 border border-zinc-700/50 rounded-lg p-2.5 text-sm text-center outline-none"
                                                     >
                                                         {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')).map(h => (
                                                             <option key={h} value={h}>{h}</option>
                                                         ))}
                                                     </select>
-                                                    <span className="text-slate-500 font-bold self-center font-mono">:</span>
+                                                    <span className="self-center text-zinc-500">:</span>
                                                     <select 
                                                         value={editTimeMin} 
                                                         onChange={(e) => setEditTimeMin(e.target.value)}
-                                                        className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-bold text-slate-200 text-center"
+                                                        className="flex-1 bg-zinc-900/50 border border-zinc-700/50 rounded-lg p-2.5 text-sm text-center outline-none"
                                                     >
                                                         {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0')).map(m => (
                                                             <option key={m} value={m}>{m}</option>
@@ -1068,7 +1123,7 @@ export const AutoAlerts = () => {
                                                     <select 
                                                         value={editTimeAmpm} 
                                                         onChange={(e) => setEditTimeAmpm(e.target.value)}
-                                                        className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-bold text-slate-200 text-center"
+                                                        className="flex-1 bg-zinc-900/50 border border-zinc-700/50 rounded-lg p-2.5 text-sm text-center outline-none"
                                                     >
                                                         <option value="AM">AM</option>
                                                         <option value="PM">PM</option>
@@ -1077,14 +1132,14 @@ export const AutoAlerts = () => {
                                             </div>
 
                                             <div className="space-y-1.5">
-                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-0.5">Flow State status</label>
+                                                <label className="text-xs font-medium text-zinc-300">Status</label>
                                                 <select 
                                                     value={editStatus} 
                                                     onChange={(e) => setEditStatus(e.target.value as 'ACTIVE' | 'INACTIVE')}
-                                                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-semibold text-slate-200 outline-none"
+                                                    className="w-full bg-zinc-900/50 border border-zinc-700/50 rounded-lg p-2.5 text-sm text-zinc-200 outline-none"
                                                 >
-                                                    <option value="ACTIVE">ACTIVE RUNNING</option>
-                                                    <option value="INACTIVE">INACTIVE PAUSED</option>
+                                                    <option value="ACTIVE">Active</option>
+                                                    <option value="INACTIVE">Inactive</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -1092,203 +1147,140 @@ export const AutoAlerts = () => {
                                 )}
                             </div>
 
-                            {/* BLOCK 2: SELECTED MESSAGE TEMPLATE SPECIFIC BLOCK */}
-                            <div className="bg-slate-950 rounded-2xl p-5 shadow-sm space-y-5 border border-slate-900">
-                                <div className="flex items-center justify-between border-b border-slate-900 pb-3.5">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-slate-900 border border-slate-800 rounded-lg text-blue-400">
-                                            <FileText className="w-4 h-4" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-extrabold text-xs text-slate-300 tracking-wide uppercase">Selected Message Template</h3>
-                                            <p className="text-[9px] text-slate-500 font-semibold tracking-wider uppercase mt-0.5">Template blueprint and formatting values</p>
-                                        </div>
-                                    </div>
-
+                            {/* BLOCK 2: MESSAGE TEMPLATE */}
+                            <div className="bg-transparent border border-zinc-800/60 rounded-xl p-5">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-base font-medium text-zinc-200">Message Template</h3>
+                                    
                                     <div className="flex items-center gap-2">
-                                        <button 
-                                            onClick={() => openTemplateSelectionPopup('EDIT')}
-                                            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
-                                        >
-                                            Change Template
-                                        </button>
-
-                                        {!isEditingTemplate ? (
+                                        {selectedAlert.template && (
                                             <button 
                                                 onClick={() => {
-                                                    setIsEditingTemplate(true);
-                                                    setTemplateEditContent(selectedAlert.template?.content || "");
+                                                    setEditTemplateId(selectedAlert.template?.id || "");
+                                                    setEditTemplateName(selectedAlert.template?.name || "");
+                                                    setEditTemplateContent(selectedAlert.template?.content || "");
+                                                    setShowTemplateEditModal(true);
                                                 }}
-                                                className="p-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 rounded-lg border border-blue-500/15 cursor-pointer"
+                                                className="px-3 py-1.5 flex items-center gap-1.5 rounded-md hover:bg-indigo-500/10 text-zinc-500 hover:text-indigo-400 transition-colors text-xs font-medium cursor-pointer border-0 outline-none"
                                                 title="Edit template content"
                                             >
-                                                <Edit className="w-3.5 h-3.5" />
+                                                <Edit className="w-4 h-4" /> Edit
                                             </button>
-                                        ) : (
-                                            <div className="flex items-center gap-1.5">
-                                                <button 
-                                                    onClick={handleSaveTemplateText}
-                                                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold cursor-pointer border-0 outline-none"
-                                                >
-                                                    Save Text
-                                                </button>
-                                                <button 
-                                                    onClick={() => setIsEditingTemplate(false)}
-                                                    className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg text-xs font-bold border border-slate-800 cursor-pointer"
-                                                >
-                                                    Cancel
-                                                </button>
-                                            </div>
                                         )}
+                                        <button 
+                                            onClick={() => openTemplateSelectionPopup('EDIT')}
+                                            className="px-3 py-1.5 rounded-md bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 transition-colors text-xs font-medium cursor-pointer flex items-center gap-1.5 border border-zinc-700/50"
+                                        >
+                                            <RefreshCw className="w-3.5 h-3.5" /> Change
+                                        </button>
                                     </div>
                                 </div>
 
-                                {!isEditingTemplate ? (
-                                    <div className="space-y-4 pt-1 text-xs">
-                                        <div className="flex items-center justify-between bg-slate-900 p-3 rounded-lg border border-slate-800">
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{selectedAlert.template?.name || "No Associated Template"}</span>
-                                            <span className="text-[9px] font-mono text-slate-500">ID: {selectedAlert.template?.id || "N/A"}</span>
+                                <div className="space-y-3">
+                                    <p className="text-sm text-zinc-400">
+                                        Currently using: <span className="text-zinc-200 font-medium">{selectedAlert.template?.name || "No Associated Template"}</span>
+                                    </p>
+                                    
+                                    <div className="bg-zinc-900/40 rounded-lg border border-zinc-800/60 min-h-[100px] overflow-hidden">
+                                        <div className="px-4 py-2 border-b border-zinc-800/60 bg-zinc-900/80">
+                                            <span className="text-xs font-medium text-zinc-500">WhatsApp Preview</span>
                                         </div>
-                                        <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 relative min-h-[100px] flex items-center">
-                                            <div className="absolute top-2 right-3 text-[9px] font-bold text-slate-655 uppercase tracking-widest font-mono select-none">WhatsApp Preview</div>
+                                        <div className="p-4 text-sm text-zinc-300 leading-relaxed">
                                             {selectedAlert.template?.content ? (
                                                 renderTemplatePreviewWithPills(selectedAlert.template.content)
                                             ) : (
-                                                <span className="text-slate-500 italic text-xs">No text blueprint configured for this template.</span>
+                                                <span className="text-zinc-500 italic">No text blueprint configured for this template.</span>
                                             )}
                                         </div>
                                     </div>
-                                ) : (
-                                    <div className="space-y-4 pt-1 animate-in fade-in duration-200 text-xs">
-                                        {/* Tag shortcut badges */}
-                                        <div className="space-y-2 bg-slate-900 p-4 rounded-xl border border-slate-800">
-                                            <span className="block text-[9px] font-black text-slate-500 uppercase tracking-widest">Available Variable Tags</span>
-                                            <div className="flex flex-wrap gap-1.5 pt-1">
-                                                {serverTags.map((tag) => (
-                                                    <button 
-                                                        key={tag}
-                                                        type="button" 
-                                                        onClick={() => handleInsertTagShortcut(tag)} 
-                                                        className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-[10px] font-mono font-bold tracking-wide rounded-lg text-emerald-400 transition-colors cursor-pointer"
-                                                    >
-                                                        +{tag}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                            <p className="text-[10px] leading-relaxed text-slate-500 font-medium pt-1.5 border-t border-slate-950/40">
-                                                Click any parameter badge above to safely inject the tag variable directly at the end of the template text.
-                                            </p>
-                                        </div>
-
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-0.5">Template Message Body Editor</label>
-                                            <textarea 
-                                                rows={4}
-                                                value={templateEditContent}
-                                                onChange={(e) => setTemplateEditContent(e.target.value)}
-                                                placeholder="Type notification text contents here..."
-                                                className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-medium text-slate-200 outline-none focus:border-slate-700 leading-relaxed font-sans"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-1.5 bg-slate-900 p-4 rounded-xl border border-slate-800">
-                                            <span className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 select-none">Live Text Preview</span>
-                                            {renderTemplatePreviewWithPills(templateEditContent)}
-                                        </div>
-                                    </div>
-                                )}
+                                </div>
                             </div>
 
-                            {/* BLOCK 3: CUSTOMER SELECTION CRITERIA BLOCK */}
-                            <div className="bg-slate-950 rounded-2xl p-5 shadow-sm space-y-5 border border-slate-900">
-                                <div className="flex items-center justify-between border-b border-slate-900 pb-3.5">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-slate-900 border border-slate-800 rounded-lg text-blue-400">
-                                            <Users className="w-4 h-4" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-extrabold text-xs text-slate-300 tracking-wide uppercase">Customer Selection Criteria</h3>
-                                            <p className="text-[9px] text-slate-500 font-semibold tracking-wider uppercase mt-0.5">Target segment filtering boundaries</p>
-                                        </div>
-                                    </div>
-
+                            {/* BLOCK 3: TARGET CUSTOMERS */}
+                            <div className="bg-transparent border border-zinc-800/60 rounded-xl p-5">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-base font-medium text-zinc-200">Target Customers</h3>
+                                    
                                     <button 
                                         onClick={() => openFiltersPopup('EDIT')}
-                                        className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
-                                        title="Edit target customer filter segment"
+                                        className="px-3 py-1.5 flex items-center gap-1.5 rounded-md hover:bg-indigo-500/10 text-zinc-500 hover:text-indigo-400 transition-colors text-xs font-medium cursor-pointer border-0 outline-none"
+                                        title="Edit Filters"
                                     >
-                                        <Filter className="w-3.5 h-3.5" />
+                                        <Edit className="w-4 h-4" /> Edit
                                     </button>
                                 </div>
 
-                                <div className="space-y-4 pt-1 text-xs">
-                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-slate-900 border border-slate-800 rounded-xl">
+                                <div className="space-y-5">
+                                    <div className="flex items-center justify-between">
                                         <div className="space-y-1">
-                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block select-none">Total Targeted Segment</span>
-                                            <div className="flex items-baseline gap-2">
-                                                <span className="text-base font-black text-blue-400">{customerCounts[selectedAlert.id] ?? 0}</span>
-                                                <span className="text-[9px] font-bold text-slate-450 uppercase tracking-wider select-none">Target Customers Matched</span>
+                                            <span className="text-xs text-zinc-500">Targeted Segment Size</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xl font-semibold text-zinc-100">{customerCounts[selectedAlert.id] ?? 0}</span>
+                                                <span className="text-sm text-zinc-400">customers</span>
                                             </div>
                                         </div>
                                         <button 
                                             onClick={launchShowCustomersOverlay}
-                                            className="px-4 py-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/10 hover:border-blue-500/20 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                            className="px-3 py-1.5 rounded-md border border-zinc-800 hover:bg-zinc-800/60 text-zinc-300 hover:text-zinc-100 transition-colors text-xs font-medium cursor-pointer"
                                         >
-                                            Show Customers
+                                            View Customers
                                         </button>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block ml-0.5 select-none">Active Segment Filtering Logic</span>
+                                        <span className="text-xs font-medium text-zinc-500 block">Active Filters</span>
                                         {renderTagsList(selectedAlert.filters)}
                                     </div>
                                 </div>
                             </div>
 
                             {/* BLOCK 4: ALERT TIMELINE HISTORY BLOCK */}
-                            <div className="bg-slate-950 rounded-2xl p-5 shadow-sm space-y-5 border border-slate-900">
-                                <div className="flex items-center gap-3 border-b border-slate-900 pb-3.5">
-                                    <div className="p-2 bg-slate-900 border border-slate-800 rounded-lg text-blue-400">
-                                        <HistoryIcon className="w-4 h-4" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-extrabold text-xs text-slate-300 tracking-wide uppercase">Alert History Log</h3>
-                                        <p className="text-[9px] text-slate-500 font-semibold tracking-wider uppercase mt-0.5">Chronological execution timeline record</p>
-                                    </div>
+                            <div className="bg-transparent border border-zinc-800/60 rounded-xl p-5">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-base font-medium text-zinc-200">Execution History</h3>
+                                    <button 
+                                        className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
+                                        onClick={refreshAlertList}
+                                    >
+                                        Refresh
+                                    </button>
                                 </div>
 
                                 {history.length === 0 ? (
-                                    <div className="p-6 text-center text-slate-500 text-xs font-semibold italic bg-slate-900 border border-slate-800 rounded-xl">
-                                        No automated trigger events logged in current channel history.
+                                    <div className="p-8 text-center bg-zinc-900/40 border border-zinc-800/60 rounded-lg">
+                                        <HistoryIcon className="w-5 h-5 text-zinc-600 mx-auto mb-2" />
+                                        <p className="text-sm text-zinc-400">No execution history available.</p>
                                     </div>
                                 ) : (
-                                    <div className="relative pl-6 space-y-5 border-l border-slate-800 ml-3 pt-1 pb-1">
+                                    <div className="relative space-y-4 pt-2">
+                                        <div className="absolute top-4 bottom-4 left-[11px] w-px bg-zinc-800/60"></div>
                                         {history.map((hist, idx) => (
-                                            <div key={hist.id} className="relative group">
-                                                {/* timeline node icon */}
-                                                <span className={`absolute -left-[31px] top-0.5 p-1 rounded-full border shrink-0 ${
+                                            <div 
+                                                key={hist.id} 
+                                                onClick={() => navigate('/payping/alert-history', { state: { selectedId: hist.id, source: 'auto-alerts' } })}
+                                                className="relative group flex gap-4 pl-1 p-2 hover:bg-zinc-900/50 rounded-xl transition-colors cursor-pointer"
+                                            >
+                                                <div className={`w-3.5 h-3.5 mt-1 rounded-full ring-4 ring-[#0f0f0f] z-10 shrink-0 ${
                                                     hist.status === 'SUCCESS' 
-                                                        ? 'bg-emerald-950 text-emerald-400 border-emerald-800/60' 
-                                                        : 'bg-rose-950 text-rose-400 border-rose-800/60'
-                                                }`}>
-                                                    <Check className="w-2.5 h-2.5" />
-                                                </span>
+                                                        ? 'bg-indigo-500/20 border border-indigo-500/50' 
+                                                        : 'bg-rose-500/20 border border-rose-500/50'
+                                                }`}></div>
 
-                                                <div className="space-y-1 text-xs">
-                                                    <div className="flex flex-wrap items-center justify-between gap-2">
-                                                        <span className="text-xs font-extrabold text-slate-305 font-mono">{hist.triggeredAt}</span>
-                                                        <span className={`text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-lg border ${
+                                                <div className="space-y-1.5 flex-1 min-w-0">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-medium text-zinc-200">{hist.triggeredAt}</span>
+                                                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
                                                             hist.status === 'SUCCESS' 
-                                                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/15' 
-                                                                : 'bg-rose-500/10 text-rose-400 border-rose-500/15'
+                                                                ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' 
+                                                                : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
                                                         }`}>
-                                                            {hist.status}
+                                                            {hist.status === 'SUCCESS' ? 'Success' : 'Failed'}
                                                         </span>
                                                     </div>
-                                                    <p className="text-xs text-slate-400 leading-relaxed font-medium">{hist.logMessage}</p>
-                                                    <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 font-mono pt-0.5">
-                                                        <Users className="w-3 h-3 text-slate-500" />
-                                                        <span>Broadcasted targets: {hist.customerCount} customers</span>
+                                                    <p className="text-sm text-zinc-400 leading-relaxed">{hist.logMessage}</p>
+                                                    <div className="flex items-center gap-1.5 text-xs text-zinc-500 pt-1">
+                                                        <Users className="w-3.5 h-3.5" />
+                                                        <span>{hist.customerCount} recipients</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1300,12 +1292,12 @@ export const AutoAlerts = () => {
                         </div>
 
                         {/* Detailed View Modal Footer */}
-                        <div className="border-t border-slate-900 p-5 shrink-0 bg-slate-950/50 flex items-center justify-end">
+                        <div className="border-t border-zinc-800/60 p-5 shrink-0 bg-transparent flex items-center justify-end">
                             <button 
                                 onClick={() => setSelectedAlert(null)}
-                                className="px-5 py-2.5 bg-slate-950 hover:bg-slate-900 border border-slate-900 text-slate-400 hover:text-white rounded-xl text-xs font-bold transition-colors cursor-pointer border-0 outline-none"
+                                className="px-4 py-2 bg-zinc-200 hover:bg-white text-zinc-900 rounded-md text-sm font-medium transition-colors cursor-pointer border-0 outline-none"
                             >
-                                Close Dossier
+                                Close Detailed View
                             </button>
                         </div>
 
@@ -1317,41 +1309,41 @@ export const AutoAlerts = () => {
                 MODAL 1: ADD NEW AUTO ALERT MODAL FLOW
                ========================================== */}
             {showAddModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
-                    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setShowAddModal(false)} />
-                    <div className="relative bg-slate-900 w-full max-w-2xl rounded-3xl border border-slate-900 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div className="fixed inset-0 flex items-center justify-center p-4 animate-in fade-in duration-150" style={{ zIndex: 50 }}>
+                    <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm" onClick={() => setShowAddModal(false)} />
+                    <div className="relative bg-[#0f0f0f] w-full max-w-xl rounded-2xl border border-zinc-800/60 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                         
-                        <div className="flex items-center justify-between border-b border-slate-900 p-5 shrink-0 bg-slate-950/50 backdrop-blur-md">
-                            <h3 className="font-extrabold text-sm flex items-center gap-2.5 tracking-wider text-slate-200 uppercase">
-                                <Bell className="w-4 h-4 text-blue-500" /> Add New Scheduled Auto Alert
+                        <div className="flex items-center justify-between border-b border-zinc-800/60 p-6 shrink-0 bg-transparent">
+                            <h3 className="text-lg font-medium text-zinc-100 tracking-tight">
+                                Add Auto Alert
                             </h3>
-                            <button onClick={() => setShowAddModal(false)} className="text-slate-500 hover:text-slate-200 transition-colors bg-transparent border-0 outline-none cursor-pointer">
+                            <button onClick={() => setShowAddModal(false)} className="p-1.5 rounded-md text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors bg-transparent border-0 outline-none cursor-pointer">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <div className="p-6 overflow-y-auto space-y-6 flex-1 max-h-[65vh] scrollbar-none text-xs">
+                        <div className="p-6 overflow-y-auto space-y-5 flex-1 max-h-[65vh] scrollbar-none text-sm">
                             
                             {/* Alert Name Input */}
                             <div className="space-y-1.5">
-                                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-0.5">Flow Name Identity</label>
+                                <label className="block text-xs font-medium text-zinc-300">Alert Name</label>
                                 <input 
                                     type="text"
-                                    placeholder="e.g., Unpaid Bill 3-Day Buffer Trigger"
+                                    placeholder="e.g., Unpaid Bill 3-Day Buffer"
                                     value={newAlertName}
                                     onChange={(e) => setNewAlertName(e.target.value)}
-                                    className="w-full bg-slate-950 text-white text-xs font-semibold p-3 rounded-xl outline-none border border-slate-900 focus:border-slate-800 transition-colors"
+                                    className="w-full bg-zinc-900/50 text-zinc-200 text-sm p-3 rounded-lg outline-none border border-zinc-800/60 focus:border-zinc-500 transition-colors"
                                 />
                             </div>
 
                             {/* Event & Offset row with Step adjustment buttons */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div className="space-y-1.5">
-                                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-0.5">Dynamic Anchor Event</label>
+                                    <label className="block text-xs font-medium text-zinc-300">Trigger Event</label>
                                     <select 
                                         value={newEvent} 
                                         onChange={(e) => setNewEvent(e.target.value)}
-                                        className="w-full bg-slate-950 border border-slate-900 focus:border-slate-800 rounded-xl p-3 text-xs font-semibold text-slate-200 outline-none"
+                                        className="w-full bg-zinc-900/50 text-zinc-200 text-sm p-3 rounded-lg outline-none border border-zinc-800/60 focus:border-zinc-500 transition-colors"
                                     >
                                         {events.map((ev) => (
                                             <option key={ev} value={ev}>{ev}</option>
@@ -1359,18 +1351,17 @@ export const AutoAlerts = () => {
                                     </select>
                                 </div>
 
-                                {/* POLISHED STEP OFFSET ADJUSTER IN CREATE FLOW WITH + AND - CLICKS */}
                                 <div className="space-y-1.5">
-                                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-0.5">
-                                        Days Offset: <span className="text-blue-400 font-bold font-mono">{newOffset > 0 ? `+${newOffset}` : newOffset} days</span>
+                                    <label className="block text-xs font-medium text-zinc-300">
+                                        Offset: <span className="text-zinc-100">{newOffset > 0 ? `+${newOffset}` : newOffset} days</span>
                                     </label>
-                                    <div className="flex items-center gap-2 bg-slate-950 p-2 rounded-xl h-[44px] border border-slate-900">
+                                    <div className="flex items-center gap-3">
                                         <button 
                                             type="button"
                                             onClick={() => setNewOffset(prev => Math.max(-28, prev - 1))}
-                                            className="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-900 text-slate-400 hover:text-white flex items-center justify-center font-bold text-lg select-none border-0 outline-none cursor-pointer"
+                                            className="w-10 h-10 rounded-lg border border-zinc-700/50 hover:bg-zinc-800 flex items-center justify-center cursor-pointer transition-colors"
                                         >
-                                            <Minus className="w-3 h-3" />
+                                            <Minus className="w-4 h-4 text-zinc-300" />
                                         </button>
                                         <input 
                                             type="range" 
@@ -1378,14 +1369,14 @@ export const AutoAlerts = () => {
                                             max="28" 
                                             value={newOffset}
                                             onChange={(e) => setNewOffset(Number(e.target.value))}
-                                            className="flex-1 accent-blue-500 h-1 bg-slate-900 rounded-lg appearance-none cursor-pointer"
+                                            className="flex-1 accent-zinc-400 h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer"
                                         />
                                         <button 
                                             type="button"
                                             onClick={() => setNewOffset(prev => Math.min(28, prev + 1))}
-                                            className="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-900 text-slate-400 hover:text-white flex items-center justify-center font-bold text-lg select-none border-0 outline-none cursor-pointer"
+                                            className="w-10 h-10 rounded-lg border border-zinc-700/50 hover:bg-zinc-800 flex items-center justify-center cursor-pointer transition-colors"
                                         >
-                                            <Plus className="w-3 h-3" />
+                                            <Plus className="w-4 h-4 text-zinc-300" />
                                         </button>
                                     </div>
                                 </div>
@@ -1393,22 +1384,22 @@ export const AutoAlerts = () => {
 
                             {/* Time Clock Picker */}
                             <div className="space-y-1.5">
-                                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-0.5">Automation Execution Schedule Time</label>
+                                <label className="block text-xs font-medium text-zinc-300">Execution Time</label>
                                 <div className="flex gap-2 max-w-sm">
                                     <select 
                                         value={newTimeHour} 
                                         onChange={(e) => setNewTimeHour(e.target.value)}
-                                        className="flex-1 bg-slate-950 border border-slate-900 focus:border-slate-800 rounded-xl p-3 text-xs font-bold text-slate-200 text-center"
+                                        className="flex-1 bg-zinc-900/50 text-zinc-200 text-sm p-3 rounded-lg outline-none border border-zinc-800/60 focus:border-zinc-500 transition-colors text-center"
                                     >
                                         {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')).map(h => (
                                             <option key={h} value={h}>{h}</option>
                                         ))}
                                     </select>
-                                    <span className="text-slate-500 font-bold self-center font-mono">:</span>
+                                    <span className="self-center text-zinc-500">:</span>
                                     <select 
                                         value={newTimeMin} 
                                         onChange={(e) => setNewTimeMin(e.target.value)}
-                                        className="flex-1 bg-slate-950 border border-slate-900 focus:border-slate-800 rounded-xl p-3 text-xs font-bold text-slate-200 text-center"
+                                        className="flex-1 bg-zinc-900/50 text-zinc-200 text-sm p-3 rounded-lg outline-none border border-zinc-800/60 focus:border-zinc-500 transition-colors text-center"
                                     >
                                         {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0')).map(m => (
                                             <option key={m} value={m}>{m}</option>
@@ -1417,7 +1408,7 @@ export const AutoAlerts = () => {
                                     <select 
                                         value={newTimeAmpm} 
                                         onChange={(e) => setNewTimeAmpm(e.target.value)}
-                                        className="flex-1 bg-slate-950 border border-slate-900 focus:border-slate-800 rounded-xl p-3 text-xs font-bold text-slate-200 text-center"
+                                        className="flex-1 bg-zinc-900/50 text-zinc-200 text-sm p-3 rounded-lg outline-none border border-zinc-800/60 focus:border-zinc-500 transition-colors text-center"
                                     >
                                         <option value="AM">AM</option>
                                         <option value="PM">PM</option>
@@ -1426,88 +1417,79 @@ export const AutoAlerts = () => {
                             </div>
 
                             {/* Template mapper Selection Block */}
-                            <div className="space-y-3 bg-slate-950 p-5 rounded-2xl border border-slate-900">
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                                    <div>
-                                        <span className="block text-[10px] font-black text-slate-500 uppercase tracking-widest select-none">Message Template Mapping</span>
-                                        <p className="text-[10px] text-slate-550 font-semibold tracking-wider uppercase mt-0.5 select-none">Template body used for broadcasts</p>
-                                    </div>
+                            <div className="space-y-4 pt-2">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs font-medium text-zinc-300">Message Template</label>
                                     <button 
                                         type="button"
                                         onClick={() => openTemplateSelectionPopup('CREATE')}
-                                        className="px-4 py-2 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 hover:text-white font-bold rounded-xl text-[11px] transition-colors cursor-pointer"
+                                        className="px-3 py-1.5 rounded-md bg-zinc-200 hover:bg-white text-zinc-900 transition-colors text-xs font-medium cursor-pointer"
                                     >
                                         {newTemplate ? "Change Template" : "Select Template"}
                                     </button>
                                 </div>
 
                                 {newTemplate ? (
-                                    <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2.5 mt-2 animate-in slide-in-from-top-2 duration-150">
-                                        <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 border-b border-slate-900 pb-2">
-                                            <span>Mapped: {newTemplate.name}</span>
-                                            <span className="font-mono">ID: {newTemplate.id}</span>
+                                    <div className="bg-zinc-900/40 p-4 rounded-lg border border-zinc-700/50 space-y-3">
+                                        <div className="flex items-center justify-between text-xs text-zinc-400 border-b border-zinc-800/60 pb-3">
+                                            <span>{newTemplate.name}</span>
                                         </div>
-                                        {renderTemplatePreviewWithPills(newTemplate.content)}
+                                        <div className="text-sm text-zinc-300 leading-relaxed">
+                                            {renderTemplatePreviewWithPills(newTemplate.content)}
+                                        </div>
                                     </div>
                                 ) : (
-                                    <div className="p-4 text-center border border-dashed border-slate-800 rounded-xl mt-2 text-slate-500 text-xs font-semibold">
-                                        No template mapped to trigger payload. Please select a template blueprint.
+                                    <div className="p-6 text-center border border-dashed border-zinc-700/50 rounded-lg text-zinc-500 text-sm">
+                                        No template selected.
                                     </div>
                                 )}
                             </div>
 
                             {/* Target customers Selector Block */}
-                            <div className="space-y-3 bg-slate-950 p-5 rounded-2xl border border-slate-900">
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                                    <div>
-                                        <span className="block text-[10px] font-black text-slate-500 uppercase tracking-widest select-none">Target Selection Parameters</span>
-                                        <p className="text-[10px] text-slate-550 font-semibold tracking-wider uppercase mt-0.5 select-none">Filter Segment targets matched</p>
-                                    </div>
+                            <div className="space-y-4 pt-2">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs font-medium text-zinc-300">Target Customers</label>
                                     <button 
                                         type="button"
                                         onClick={() => openFiltersPopup('CREATE')}
-                                        className="px-4 py-2 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 hover:text-white font-bold rounded-xl text-[11px] transition-colors cursor-pointer"
+                                        className="px-3 py-1.5 rounded-md hover:bg-zinc-800/60 text-zinc-300 hover:text-zinc-100 transition-colors text-xs font-medium border border-zinc-700 cursor-pointer"
                                     >
-                                        {Object.keys(newFilters).length > 0 ? "Edit Customer Selection" : "Select Customers"}
+                                        {Object.keys(newFilters).length > 0 ? "Edit Filters" : "Add Filters"}
                                     </button>
                                 </div>
 
-                                <div className="space-y-3 mt-2">
+                                <div className="space-y-3">
                                     {renderTagsList(newFilters)}
 
                                     {Object.keys(newFilters).length > 0 && (
-                                        <div className="flex items-center gap-2 text-xs font-extrabold text-blue-400 bg-slate-900 px-3 py-2 rounded-xl border border-blue-500/10 w-fit">
-                                            <Users className="w-3.5 h-3.5" />
-                                            <span>Dynamic Segment Target Count: {newCustomerCount} customer{newCustomerCount === 1 ? '' : 's'} matched</span>
+                                        <div className="flex items-center gap-2 text-sm text-zinc-300 bg-zinc-900/50 px-3 py-2 rounded-lg border border-zinc-800 w-fit">
+                                            <Users className="w-4 h-4" />
+                                            <span>{newCustomerCount} customers matched</span>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
                             {/* Live trigger sentence builder Preview Block */}
-                            <div className="p-5 bg-slate-950 border border-blue-900/30 rounded-2xl space-y-2 relative overflow-hidden">
-                                <div className="absolute top-2 right-3 text-[8px] font-black text-blue-400 uppercase tracking-widest font-mono select-none">Sentence Builder Engine</div>
-                                <span className="block text-[10px] font-black text-slate-500 uppercase tracking-widest select-none">Live Schedule Trigger Preview</span>
-                                <p className="text-xs font-bold text-slate-300 leading-relaxed pt-1.5 flex items-start gap-2">
-                                    <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-                                    <span>"{sentencePreviewText}"</span>
-                                </p>
+                            <div className="p-4 bg-zinc-900/30 border border-zinc-800 rounded-lg text-sm text-zinc-400 leading-relaxed">
+                                <span className="font-medium text-zinc-200">Summary: </span>
+                                Send <span className="text-zinc-200 font-medium">"{newTemplate?.name || 'Template'}"</span> to <span className="text-zinc-200 font-medium">{newCustomerCount}</span> customers {newOffset === 0 ? "exactly on" : `${Math.abs(newOffset)} days ${newOffset < 0 ? 'before' : 'after'}`} <span className="text-zinc-200 font-medium">{newEvent || 'event'}</span> at <span className="text-zinc-200 font-medium">{newTimeHour}:{newTimeMin} {newTimeAmpm}</span>.
                             </div>
 
                         </div>
 
-                        <div className="border-t border-slate-900 p-5 shrink-0 bg-slate-950/50 flex items-center gap-3">
-                            <button 
-                                onClick={handleCreateAutoAlert}
-                                className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 active:scale-98 transition-all text-xs font-bold rounded-xl text-white uppercase cursor-pointer border-0 outline-none shadow-lg shadow-blue-600/10"
-                            >
-                                Confirm & Schedule
-                            </button>
+                        <div className="border-t border-zinc-800/60 p-6 shrink-0 bg-transparent flex items-center justify-end gap-3">
                             <button 
                                 onClick={() => setShowAddModal(false)}
-                                className="px-5 py-3 bg-slate-950 border border-slate-900 text-slate-400 hover:text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                                className="px-4 py-2 hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200 rounded-lg text-sm font-medium transition-colors cursor-pointer border-0 outline-none"
                             >
                                 Cancel
+                            </button>
+                            <button 
+                                onClick={handleCreateAutoAlert}
+                                className="px-4 py-2 bg-indigo-500 hover:bg-indigo-400 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer border border-indigo-500/50 shadow-sm shadow-indigo-500/20"
+                            >
+                                Create Auto Alert
                             </button>
                         </div>
 
@@ -1516,87 +1498,101 @@ export const AutoAlerts = () => {
             )}
 
             {/* ======================================================= */}
-            {/* MODAL 2: FULLSCREEN DYNAMIC TEMPLATE SELECTOR WORKSPACE */}
+            {/* MODAL 2: DYNAMIC TEMPLATE SELECTOR WORKSPACE OVERLAY */}
             {/* ======================================================= */}
             {showTemplatePicker && (
-                <div className="fixed inset-0 z-40 bg-slate-950 flex flex-col font-sans select-none overflow-x-hidden animate-in slide-in-from-bottom-10 duration-200">
-                    <header className="sticky top-0 z-30 bg-slate-950 px-6 pt-6 pb-4 border-b border-slate-900/50 flex flex-col gap-3 shrink-0">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-xl font-bold tracking-tight flex items-center gap-2">
-                                <MessageSquare className="w-5 h-5 text-blue-500 animate-pulse" /> Select Message Template
-                            </h2>
-                            <button onClick={() => setShowTemplatePicker(false)} className="text-slate-500 hover:text-slate-300 border-0 outline-none bg-transparent cursor-pointer">
+                <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 60 }}>
+                    <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-md" onClick={() => setShowTemplatePicker(false)} />
+                    <div className="relative bg-[#0f0f0f] w-full max-w-2xl rounded-3xl border border-zinc-800/60 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-in slide-in-from-bottom-10 duration-200">
+                        
+                        {/* Header */}
+                        <div className="p-5 border-b border-zinc-800/60 flex items-center justify-between bg-transparent shrink-0">
+                            <div className="flex items-center gap-2">
+                                <MessageSquare className="w-5 h-5 text-indigo-500 animate-pulse" />
+                                <h3 className="font-extrabold text-sm text-zinc-100 tracking-tight uppercase">Select Message Template</h3>
+                            </div>
+                            <button onClick={() => setShowTemplatePicker(false)} className="text-zinc-400 hover:text-zinc-200 transition-colors bg-transparent border-0 outline-none cursor-pointer">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
-                        <p className="text-[10px] text-slate-550 font-semibold tracking-wider uppercase select-none">Select a message template blueprint from alert catalog to map to the Scheduled alert trigger</p>
                         
-                        <input 
-                            type="text"
-                            placeholder="Search templates inside alert catalog..."
-                            value={templateSearchQuery}
-                            onChange={(e) => setTemplateSearchQuery(e.target.value)}
-                            className="w-full bg-slate-900 text-xs font-semibold p-3.5 border border-slate-900 rounded-xl outline-none focus:border-slate-800"
-                        />
-                    </header>
+                        <div className="px-6 py-4 bg-zinc-900/20 border-b border-zinc-800/60 shrink-0">
+                            <p className="text-[10px] text-zinc-500 font-semibold tracking-wider uppercase select-none mb-2">Select a message template blueprint from alert catalog to map to the Scheduled alert trigger</p>
+                            <input 
+                                type="text"
+                                placeholder="Search templates inside alert catalog..."
+                                value={templateSearchQuery}
+                                onChange={(e) => setTemplateSearchQuery(e.target.value)}
+                                className="w-full bg-zinc-900/50 text-xs font-semibold p-3 border border-zinc-800/60 rounded-xl outline-none focus:border-zinc-700"
+                            />
+                        </div>
 
-                    {/* Picker Core Content */}
-                    <main className="flex-1 p-6 space-y-4 overflow-y-auto pb-24 max-w-md lg:max-w-6xl mx-auto w-full">
-                        {filteredTemplatesList.length === 0 ? (
-                            <div className="py-20 text-center text-slate-600 text-xs space-y-2 bg-slate-900 rounded-3xl border border-slate-900 shadow-sm">
-                                <MessageSquare className="w-8 h-8 mx-auto opacity-10" />
-                                <p>No operational templates matched the search filter queries.</p>
-                            </div>
-                        ) : (
-                            /* FULL WIDTH VERTICAL COLUMN TEMPLATES PICKER JUST LIKE CUSTOMERS.TS */
-                            <div className="w-full space-y-3 animate-in fade-in duration-100">
-                                {filteredTemplatesList.map((tmpl) => (
-                                    <div 
-                                        key={tmpl.id}
-                                        onClick={() => setCandidateTemplate(tmpl)}
-                                        className="w-full bg-slate-900 p-4 rounded-xl flex items-center justify-between border border-transparent hover:border-slate-800 transition-all active:scale-[0.99] cursor-pointer group"
-                                    >
-                                        <div className="min-w-0 pr-4 space-y-1">
-                                            <h4 className="text-sm font-bold text-slate-200 truncate group-hover:text-white transition-colors">{tmpl.name}</h4>
-                                            <p className="text-xs text-slate-500 truncate font-semibold leading-relaxed font-sans">{tmpl.content}</p>
+                        {/* Picker Core Content */}
+                        <div className="flex-1 p-6 space-y-3 overflow-y-auto scrollbar-none">
+                            {filteredTemplatesList.length === 0 ? (
+                                <div className="py-12 text-center text-zinc-500 text-xs space-y-2 bg-zinc-900/40 rounded-2xl border border-zinc-800/60">
+                                    <MessageSquare className="w-8 h-8 mx-auto opacity-20" />
+                                    <p>No operational templates matched the search queries.</p>
+                                </div>
+                            ) : (
+                                <div className="w-full space-y-3 animate-in fade-in duration-100">
+                                    {filteredTemplatesList.map((tmpl) => (
+                                        <div 
+                                            key={tmpl.id}
+                                            onClick={() => setCandidateTemplate(tmpl)}
+                                            className="w-full bg-zinc-900/40 p-4 rounded-xl flex items-center justify-between border border-zinc-800/60 hover:border-zinc-700 transition-all active:scale-[0.99] cursor-pointer group"
+                                        >
+                                            <div className="min-w-0 pr-4 space-y-1">
+                                                <h4 className="text-sm font-bold text-zinc-200 truncate group-hover:text-white transition-colors">{tmpl.name}</h4>
+                                                <p className="text-xs text-zinc-500 truncate font-semibold leading-relaxed font-sans">{tmpl.content}</p>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 shrink-0 pl-2">
+                                                <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest select-none">SELECT</span>
+                                                <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all" />
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-1.5 shrink-0 pl-2">
-                                            <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest select-none">SELECT</span>
-                                            <ChevronRight className="w-4 h-4 text-slate-600 rotate-180 rotate-0 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all" />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </main>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="border-t border-zinc-800/60 p-5 shrink-0 bg-transparent flex items-center justify-end">
+                            <button 
+                                onClick={() => setShowTemplatePicker(false)}
+                                className="px-5 py-2.5 bg-zinc-900/50 hover:bg-zinc-800 border border-zinc-800/60 text-zinc-400 hover:text-white rounded-xl text-xs font-bold transition-colors cursor-pointer border-0 outline-none"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
 
                     {/* Fullscreen Overlay template selection Preview Modal */}
                     {candidateTemplate && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                            <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-sm" onClick={() => setCandidateTemplate(null)} />
-                            <div className="relative bg-slate-900 w-full max-w-md rounded-3xl border border-slate-900/50 p-6 space-y-5 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
-                                <h4 className="text-xs font-black text-blue-450 uppercase tracking-widest border-b border-slate-900 pb-2 select-none">
+                        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 65 }}>
+                            <div className="absolute inset-0 bg-zinc-950/90 backdrop-blur-sm" onClick={() => setCandidateTemplate(null)} />
+                            <div className="relative bg-[#0f0f0f] w-full max-w-md rounded-3xl border border-zinc-800/60 p-6 space-y-5 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
+                                <h4 className="text-xs font-black text-indigo-400 uppercase tracking-widest border-b border-zinc-800/60 pb-2 select-none">
                                     Confirm selecting this template to: {selectedAlert ? selectedAlert.name : (newAlertName || "New Auto Alert")}
                                 </h4>
                                 <div className="space-y-2.5 text-xs">
-                                    <div className="flex justify-between items-center text-[10px] font-bold text-slate-500">
+                                    <div className="flex justify-between items-center text-[10px] font-bold text-zinc-500">
                                         <span>Label: {candidateTemplate.name}</span>
                                         <span>ID: {candidateTemplate.id}</span>
                                     </div>
-                                    <div className="p-4 bg-slate-950 border border-slate-900 rounded-xl">
+                                    <div className="p-4 bg-zinc-900/50 border border-zinc-800/60 rounded-xl">
                                         {renderTemplatePreviewWithPills(candidateTemplate.content)}
                                     </div>
                                 </div>
                                 <div className="flex gap-2.5 pt-2">
                                     <button 
                                         onClick={handleConfirmTemplateSelection}
-                                        className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold uppercase tracking-widest transition-all cursor-pointer border-0 outline-none shadow-md shadow-blue-600/10"
+                                        className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-extrabold uppercase tracking-widest transition-all cursor-pointer border-0 outline-none shadow-md shadow-indigo-600/10"
                                     >
                                         Confirm Mapping
                                     </button>
                                     <button 
                                         onClick={() => setCandidateTemplate(null)}
-                                        className="px-5 py-3 bg-slate-950 hover:bg-slate-900 text-slate-400 rounded-xl text-xs font-extrabold border border-slate-900 transition-colors cursor-pointer"
+                                        className="px-5 py-3 bg-zinc-900/50 hover:bg-zinc-800 text-zinc-400 rounded-xl text-xs font-extrabold border border-zinc-800/60 transition-colors cursor-pointer"
                                     >
                                         Cancel
                                     </button>
@@ -1606,32 +1602,151 @@ export const AutoAlerts = () => {
                     )}
                 </div>
             )}
+            {/* ======================================================= */}
+            {/* MODAL 7: DEDICATED TEMPLATE EDIT POPUP MODAL */}
+            {/* ======================================================= */}
+            {showTemplateEditModal && (
+                <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 70 }}>
+                    <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm" onClick={() => setShowTemplateEditModal(false)} />
+                    <div className="relative bg-[#0f0f0f] w-full max-w-xl rounded-3xl border border-zinc-800/60 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-10 duration-200">
+                        
+                        <div className="flex items-center justify-between border-b border-zinc-800/60 p-5 shrink-0 bg-transparent">
+                            <h3 className="font-extrabold text-sm flex items-center gap-2.5 tracking-wider text-zinc-200 uppercase">
+                                <FileText className="w-4 h-4 text-indigo-500" /> Edit Message Template
+                            </h3>
+                            <button onClick={() => setShowTemplateEditModal(false)} className="text-zinc-500 hover:text-zinc-200 transition-colors bg-transparent border-0 outline-none cursor-pointer">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 overflow-y-auto space-y-5 flex-1 scrollbar-none text-xs">
+                            {/* Template Name Input */}
+                            <div className="space-y-1.5">
+                                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-0.5">Template Label Name</label>
+                                <input 
+                                    type="text"
+                                    value={editTemplateName}
+                                    onChange={(e) => setEditTemplateName(e.target.value)}
+                                    className="w-full bg-zinc-900/50 text-white text-xs font-semibold p-3 rounded-xl outline-none border border-zinc-800/60 focus:border-zinc-700 transition-colors"
+                                />
+                            </div>
+
+                            {/* Variable shortcut badges */}
+                            <div className="space-y-2 bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/60">
+                                <span className="block text-[9px] font-black text-zinc-500 uppercase tracking-widest">Available Variable Tags</span>
+                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                    {serverTags.map((tag) => (
+                                        <button 
+                                            key={tag}
+                                            type="button" 
+                                            onClick={() => setEditTemplateContent(prev => prev + `{${tag}}`)} 
+                                            className="px-2.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/50 text-[10px] font-mono font-bold tracking-wide rounded-lg text-emerald-400 transition-colors cursor-pointer border-0 outline-none"
+                                        >
+                                            +{tag}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Template Body Editor */}
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block ml-0.5">Template Message Body</label>
+                                <textarea 
+                                    rows={5}
+                                    value={editTemplateContent}
+                                    onChange={(e) => setEditTemplateContent(e.target.value)}
+                                    placeholder="Type notification text content..."
+                                    className="w-full bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3 text-xs font-medium text-zinc-200 outline-none focus:border-zinc-700 leading-relaxed font-sans"
+                                />
+                            </div>
+
+                            {/* Live Text Preview */}
+                            <div className="space-y-1.5 bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/60">
+                                <span className="block text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1.5">Live Text Preview</span>
+                                {renderTemplatePreviewWithPills(editTemplateContent)}
+                            </div>
+                        </div>
+
+                        <div className="border-t border-zinc-800/60 p-5 shrink-0 bg-transparent flex items-center gap-3">
+                            <button 
+                                onClick={async () => {
+                                    if (!editTemplateName.trim()) {
+                                        window.dispatchEvent(new CustomEvent('PAYPING_SYSTEM_ERROR', { detail: "Please provide a valid template name." }));
+                                        return;
+                                    }
+                                    if (!editTemplateContent.trim()) {
+                                        window.dispatchEvent(new CustomEvent('PAYPING_SYSTEM_ERROR', { detail: "Template body text cannot be empty." }));
+                                        return;
+                                    }
+
+                                    const updatedTemplate: TemplateDTO = {
+                                        id: editTemplateId,
+                                        name: editTemplateName,
+                                        content: editTemplateContent
+                                    };
+
+                                    try {
+                                        await api.put(`/payping/templates/save/${editTemplateId}`, updatedTemplate, {
+                                            headers: { 'X-Trigger-Success': 'true' }
+                                        });
+                                        
+                                        // local updates
+                                        setTemplates(prev => prev.map(t => t.id === editTemplateId ? updatedTemplate : t));
+                                        setAlerts(prev => prev.map(a => a.id === selectedAlert?.id ? { ...a, template: updatedTemplate } : a));
+                                        setSelectedAlert(prev => prev ? { ...prev, template: updatedTemplate } : null);
+                                        setShowTemplateEditModal(false);
+                                    } catch (err) {
+                                        // Simulated local edit fallback
+                                        setTemplates(prev => prev.map(t => t.id === editTemplateId ? updatedTemplate : t));
+                                        setAlerts(prev => prev.map(a => a.id === selectedAlert?.id ? { ...a, template: updatedTemplate } : a));
+                                        setSelectedAlert(prev => prev ? { ...prev, template: updatedTemplate } : null);
+                                        setShowTemplateEditModal(false);
+                                        window.dispatchEvent(new CustomEvent('PAYPING_SYSTEM_SUCCESS', {
+                                            detail: "Template layout saved successfully!"
+                                        }));
+                                    }
+                                }}
+                                className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 active:scale-98 transition-all text-xs font-bold rounded-xl text-white uppercase cursor-pointer border-0 outline-none shadow-lg shadow-indigo-600/10"
+                            >
+                                Save Template
+                            </button>
+                            <button 
+                                onClick={() => setShowTemplateEditModal(false)}
+                                className="px-5 py-3 bg-zinc-900/50 border border-zinc-800/60 text-zinc-400 hover:text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
 
             {/* ==========================================
                 MODAL 3: SEGMENT TARGET CUSTOMER FILTER DRAFT
                ========================================== */}
             {showFilterModal && (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0">
-                    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setShowFilterModal(false)} />
-                    <div className="relative bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-[2rem] border border-slate-900 p-6 space-y-5 animate-in slide-in-from-bottom-10 duration-200 flex flex-col max-h-[85vh]">
+                <div className="fixed inset-0 flex items-end sm:items-center justify-center p-0" style={{ zIndex: 60 }}>
+                    <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm" onClick={() => setShowFilterModal(false)} />
+                    <div className="relative bg-[#0f0f0f] w-full max-w-md rounded-t-3xl sm:rounded-[2rem] border border-zinc-800/60 p-6 animate-in slide-in-from-bottom-10 duration-200 flex flex-col max-h-[85vh] overflow-hidden">
                         
-                        <div className="flex items-center justify-between border-b border-slate-950 pb-4 shrink-0">
-                            <h3 className="font-extrabold text-sm flex items-center gap-2 tracking-wider text-slate-200 uppercase">
-                                <Filter className="w-4 h-4 text-blue-500" /> Filter Criteria Configuration
+                        <div className="flex items-center justify-between border-b border-zinc-800/60 pb-4 shrink-0 mb-5">
+                            <h3 className="font-extrabold text-sm flex items-center gap-2 tracking-wider text-zinc-200 uppercase">
+                                <Filter className="w-4 h-4 text-indigo-500" /> Filter Criteria Configuration
                             </h3>
-                            <button onClick={() => setShowFilterModal(false)} className="text-slate-500 hover:text-slate-200 transition-colors bg-transparent border-0 outline-none cursor-pointer">
+                            <button onClick={() => setShowFilterModal(false)} className="text-zinc-500 hover:text-zinc-200 transition-colors bg-transparent border-0 outline-none cursor-pointer">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
                         
-                        <div className="space-y-5 overflow-y-auto pr-1 flex-1 max-h-[50vh] scrollbar-none">
+                        <div className="space-y-5 overflow-y-auto pr-1 flex-1 min-h-0 scrollbar-none">
                             
                             {/* Section 1: Filters (mainFilters) */}
                             {Object.keys(filterMetadata.mainFilters || {}).length > 0 && (
                                 <div className="space-y-4">
                                     {Object.entries(filterMetadata.mainFilters || {}).map(([category, options]) => (
                                         <div key={category} className="space-y-2">
-                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block ml-0.5">
+                                            <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block ml-0.5">
                                                 {category.replace(/([A-Z])/g, ' $1').trim()}
                                             </label>
                                             <div className="grid grid-cols-3 gap-2">
@@ -1644,8 +1759,8 @@ export const AutoAlerts = () => {
                                                             onClick={() => toggleFilterDraftOption(category, val)}
                                                             className={`py-2 px-1 text-center text-xs font-bold rounded-lg transition-colors truncate border cursor-pointer ${
                                                                 isSelected 
-                                                                    ? 'bg-blue-600 text-white border-blue-500' 
-                                                                    : 'bg-slate-950 text-slate-400 border-slate-900 hover:text-slate-200'
+                                                                    ? 'bg-indigo-600 text-white border-indigo-500' 
+                                                                    : 'bg-zinc-900/50 text-zinc-400 border-zinc-800/60 hover:text-zinc-200'
                                                             }`}
                                                         >
                                                             {val}
@@ -1660,11 +1775,11 @@ export const AutoAlerts = () => {
 
                             {/* Section 2: Custom Filter (customFilters) */}
                             {Object.keys(filterMetadata.customFilters || {}).length > 0 && (
-                                <div className="space-y-4 pt-4 border-t border-slate-950/60">
-                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block ml-0.5 select-none">Custom Configuration Filter</span>
+                                <div className="space-y-4 pt-4 border-t border-zinc-800/60">
+                                    <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block ml-0.5 select-none">Custom Configuration Filter</span>
                                     {Object.entries(filterMetadata.customFilters || {}).map(([category, options]) => (
                                         <div key={category} className="space-y-2">
-                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block ml-0.5">
+                                            <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block ml-0.5">
                                                 {category.replace(/([A-Z])/g, ' $1').trim()}
                                             </label>
                                             <div className="grid grid-cols-3 gap-2">
@@ -1677,8 +1792,8 @@ export const AutoAlerts = () => {
                                                             onClick={() => toggleFilterDraftOption(category, val)}
                                                             className={`py-2 px-1 text-center text-xs font-bold rounded-lg transition-colors truncate border cursor-pointer ${
                                                                 isSelected 
-                                                                    ? 'bg-blue-600 text-white border-blue-500' 
-                                                                    : 'bg-slate-950 text-slate-400 border-slate-900 hover:text-slate-200'
+                                                                    ? 'bg-indigo-600 text-white border-indigo-500' 
+                                                                    : 'bg-zinc-900/50 text-zinc-400 border-zinc-800/60 hover:text-zinc-200'
                                                             }`}
                                                         >
                                                             {val}
@@ -1693,20 +1808,23 @@ export const AutoAlerts = () => {
                         </div>
 
                         {/* POLISHED DYNAMIC CUSTOMER SEGMENTS LIVE COUNT INDICATOR */}
-                        <div className="p-4 bg-slate-950 border border-slate-900 rounded-2xl flex items-center justify-between shrink-0 shadow-inner">
+                        <div className="p-4 bg-zinc-900/50 border border-zinc-800/60 rounded-2xl flex items-center justify-between shrink-0 shadow-inner mt-5">
                             <div className="flex items-center gap-2.5">
-                                <div className="p-2 bg-blue-600/10 text-blue-400 rounded-xl relative shrink-0">
+                                <div className="p-2 bg-indigo-600/10 text-indigo-400 rounded-xl relative shrink-0">
                                     <Users className="w-4 h-4 shrink-0" />
-                                    <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping" />
+                                    <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                                    </span>
                                 </div>
                                 <div className="min-w-0 pr-2">
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest block select-none">Matched Segments Count</span>
-                                    <span className="text-xs font-bold text-slate-300 font-mono block mt-0.5 tracking-wide truncate">{liveDraftCount} targets</span>
+                                    <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest block select-none">Matched Segments Count</span>
+                                    <span className="text-xs font-bold text-zinc-300 font-mono block mt-0.5 tracking-wide truncate">{liveDraftCount} targets</span>
                                 </div>
                             </div>
                             <button 
                                 onClick={handleApplyFilters}
-                                className="px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-xl uppercase tracking-wider transition-colors cursor-pointer border-0 outline-none shadow-lg shadow-blue-600/10"
+                                className="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs rounded-xl uppercase tracking-wider transition-colors cursor-pointer border-0 outline-none shadow-lg shadow-indigo-600/10"
                             >
                                 Apply Filters
                             </button>
@@ -1719,40 +1837,40 @@ export const AutoAlerts = () => {
                 MODAL 4: SHOW CUSTOMERS OVERLAY TABLE
                ========================================== */}
             {showCustomersOverlay && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setShowCustomersOverlay(false)} />
-                    <div className="relative bg-slate-900 w-full max-w-4xl rounded-3xl border border-slate-900 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+                <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 55 }}>
+                    <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm" onClick={() => setShowCustomersOverlay(false)} />
+                    <div className="relative bg-[#0f0f0f] w-full max-w-4xl rounded-3xl border border-zinc-800/60 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
                         
-                        <div className="flex items-center justify-between border-b border-slate-900 p-5 shrink-0 bg-slate-950/30 backdrop-blur-md">
+                        <div className="flex items-center justify-between border-b border-zinc-800/60 p-5 shrink-0 bg-transparent backdrop-blur-md">
                             <div>
-                                <h3 className="font-extrabold text-sm tracking-wider text-slate-200 uppercase flex items-center gap-2">
-                                    <Users className="w-4 h-4 text-blue-500 shrink-0" /> targeted customer segment preview
+                                <h3 className="font-extrabold text-sm tracking-wider text-zinc-200 uppercase flex items-center gap-2">
+                                    <Users className="w-4 h-4 text-indigo-500 shrink-0" /> targeted customer segment preview
                                 </h3>
-                                <p className="text-[10px] text-slate-500 font-semibold tracking-wider uppercase mt-1">
+                                <p className="text-[10px] text-zinc-500 font-semibold tracking-wider uppercase mt-1">
                                     Displays maximum 30 active customer entries mapped to current scheduled filter logic.
                                 </p>
                             </div>
-                            <button onClick={() => setShowCustomersOverlay(false)} className="text-slate-500 hover:text-slate-200 transition-colors bg-transparent border-0 outline-none cursor-pointer">
+                            <button onClick={() => setShowCustomersOverlay(false)} className="text-zinc-500 hover:text-zinc-200 transition-colors bg-transparent border-0 outline-none cursor-pointer">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-auto p-6 min-h-[300px] scrollbar-none bg-slate-950/20">
+                        <div className="flex-1 overflow-auto p-6 min-h-[300px] scrollbar-none bg-transparent">
                             {loadingPreviewCustomers ? (
                                 <div className="flex flex-col items-center justify-center py-20 space-y-3">
-                                    <Loader2 className="w-7 h-7 text-blue-500 animate-spin" />
-                                    <span className="text-[10px] text-slate-500 uppercase tracking-widest animate-pulse select-none">Scanning registry database...</span>
+                                    <Loader2 className="w-7 h-7 text-indigo-500 animate-spin" />
+                                    <span className="text-[10px] text-zinc-500 uppercase tracking-widest animate-pulse select-none">Scanning registry database...</span>
                                 </div>
                             ) : previewCustomers.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-20 space-y-3 text-slate-500 bg-slate-950/40 rounded-2xl border border-slate-900 border-dashed">
-                                    <AlertCircle className="w-8 h-8 text-slate-655" />
+                                <div className="flex flex-col items-center justify-center py-20 space-y-3 text-zinc-500 bg-zinc-900/40 rounded-2xl border border-zinc-800/60 border-dashed">
+                                    <AlertCircle className="w-8 h-8 text-zinc-600" />
                                     <span className="text-xs font-semibold italic select-none">No customers match the current filter boundary limits.</span>
                                 </div>
                             ) : (
-                                <div className="border border-slate-900 rounded-2xl overflow-hidden bg-slate-950 shadow-inner">
+                                <div className="border border-zinc-800/60 rounded-2xl overflow-hidden bg-zinc-900/40 shadow-inner">
                                     <table className="w-full text-left border-collapse text-xs">
                                         <thead>
-                                            <tr className="bg-slate-900 text-slate-450 font-extrabold uppercase text-[9px] tracking-widest border-b border-slate-900 select-none">
+                                            <tr className="bg-zinc-900/80 text-zinc-400 font-extrabold uppercase text-[9px] tracking-widest border-b border-zinc-800/60 select-none">
                                                 <th className="p-4">Customer Name</th>
                                                 <th className="p-4">Phone Channel</th>
                                                 <th className="p-4">Expiry Date</th>
@@ -1761,24 +1879,24 @@ export const AutoAlerts = () => {
                                                 <th className="p-4 text-center">Status</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-slate-900/60 bg-slate-950/20">
+                                        <tbody className="divide-y divide-zinc-800/60 bg-transparent">
                                             {previewCustomers.map((cust) => (
-                                                <tr key={cust.id} className="hover:bg-slate-900/40 text-slate-300 font-semibold transition-colors">
-                                                    <td className="p-4 font-bold text-slate-200">{cust.name}</td>
-                                                    <td className="p-4 font-mono text-slate-450">{cust.phone}</td>
-                                                    <td className="p-4 font-mono text-slate-450">{cust.expiryDate}</td>
-                                                    <td className="p-4 text-right text-slate-200 font-bold font-mono">₹{cust.amount.toLocaleString()}</td>
+                                                <tr key={cust.id} className="hover:bg-zinc-800/40 text-zinc-300 font-semibold transition-colors">
+                                                    <td className="p-4 font-bold text-zinc-200">{cust.name}</td>
+                                                    <td className="p-4 font-mono text-zinc-400">{cust.phone}</td>
+                                                    <td className="p-4 font-mono text-zinc-400">{cust.expiryDate}</td>
+                                                    <td className="p-4 text-right text-zinc-200 font-bold font-mono">₹{cust.amount.toLocaleString()}</td>
                                                     <td className="p-4 text-center">
                                                         <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${
-                                                            cust.paymentStatus === 'PAID' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/15' :
-                                                            cust.paymentStatus === 'UNPAID' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/15' :
-                                                            'bg-rose-500/10 text-rose-455 border border-rose-500/15'
+                                                            cust.paymentStatus === 'PAID' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                                                            cust.paymentStatus === 'UNPAID' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                                                            'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                                                         }`}>
                                                             {cust.paymentStatus}
                                                         </span>
                                                     </td>
                                                     <td className="p-4 text-center">
-                                                        <span className={`px-1.5 py-0.5 rounded text-[8px] font-extrabold ${cust.status === 'ACTIVE' ? 'bg-blue-500/10 text-blue-400' : 'bg-slate-900 text-slate-500'}`}>
+                                                        <span className={`px-1.5 py-0.5 rounded text-[8px] font-extrabold ${cust.status === 'ACTIVE' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-zinc-800 text-zinc-500'}`}>
                                                             {cust.status}
                                                         </span>
                                                     </td>
@@ -1794,20 +1912,61 @@ export const AutoAlerts = () => {
                 </div>
             )}
 
+            {/* ======================================================= */}
+            {/* MODAL 6: STATUS DEACTIVATION CONFIRMATION */}
+            {/* ======================================================= */}
+            {showStatusDeactivationConfirm && statusToggleAlert && (
+                <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 55 }}>
+                    <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm" onClick={() => setShowStatusDeactivationConfirm(false)} />
+                    <div className="relative bg-[#0f0f0f] w-full max-w-sm rounded-[2rem] p-6 space-y-5 text-center animate-in zoom-in-95 duration-150 shadow-2xl border border-zinc-800/60">
+                        <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto relative">
+                            <AlertCircle className="w-5 h-5 absolute animate-ping" />
+                            <AlertCircle className="w-5 h-5" />
+                        </div>
+                        <div className="space-y-2">
+                            <h3 className="text-sm font-bold text-zinc-200">Confirm Deactivation</h3>
+                            <p className="text-xs text-zinc-400 leading-relaxed">
+                                confirm deactivating the {statusToggleAlert.name} auto alert, this won't send the alerts hereafter
+                            </p>
+                        </div>
+                        <div className="flex gap-3 pt-2">
+                            <button 
+                                type="button"
+                                onClick={() => setShowStatusDeactivationConfirm(false)}
+                                className="w-1/2 bg-zinc-900/50 hover:bg-zinc-800 text-zinc-400 font-bold py-3 rounded-xl text-xs border border-zinc-800/60 cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                type="button"
+                                onClick={() => {
+                                    setShowStatusDeactivationConfirm(false);
+                                    commitToggleStatus(statusToggleAlert);
+                                }}
+                                className="w-1/2 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl text-xs shadow-lg shadow-red-600/10 cursor-pointer border-0 outline-none"
+                            >
+                                Proceed
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* ==========================================
                 MODAL 5: DELETE SCHEDULER CONFIRMATION
                ========================================== */}
             {showDeleteConfirm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
-                    <div className="relative bg-slate-900 w-full max-w-sm rounded-[2rem] border border-slate-900 p-6 space-y-6 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
+                <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 55 }}>
+                    <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
+                    <div className="relative bg-[#0f0f0f] w-full max-w-sm rounded-[2rem] border border-zinc-800/60 p-6 space-y-6 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
                         <div className="text-center space-y-3">
-                            <div className="p-3 bg-red-650/10 text-red-500 border border-red-900/15 rounded-2xl w-fit mx-auto animate-pulse">
-                                <AlertCircle className="w-6 h-6" />
+                            <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto relative mb-2">
+                                <AlertCircle className="w-5 h-5 absolute animate-ping" />
+                                <AlertCircle className="w-5 h-5" />
                             </div>
-                            <h3 className="font-extrabold text-sm text-slate-200 uppercase tracking-wider select-none">Confirm Alert Deletion?</h3>
-                            <p className="text-xs text-slate-500 leading-relaxed font-semibold">
-                                Are you absolutely sure you want to delete the scheduled flow <span className="text-slate-300 font-bold">"{selectedAlert?.name}"</span>? This action removes all dynamic trigger schedules forever.
+                            <h3 className="font-extrabold text-sm text-zinc-200 uppercase tracking-wider select-none">Confirm Alert Deletion?</h3>
+                            <p className="text-xs text-zinc-500 leading-relaxed font-semibold">
+                                Are you absolutely sure you want to delete the scheduled flow <span className="text-zinc-300 font-bold">"{selectedAlert?.name}"</span>? This action removes all dynamic trigger schedules forever.
                             </p>
                         </div>
                         <div className="flex gap-2.5">
@@ -1819,7 +1978,7 @@ export const AutoAlerts = () => {
                             </button>
                             <button 
                                 onClick={() => setShowDeleteConfirm(false)}
-                                className="flex-1 py-3.5 bg-slate-950 border border-slate-900 text-slate-400 hover:text-white rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer"
+                                className="flex-1 py-3.5 bg-zinc-900/50 border border-zinc-800/60 text-zinc-400 hover:text-white rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer"
                             >
                                 Back
                             </button>

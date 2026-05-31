@@ -47,7 +47,7 @@ interface CustomerDTO {
     paymentStatus: 'PAID' | 'UNPAID' | 'OVERDUE';
     status: 'ACTIVE' | 'INACTIVE';
     notificationStatus?: 'ACTIVE' | 'INACTIVE';
-    additionalDetails?: Record<string, string>;
+    additionalDetails?: Record<string, string | string[]>;
 }
 
 interface FilterDTO {
@@ -124,19 +124,23 @@ const Customers = () => {
         status: 'ACTIVE',
         search: '',
         sort: 'name_asc',
-        filters: { paymentStatus: [] as string[] } as Record<string, string[]>,
+        filters: {} as Record<string, string[]>,
         page: 0,
         size: 30
     });
 
     useEffect(() => {
-        const state = location.state as { filter?: string } | null;
+        const state = location.state as { filter?: string; preSelectedTemplate?: TemplateDTO } | null;
         if (state?.filter) {
             setQueryPayload(prev => ({
                 ...prev,
                 filters: { paymentStatus: [state.filter!] }
             }));
-            window.history.replaceState({}, document.title);
+            window.history.replaceState({ ...state, filter: undefined }, document.title);
+        }
+        if (state?.preSelectedTemplate) {
+            setPreSelectedTemplate(state.preSelectedTemplate);
+            setIsSelectionModeActive(true);
         }
     }, [location.state]);
 
@@ -157,14 +161,11 @@ const Customers = () => {
     const [editFormDraft, setEditFormDraft] = useState<CustomerDTO | null>(null);
     const [selectedFilterDraft, setSelectedFilterDraft] = useState<Record<string, string[]>>({});
 
-    // 7. Template Picker States
-    const [showTemplatePicker, setShowTemplatePicker] = useState<boolean>(false);
-    const [templates, setTemplates] = useState<TemplateDTO[]>([]);
-    const [loadingTemplates, setLoadingTemplates] = useState<boolean>(false);
-    const [selectedTemplate, setSelectedTemplate] = useState<TemplateDTO | null>(null);
-    const [showTemplateDetailModal, setShowTemplateDetailModal] = useState<boolean>(false);
-    const [detailPreviewText, setDetailPreviewText] = useState<string>('');
-    const [loadingDetailPreview, setLoadingDetailPreview] = useState<boolean>(false);
+    // 7. WhatsApp Send Flow States
+    const [preSelectedTemplate, setPreSelectedTemplate] = useState<TemplateDTO | null>(null);
+    const [showConfirmationModal, setShowConfirmationModal] = useState<boolean>(false);
+    const [alertName, setAlertName] = useState<string>('');
+    const [isSending, setIsSending] = useState<boolean>(false);
 
     // 8. AddCustomers Overlay States
     const [showAddCustomers, setShowAddCustomers] = useState<boolean>(false);
@@ -193,7 +194,34 @@ const Customers = () => {
         const fetchFilters = async () => {
             try {
                 const res = await api.get('/payping/customers/getfilters');
-                setFilters(res.data || { mainFilters: {}, customFilters: {} });
+                const fetchedFilters = res.data || { mainFilters: {}, customFilters: {} };
+                setFilters(fetchedFilters);
+
+                const getExactKey = (target: string) => {
+                    const norm = target.toLowerCase().replace(/\s+/g, '');
+                    for (const k of Object.keys(fetchedFilters.mainFilters || {})) {
+                        if (k.toLowerCase().replace(/\s+/g, '') === norm) return k;
+                    }
+                    for (const k of Object.keys(fetchedFilters.customFilters || {})) {
+                        if (k.toLowerCase().replace(/\s+/g, '') === norm) return k;
+                    }
+                    return target;
+                };
+
+                setQueryPayload(prev => {
+                    const migratedFilters: Record<string, string[]> = {};
+                    let changed = false;
+                    Object.entries(prev.filters || {}).forEach(([k, v]) => {
+                        const exactKey = getExactKey(k);
+                        migratedFilters[exactKey] = v;
+                        if (exactKey !== k) changed = true;
+                    });
+                    if (changed) {
+                        setSelectedFilterDraft(migratedFilters);
+                        return { ...prev, filters: migratedFilters };
+                    }
+                    return prev;
+                });
             } catch (err) {
                 console.error("Failed to load filter metadata:", err);
             }
@@ -207,7 +235,21 @@ const Customers = () => {
     const executeLedgerQuery = useCallback(async (payload: typeof queryPayload) => {
         try {
             setLoading(true);
-            const res = await api.post('/payping/customers/get', payload);
+            
+            // Format payload filters to send empty object {} if no actual filters are active, and drop empty arrays
+            const processedPayload = { ...payload };
+            const newFilters: Record<string, string[]> = {};
+            Object.entries(processedPayload.filters || {}).forEach(([key, arr]) => {
+                if (Array.isArray(arr)) {
+                    const cleanArr = arr.filter(v => typeof v === 'string' && v.trim() !== '');
+                    if (cleanArr.length > 0) {
+                        newFilters[key] = cleanArr;
+                    }
+                }
+            });
+            processedPayload.filters = newFilters;
+
+            const res = await api.post('/payping/customers/get', processedPayload);
             const dataContent = res.data || res.data.content || [];
 
             setCustomers(dataContent);
@@ -235,83 +277,6 @@ const Customers = () => {
         }
     }, [customers, isGlobalSelectAllActive]);
 
-    // Fetch Templates when Template Picker opens
-    useEffect(() => {
-        const fetchTemplatesList = async () => {
-            if (!showTemplatePicker) return;
-            try {
-                setLoadingTemplates(true);
-                const res = await api.get('/payping/templates/get');
-                setTemplates(res.data || []);
-            } catch (err) {
-                console.error("Failed to fetch templates:", err);
-            } finally {
-                setLoadingTemplates(false);
-            }
-        };
-        fetchTemplatesList();
-    }, [showTemplatePicker]);
-
-    // Fetch live template preview when template is selected
-    useEffect(() => {
-        const fetchDetailPreview = async () => {
-            if (!selectedTemplate) {
-                setDetailPreviewText('');
-                return;
-            }
-            try {
-                setLoadingDetailPreview(true);
-                const res = await api.post('/payping/templates/preview', {
-                    name: selectedTemplate.name,
-                    content: selectedTemplate.content
-                });
-                setDetailPreviewText(res.data.preview || res.data || "Empty response.");
-            } catch (err) {
-                console.error("Detail preview fetch error:", err);
-                setDetailPreviewText("System parsing error.");
-            } finally {
-                setLoadingDetailPreview(false);
-            }
-        };
-
-        fetchDetailPreview();
-    }, [selectedTemplate]);
-
-    const handleRemoveTagFromDetail = async (tag: string) => {
-        if (!selectedTemplate) return;
-        const updatedContent = selectedTemplate.content.split(`{${tag}}`).join('');
-        try {
-            await api.put(`/payping/templates/save/${selectedTemplate.id}`, {
-                name: selectedTemplate.name,
-                content: updatedContent
-            });
-            setSelectedTemplate({
-                ...selectedTemplate,
-                content: updatedContent
-            });
-            // Re-fetch template list so picker shows updated content
-            const res = await api.get('/payping/templates/get');
-            setTemplates(res.data || []);
-        } catch (err) {
-            console.error("Failed to remove tag in detail modal:", err);
-        }
-    };
-
-    const handleRemoveTagFromPickerList = async (tmpl: TemplateDTO, tag: string) => {
-        const updatedContent = tmpl.content.split(`{${tag}}`).join('');
-        try {
-            await api.put(`/payping/templates/save/${tmpl.id}`, {
-                name: tmpl.name,
-                content: updatedContent
-            });
-            // Re-fetch template list so picker shows updated content
-            const res = await api.get('/payping/templates/get');
-            setTemplates(res.data || []);
-        } catch (err) {
-            console.error("Failed to remove tag from picker template:", err);
-        }
-    };
-
     // ==========================================
     // ACTION HANDLERS
     // ==========================================
@@ -336,8 +301,22 @@ const Customers = () => {
     const handleCancelSearch = () => {
         setIsSearchExpanded(false);
         // Only trigger API if we are actually clearing an active search
-        if (queryPayload.search.trim() !== '') {
+        if (queryPayload.search) {
             setQueryPayload(prev => ({ ...prev, search: '', page: 0 }));
+        }
+    };
+
+    const handleMessageClick = (overrideIds?: Set<string>) => {
+        const targetIds = overrideIds || selectedCustomerIds;
+        if (targetIds.size === 0) return;
+        
+        if (preSelectedTemplate) {
+            setSelectedCustomerIds(targetIds);
+            setShowConfirmationModal(true);
+        } else {
+            navigate('/payping/message-templates', { 
+                state: { preSelectedCustomerIds: Array.from(targetIds) }
+            });
         }
     };
 
@@ -526,21 +505,21 @@ const Customers = () => {
     );
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white flex flex-col font-sans select-none overflow-x-hidden pb-28 relative">
+        <div className="min-h-screen bg-[#0f0f0f] text-white flex flex-col font-sans select-none overflow-x-hidden pb-28 relative">
             
             {/* ======================================================= */}
             {/* HEADER (ZONES 1 & 2): RIGID LAYOUT, NO BORDERS/OUTLINES */}
             {/* ======================================================= */}
-            <header className="sticky top-0 z-30 bg-slate-950 px-4 pt-5 pb-3 max-w-md lg:max-w-6xl mx-auto w-full">
+            <header className="sticky top-0 z-30 bg-[#0f0f0f] px-4 pt-5 pb-3 max-w-md lg:max-w-6xl mx-auto w-full">
                 
                 {/* ZONE 1: CORE HEADER (Never shifts or hides) */}
                 <div className="flex items-center justify-between pb-5">
                     <h2 className="text-xl font-bold tracking-tight flex items-center gap-2">
-                        <Users className="w-5 h-5 text-blue-500" /> Customers
+                        <Users className="w-5 h-5 text-indigo-500" /> Customers
                     </h2>
                     <button 
                         onClick={() => setShowAddCustomers(true)}
-                        className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center transition-colors shadow-lg shadow-blue-600/10 border-0 outline-none cursor-pointer"
+                        className="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl flex items-center justify-center transition-colors shadow-lg shadow-indigo-600/10 border-0 outline-none cursor-pointer"
                     >
                         <UserPlus className="w-4 h-4" />
                     </button>
@@ -555,21 +534,21 @@ const Customers = () => {
                             <div className="relative">
                                 <button 
                                     onClick={() => setShowStatusDropdown(true)}
-                                    className="flex items-center gap-1.5 text-xs font-bold text-slate-300 tracking-wider uppercase"
+                                    className="flex items-center gap-1.5 text-xs font-bold text-zinc-300 tracking-wider uppercase"
                                 >
                                     {queryPayload.status} REGISTRY
-                                    <ChevronDown className="w-4 h-4 text-slate-500" />
+                                    <ChevronDown className="w-4 h-4 text-zinc-500" />
                                 </button>
                                 
                                 {showStatusDropdown && (
                                     <>
                                         <div onClick={() => setShowStatusDropdown(false)} className="fixed inset-0 z-40" />
-                                        <div className="absolute left-0 mt-3 w-40 bg-slate-900 rounded-xl p-1.5 shadow-2xl z-50 animate-in fade-in slide-in-from-top-1 duration-100">
+                                        <div className="absolute left-0 mt-3 w-40 bg-zinc-900 rounded-xl p-1.5 shadow-2xl z-50 animate-in fade-in slide-in-from-top-1 duration-100">
                                             {['ACTIVE', 'INACTIVE', 'ALL'].map((opt) => (
                                                 <button 
                                                     key={opt}
                                                     onClick={() => { setQueryPayload(prev => ({ ...prev, status: opt, page: 0 })); setShowStatusDropdown(false); }}
-                                                    className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-800 font-semibold text-xs tracking-wide text-slate-300"
+                                                    className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-zinc-800 font-semibold text-xs tracking-wide text-zinc-300"
                                                 >
                                                     {opt} DIRECTORY
                                                 </button>
@@ -580,7 +559,7 @@ const Customers = () => {
                             </div>
 
                             {/* Right Icons (No borders, pure icons) */}
-                            <div className="flex items-center gap-5 text-slate-400">
+                            <div className="flex items-center gap-5 text-zinc-400">
                                 <div className="relative">
                                     <button onClick={() => setShowSortDropdown(true)} className="flex items-center justify-center hover:text-white transition-colors">
                                         <ArrowUpDown className="w-4 h-4" />
@@ -590,7 +569,7 @@ const Customers = () => {
                                     {showSortDropdown && (
                                         <>
                                             <div onClick={() => setShowSortDropdown(false)} className="fixed inset-0 z-40" />
-                                            <div className="absolute right-0 mt-3 w-48 bg-slate-900 rounded-xl p-1.5 shadow-2xl z-50 animate-in fade-in slide-in-from-top-1 duration-100">
+                                            <div className="absolute right-0 mt-3 w-48 bg-zinc-900 rounded-xl p-1.5 shadow-2xl z-50 animate-in fade-in slide-in-from-top-1 duration-100">
                                                 {[
                                                     { key: 'name_asc', label: 'Name (A-Z)' },
                                                     { key: 'name_desc', label: 'Name (Z-A)' },
@@ -600,7 +579,7 @@ const Customers = () => {
                                                     <button
                                                         key={opt.key}
                                                         onClick={() => { setQueryPayload(prev => ({ ...prev, sort: opt.key, page: 0 })); setShowSortDropdown(false); }}
-                                                        className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center justify-between text-xs font-semibold ${queryPayload.sort === opt.key ? 'text-blue-400 bg-blue-500/10' : 'text-slate-300 hover:bg-slate-800'}`}
+                                                        className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center justify-between text-xs font-semibold ${queryPayload.sort === opt.key ? 'text-indigo-400 bg-indigo-500/10' : 'text-zinc-300 hover:bg-zinc-800'}`}
                                                     >
                                                         {opt.label}
                                                         {queryPayload.sort === opt.key && <Check className="w-3.5 h-3.5" />}
@@ -613,7 +592,7 @@ const Customers = () => {
 
                                 <button onClick={() => { setShowFilterModal(true); setSelectedFilterDraft(queryPayload.filters || {}); }} className="relative flex items-center justify-center hover:text-white transition-colors">
                                     <Filter className="w-4 h-4" />
-                                    {activeFiltersCount > 0 && <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full" />}
+                                    {activeFiltersCount > 0 && <span className="absolute -top-1 -right-1 w-2 h-2 bg-indigo-500 rounded-full" />}
                                 </button>
                                 <button onClick={() => { setIsSearchExpanded(true); setTimeout(() => searchInputRef.current?.focus(), 50); }} className="flex items-center justify-center hover:text-white transition-colors">
                                     <Search className="w-4 h-4" />
@@ -623,8 +602,8 @@ const Customers = () => {
                     ) : (
                         /* Search Box (Replaces Zone 2 entirely) */
                         <div className="flex items-center gap-3 h-full animate-in slide-in-from-right-3 duration-150">
-                            <div className="flex-1 bg-slate-900 rounded-lg px-3 h-full flex items-center gap-2">
-                                <Search className="w-4 h-4 text-slate-500" />
+                            <div className="flex-1 bg-zinc-900/50 border border-zinc-800/60 focus-within:border-indigo-500 transition-colors rounded-lg px-3 h-full flex items-center gap-2">
+                                <Search className="w-4 h-4 text-zinc-500" />
                                 <input 
                                     ref={searchInputRef}
                                     type="text"
@@ -632,15 +611,15 @@ const Customers = () => {
                                     defaultValue={queryPayload.search}
                                     onChange={handleSearchTextChange}
                                     onKeyDown={(e) => e.key === 'Enter' && searchInputRef.current?.blur()}
-                                    className="bg-transparent text-sm text-white outline-none w-full placeholder:text-slate-500"
+                                    className="bg-transparent text-sm text-white outline-none w-full placeholder:text-zinc-500"
                                 />
                                 {searchInputRef.current?.value && (
                                     <button onClick={() => { if(searchInputRef.current) searchInputRef.current.value = ''; setQueryPayload(prev => ({...prev, search: '', page: 0})); }}>
-                                        <X className="w-4 h-4 text-slate-500" />
+                                        <X className="w-4 h-4 text-zinc-500" />
                                     </button>
                                 )}
                             </div>
-                            <button onClick={handleCancelSearch} className="text-xs font-bold text-slate-400">
+                            <button onClick={handleCancelSearch} className="text-xs font-bold text-zinc-400">
                                 Cancel
                             </button>
                         </div>
@@ -657,12 +636,12 @@ const Customers = () => {
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         {/* No borders, just icon and text */}
-                        <button onClick={toggleGlobalSelectAll} className="flex items-center gap-2 text-xs font-bold text-slate-300">
-                            {isGlobalSelectAllActive ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4 text-slate-500" />}
+                        <button onClick={toggleGlobalSelectAll} className="flex items-center gap-2 text-xs font-bold text-zinc-300">
+                            {isGlobalSelectAllActive ? <CheckSquare className="w-4 h-4 text-indigo-500" /> : <Square className="w-4 h-4 text-zinc-500" />}
                             SELECT LEDGER TOTAL
                         </button>
                         {selectedCustomerIds.size > 0 && (
-                            <span className="text-xs font-mono text-slate-400">
+                            <span className="text-xs font-mono text-zinc-400">
                                 SELECTED: {selectedCustomerIds.size}
                             </span>
                         )}
@@ -671,11 +650,11 @@ const Customers = () => {
                     {/* Renders ONLY if at least 1 customer is selected, uses precise WhatsApp green */}
                     {selectedCustomerIds.size > 0 && (
                         <button 
-                            onClick={() => setShowTemplatePicker(true)}
+                            onClick={() => handleMessageClick()}
                             className="w-full bg-[#128C7E] text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-[#128C7E]/20 animate-in fade-in zoom-in-95 duration-200"
                         >
                             <MessageCircle className="w-4 h-4 fill-white text-[#128C7E]" />
-                            Send Message to Selected Customers
+                            {preSelectedTemplate ? `Send "${preSelectedTemplate.name}" to Selected Customers` : "Send Message to Selected Customers"}
                         </button>
                     )}
                 </div>
@@ -685,8 +664,8 @@ const Customers = () => {
                     <div className="flex flex-wrap gap-2 animate-in fade-in duration-100">
                         {Object.entries(queryPayload.filters || {}).flatMap(([key, values]) => 
                             (values || []).map((pill) => (
-                                <div key={`${key}-${pill}`} className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-xs font-mono text-slate-300">
-                                    <span className="text-[9px] font-bold text-slate-555 uppercase tracking-wider">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                                <div key={`${key}-${pill}`} className="inline-flex items-center gap-1.5 px-3 py-1 bg-zinc-900 border border-zinc-800 rounded-full text-xs font-mono text-zinc-300">
+                                    <span className="text-[9px] font-bold text-zinc-555 uppercase tracking-wider">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
                                     <span>{pill}</span>
                                     <button 
                                         onClick={() => setQueryPayload(prev => {
@@ -713,11 +692,11 @@ const Customers = () => {
                 {/* ZONE 5: CUSTOMER ROWS */}
                 <section className="flex flex-col gap-3">
                     {loading && customers.length === 0 ? (
-                        <div className="py-20 text-center flex flex-col items-center gap-2 text-slate-500 text-xs font-mono">
-                            <RefreshCw className="w-4 h-4 animate-spin text-blue-500" /> LOADING DIRECTORY...
+                        <div className="py-20 text-center flex flex-col items-center gap-2 text-zinc-500 text-xs font-mono">
+                            <RefreshCw className="w-4 h-4 animate-spin text-indigo-500" /> LOADING DIRECTORY...
                         </div>
                     ) : customers.length === 0 ? (
-                        <div className="py-16 text-center text-slate-500 text-sm">
+                        <div className="py-16 text-center text-zinc-500 text-sm">
                             No records match current parameters.
                         </div>
                     ) : (
@@ -738,27 +717,27 @@ const Customers = () => {
                                     onMouseDown={() => handleTouchStart(customer.id)}
                                     onMouseUp={handleTouchEnd}
                                     onClick={() => isSelectionModeActive ? handleRowCheckboxToggle(customer.id) : openCustomerDetails(customer.id)}
-                                    className={`w-full bg-slate-900 p-4 rounded-xl flex items-center justify-between gap-3 transition-colors ${isChecked ? 'ring-1 ring-blue-500 bg-slate-800' : ''}`}
+                                    className={`w-full bg-zinc-900/40 hover:bg-zinc-900/60 p-4 rounded-xl border border-zinc-800/60 flex items-center justify-between gap-3 transition-colors cursor-pointer ${isChecked ? 'ring-1 ring-indigo-500 bg-zinc-900/60' : ''}`}
                                 >
                                     <div className="flex items-center gap-3 min-w-0">
                                         {isSelectionModeActive && (
                                             <div className="shrink-0">
-                                                {isChecked ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4 text-slate-600" />}
+                                                {isChecked ? <CheckSquare className="w-4 h-4 text-indigo-500" /> : <Square className="w-4 h-4 text-zinc-600" />}
                                             </div>
                                         )}
                                         
-                                        <div className="w-10 h-10 rounded-lg bg-slate-950 font-bold text-xs text-slate-400 flex items-center justify-center uppercase shrink-0">
+                                        <div className="w-10 h-10 rounded-lg bg-[#0f0f0f] font-bold text-xs text-zinc-400 flex items-center justify-center uppercase shrink-0">
                                             {customer.name.substring(0, 2)}
                                         </div>
 
                                         <div className="min-w-0">
-                                            <h4 className="text-sm font-bold text-slate-200 truncate">{customer.name}</h4>
-                                            <p className="text-[10px] text-slate-500 font-mono mt-0.5">{customer.phone}</p>
+                                            <h4 className="text-sm font-bold text-zinc-200 truncate">{customer.name}</h4>
+                                            <p className="text-[10px] text-zinc-500 font-mono mt-0.5">{customer.phone}</p>
                                         </div>
                                     </div>
 
                                     <div className="text-right shrink-0 space-y-1">
-                                        <div className="text-sm font-bold text-slate-100">₹{customer.amount}</div>
+                                        <div className="text-sm font-bold text-zinc-100">₹{customer.amount}</div>
                                         <span className={`inline-block px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded ${badgeStyle}`}>
                                             {customer.paymentStatus}
                                         </span>
@@ -771,11 +750,11 @@ const Customers = () => {
 
                 {/* ZONE 6: PAGINATION */}
                 {totalPages > 1 && (
-                    <footer className="flex items-center justify-between pt-2 pb-6 text-xs text-slate-500 font-bold tracking-wider">
+                    <footer className="flex items-center justify-between pt-2 pb-6 text-xs text-zinc-500 font-bold tracking-wider">
                         <button 
                             disabled={queryPayload.page === 0 || loading}
                             onClick={() => setQueryPayload(prev => ({ ...prev, page: prev.page - 1 }))}
-                            className="px-4 py-2 bg-slate-900 rounded-lg disabled:opacity-30"
+                            className="px-4 py-2 bg-zinc-900 rounded-lg disabled:opacity-30"
                         >
                             PREV
                         </button>
@@ -783,7 +762,7 @@ const Customers = () => {
                         <button 
                             disabled={queryPayload.page + 1 >= totalPages || loading}
                             onClick={() => setQueryPayload(prev => ({ ...prev, page: prev.page + 1 }))}
-                            className="px-4 py-2 bg-slate-900 rounded-lg disabled:opacity-30"
+                            className="px-4 py-2 bg-zinc-900 rounded-lg disabled:opacity-30"
                         >
                             NEXT
                         </button>
@@ -798,11 +777,11 @@ const Customers = () => {
             {/* FILTER MODAL */}
             {showFilterModal && (
                 <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0">
-                    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setShowFilterModal(false)} />
-                    <div className="relative bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 space-y-6 animate-in slide-in-from-bottom-10 duration-200">
-                        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                            <h3 className="font-bold text-base flex items-center gap-2"><Filter className="w-4 h-4 text-blue-500" /> Filters</h3>
-                            <button onClick={() => setShowFilterModal(false)} className="text-slate-500"><X className="w-5 h-5" /></button>
+                    <div className="absolute inset-0 bg-[#0f0f0f]/80 backdrop-blur-sm" onClick={() => setShowFilterModal(false)} />
+                    <div className="relative bg-zinc-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 space-y-6 animate-in slide-in-from-bottom-10 duration-200">
+                        <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+                            <h3 className="font-bold text-base flex items-center gap-2"><Filter className="w-4 h-4 text-indigo-500" /> Filters</h3>
+                            <button onClick={() => setShowFilterModal(false)} className="text-zinc-500"><X className="w-5 h-5" /></button>
                         </div>
                         
                         <div className="space-y-5 max-h-[60vh] overflow-y-auto pr-1">
@@ -811,7 +790,7 @@ const Customers = () => {
                                 <div className="space-y-4">
                                     {Object.entries(filters.mainFilters || {}).map(([category, options]) => (
                                         <div key={category} className="space-y-2">
-                                            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                                            <label className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider block">
                                                 {category.replace(/([A-Z])/g, ' $1').trim()}
                                             </label>
                                             <div className="grid grid-cols-3 gap-2">
@@ -831,7 +810,7 @@ const Customers = () => {
                                                                     [category]: nextArr
                                                                 };
                                                             })}
-                                                            className={`py-2 px-1 text-center text-xs font-bold rounded-lg transition-colors truncate ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:text-slate-200'}`}
+                                                            className={`py-2 px-1 text-center text-xs font-bold rounded-lg transition-colors truncate ${isSelected ? 'bg-indigo-600 text-white' : 'bg-[#0f0f0f] text-zinc-400 hover:text-zinc-200'}`}
                                                         >
                                                             {val}
                                                         </button>
@@ -845,11 +824,11 @@ const Customers = () => {
 
                             {/* Section 2: Custom Filter (customFilters) */}
                             {Object.keys(filters.customFilters || {}).length > 0 && (
-                                <div className="space-y-4 pt-4 border-t border-slate-800/60">
-                                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Custom Filter</span>
+                                <div className="space-y-4 pt-4 border-t border-zinc-800/60">
+                                    <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider block">Custom Filter</span>
                                     {Object.entries(filters.customFilters || {}).map(([category, options]) => (
                                         <div key={category} className="space-y-2">
-                                            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                                            <label className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider block">
                                                 {category.replace(/([A-Z])/g, ' $1').trim()}
                                             </label>
                                             <div className="grid grid-cols-3 gap-2">
@@ -869,7 +848,7 @@ const Customers = () => {
                                                                     [category]: nextArr
                                                                 };
                                                             })}
-                                                            className={`py-2 px-1 text-center text-xs font-bold rounded-lg transition-colors truncate ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:text-slate-200'}`}
+                                                            className={`py-2 px-1 text-center text-xs font-bold rounded-lg transition-colors truncate ${isSelected ? 'bg-indigo-600 text-white' : 'bg-[#0f0f0f] text-zinc-400 hover:text-zinc-200'}`}
                                                         >
                                                             {val}
                                                         </button>
@@ -895,29 +874,29 @@ const Customers = () => {
             {/* DETAILS & EDIT MODAL */}
             {selectedCustomerContext && (
                 <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0">
-                    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setSelectedCustomerContext(null)} />
-                    <div className="relative bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10 duration-200 flex flex-col max-h-[85vh]">
+                    <div className="absolute inset-0 bg-[#0f0f0f]/80 backdrop-blur-sm" onClick={() => setSelectedCustomerContext(null)} />
+                    <div className="relative bg-[#0f0f0f] border border-zinc-800/60 w-full max-w-3xl rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[88vh]">
                         
-                        <div className="p-4 flex items-center justify-between bg-slate-950/50">
-                            <h3 className="font-bold text-sm text-slate-300">
+                        <div className="p-4 flex items-center justify-between bg-[#0f0f0f]/50">
+                            <h3 className="font-bold text-sm text-zinc-300">
                                 {isEditMode ? "Edit Record" : "Customer Details"}
                             </h3>
-                            <button onClick={() => setSelectedCustomerContext(null)} className="text-slate-400"><X className="w-5 h-5" /></button>
+                            <button onClick={() => setSelectedCustomerContext(null)} className="text-zinc-400"><X className="w-5 h-5" /></button>
                         </div>
 
                         <form onSubmit={commitDirectManualUpdate} id="contextForm" className="p-5 overflow-y-auto flex-1 text-sm space-y-5">
                             {/* 1. Header Profile & Status Toggle */}
-                            <div className="flex items-center justify-between p-1 rounded-2.5rem pr-4 shadow-sm bg-slate-950/20">
+                            <div className="flex items-center justify-between p-1 rounded-2.5rem pr-4 shadow-sm bg-[#0f0f0f]/20">
                                 <div className="flex items-center gap-3 w-full min-w-0 mr-2">
-                                    <div className="w-12 h-12 rounded-full bg-blue-500/10 text-blue-400 font-bold text-sm flex items-center justify-center uppercase shrink-0 border border-blue-500/20">
+                                    <div className="w-12 h-12 rounded-full bg-indigo-500/10 text-indigo-400 font-bold text-sm flex items-center justify-center uppercase shrink-0 border border-indigo-500/20">
                                         {(isEditMode ? editFormDraft?.name || 'C' : selectedCustomerContext.name).substring(0, 2)}
                                     </div>
                                     <div className="min-w-0 flex-1">
                                         {!isEditMode ? (
                                             <>
                                                 <h2 className="text-sm font-bold text-white truncate">{selectedCustomerContext.name}</h2>
-                                                <p className="text-[10px] text-slate-500 font-mono flex items-center gap-1 mt-0.5">
-                                                    <Phone className="w-3 h-3 text-slate-600" /> {selectedCustomerContext.phone}
+                                                <p className="text-[10px] text-zinc-500 font-mono flex items-center gap-1 mt-0.5">
+                                                    <Phone className="w-3 h-3 text-zinc-600" /> {selectedCustomerContext.phone}
                                                 </p>
                                             </>
                                         ) : (
@@ -927,7 +906,7 @@ const Customers = () => {
                                                     required 
                                                     value={editFormDraft?.name || ''} 
                                                     onChange={(e) => setEditFormDraft(prev => prev ? { ...prev, name: e.target.value } : null)} 
-                                                    className="w-full bg-slate-950 border border-slate-800 p-2 rounded-xl text-xs text-white font-bold outline-none focus:border-blue-500" 
+                                                    className="w-full bg-[#0f0f0f] border border-zinc-800 p-2 rounded-xl text-xs text-white font-bold outline-none focus:border-indigo-500" 
                                                     placeholder="Name"
                                                 />
                                                 <input 
@@ -935,7 +914,7 @@ const Customers = () => {
                                                     required 
                                                     value={editFormDraft?.phone || ''} 
                                                     onChange={(e) => setEditFormDraft(prev => prev ? { ...prev, phone: e.target.value } : null)} 
-                                                    className="w-full bg-slate-950 border border-slate-800 p-2 rounded-xl text-[10px] text-slate-300 font-mono outline-none focus:border-blue-500" 
+                                                    className="w-full bg-[#0f0f0f] border border-zinc-800 p-2 rounded-xl text-[10px] text-zinc-300 font-mono outline-none focus:border-indigo-500" 
                                                     placeholder="Phone"
                                                 />
                                             </div>
@@ -946,7 +925,7 @@ const Customers = () => {
                                 {/* Customer status toggle switch */}
                                 <div className="flex items-center gap-2 shrink-0">
                                     <span className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded ${
-                                        (isEditMode ? editFormDraft?.status : selectedCustomerContext.status) === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-450' : 'bg-slate-800 text-slate-500'
+                                        (isEditMode ? editFormDraft?.status : selectedCustomerContext.status) === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-450' : 'bg-zinc-800 text-zinc-500'
                                     }`}>
                                         {isEditMode ? editFormDraft?.status : selectedCustomerContext.status}
                                     </span>
@@ -961,7 +940,7 @@ const Customers = () => {
                                             }
                                         }}
                                         className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                            ((isEditMode ? editFormDraft?.status : selectedCustomerContext.status) === 'ACTIVE') ? 'bg-blue-600' : 'bg-slate-800'
+                                            ((isEditMode ? editFormDraft?.status : selectedCustomerContext.status) === 'ACTIVE') ? 'bg-indigo-600' : 'bg-zinc-800'
                                         }`}
                                     >
                                         <span
@@ -974,7 +953,7 @@ const Customers = () => {
                             </div>
 
                             {/* 2. Core Details Matrix */}
-                            <div className="bg-slate-950 p-4 rounded-2xl shadow-sm space-y-3">
+                            <div className="bg-[#0f0f0f] p-4 rounded-2xl shadow-sm space-y-3">
                                 {((isEditMode ? editFormDraft?.paymentStatus : selectedCustomerContext.paymentStatus) === 'PAID' && originalPaymentStatus !== 'PAID') && (
                                     <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-300 rounded-xl text-[10px] font-bold leading-normal animate-in slide-in-from-top-1 duration-150 flex items-center gap-1.5">
                                         <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
@@ -983,21 +962,21 @@ const Customers = () => {
                                 )}
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
-                                        <span className="text-[9px] font-bold text-slate-500 block uppercase tracking-wider mb-1 ml-0.5">Expiry Date</span>
+                                        <span className="text-[9px] font-bold text-zinc-500 block uppercase tracking-wider mb-1 ml-0.5">Expiry Date</span>
                                         {!isEditMode ? (
-                                            <span className="text-xs font-black text-slate-305 font-mono">{selectedCustomerContext.expiryDate}</span>
+                                            <span className="text-xs font-black text-zinc-305 font-mono">{selectedCustomerContext.expiryDate}</span>
                                         ) : (
                                             <input 
                                                 type="date" 
                                                 required 
                                                 value={editFormDraft?.expiryDate || ''} 
                                                 onChange={(e) => setEditFormDraft(prev => prev ? { ...prev, expiryDate: e.target.value } : null)} 
-                                                className="w-full bg-slate-900 border border-slate-800 p-2 rounded-xl text-xs text-slate-305 font-mono font-bold outline-none focus:border-blue-500" 
+                                                className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded-xl text-xs text-zinc-305 font-mono font-bold outline-none focus:border-indigo-500" 
                                             />
                                         )}
                                     </div>
                                     <div>
-                                        <span className="text-[9px] font-bold text-slate-500 block uppercase tracking-wider mb-1 ml-0.5">Subscription Amount</span>
+                                        <span className="text-[9px] font-bold text-zinc-500 block uppercase tracking-wider mb-1 ml-0.5">Subscription Amount</span>
                                         {!isEditMode ? (
                                             <span className="text-base font-black text-white font-mono">₹{selectedCustomerContext.amount}</span>
                                         ) : (
@@ -1006,7 +985,7 @@ const Customers = () => {
                                                 required 
                                                 value={editFormDraft?.amount ?? 0} 
                                                 onChange={(e) => setEditFormDraft(prev => prev ? { ...prev, amount: Number(e.target.value) } : null)} 
-                                                className="w-full bg-slate-900 border border-slate-800 p-2 rounded-xl text-xs text-white font-mono font-bold outline-none focus:border-blue-500" 
+                                                className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded-xl text-xs text-white font-mono font-bold outline-none focus:border-indigo-500" 
                                             />
                                         )}
                                     </div>
@@ -1014,9 +993,9 @@ const Customers = () => {
                             </div>
 
                             {/* 3. Toggles Matrix (Payment Status Dropdown & Notification Status) */}
-                            <div className="p-4 bg-slate-950/40 rounded-2xl space-y-3.5 shadow-sm">
+                            <div className="p-4 bg-[#0f0f0f]/40 rounded-2xl space-y-3.5 shadow-sm">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs font-bold text-slate-400">Payment Status</span>
+                                    <span className="text-xs font-bold text-zinc-400">Payment Status</span>
                                     {!isEditMode ? (
                                         <select 
                                             value={selectedCustomerContext.paymentStatus || 'UNPAID'} 
@@ -1029,7 +1008,7 @@ const Customers = () => {
                                                     handlePaymentStatusChange(nextVal);
                                                 }
                                             }}
-                                            className="bg-slate-900 border border-slate-800 p-2 rounded-xl text-xs text-white font-bold outline-none focus:border-blue-500 cursor-pointer"
+                                            className="bg-zinc-900 border border-zinc-800 p-2 rounded-xl text-xs text-white font-bold outline-none focus:border-indigo-500 cursor-pointer"
                                         >
                                             <option value="PAID">Paid</option>
                                             <option value="UNPAID">Unpaid</option>
@@ -1042,7 +1021,7 @@ const Customers = () => {
                                                 const nextVal = e.target.value as 'PAID' | 'UNPAID' | 'OVERDUE';
                                                 setEditFormDraft(prev => prev ? { ...prev, paymentStatus: nextVal } : null);
                                             }}
-                                            className="bg-slate-900 border border-slate-800 p-2 rounded-xl text-xs text-white font-bold outline-none focus:border-blue-500 cursor-pointer"
+                                            className="bg-zinc-900 border border-zinc-800 p-2 rounded-xl text-xs text-white font-bold outline-none focus:border-indigo-500 cursor-pointer"
                                         >
                                             <option value="PAID">Paid</option>
                                             <option value="UNPAID">Unpaid</option>
@@ -1051,11 +1030,11 @@ const Customers = () => {
                                     )}
                                 </div>
 
-                                <div className="flex items-center justify-between pt-2 border-t border-slate-900/40">
-                                    <span className="text-xs font-bold text-slate-400">Notification Alerts</span>
+                                <div className="flex items-center justify-between pt-2 border-t border-zinc-900/40">
+                                    <span className="text-xs font-bold text-zinc-400">Notification Alerts</span>
                                     <div className="flex items-center gap-2">
                                         <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded tracking-wider ${
-                                            (isEditMode ? editFormDraft?.notificationStatus : selectedCustomerContext.notificationStatus) === 'ACTIVE' ? 'bg-blue-500/10 text-blue-400' : 'bg-slate-800 text-slate-500'
+                                            (isEditMode ? editFormDraft?.notificationStatus : selectedCustomerContext.notificationStatus) === 'ACTIVE' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-zinc-800 text-zinc-500'
                                         }`}>
                                             {isEditMode ? (editFormDraft?.notificationStatus || 'ACTIVE') : (selectedCustomerContext.notificationStatus || 'ACTIVE')}
                                         </span>
@@ -1070,7 +1049,7 @@ const Customers = () => {
                                                 }
                                             }}
                                             className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                                (isEditMode ? (editFormDraft?.notificationStatus || 'ACTIVE') : (selectedCustomerContext.notificationStatus || 'ACTIVE')) === 'ACTIVE' ? 'bg-blue-600' : 'bg-slate-700'
+                                                (isEditMode ? (editFormDraft?.notificationStatus || 'ACTIVE') : (selectedCustomerContext.notificationStatus || 'ACTIVE')) === 'ACTIVE' ? 'bg-indigo-600' : 'bg-zinc-700'
                                             }`}
                                         >
                                             <span
@@ -1085,7 +1064,7 @@ const Customers = () => {
 
                             {/* 4. Scrollable Additional Parameters List */}
                             <div className="space-y-2">
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block ml-0.5">Additional Info Parameters</span>
+                                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block ml-0.5">Additional Info Parameters</span>
                                 
                                 {((isEditMode ? editFormDraft?.additionalDetails : selectedCustomerContext.additionalDetails) && parseDetailsFromPayload(isEditMode ? editFormDraft?.additionalDetails : selectedCustomerContext.additionalDetails).length > 0) ? (
                                     (() => {
@@ -1095,11 +1074,11 @@ const Customers = () => {
                                                 {list.map(({ key, value }, index) => (
                                                     <div 
                                                         key={`${key}-${value}-${index}`} 
-                                                        className="flex items-center justify-between p-3.5 bg-slate-950 rounded-2xl shadow-sm border border-slate-900/40 text-xs hover:bg-slate-900/20 transition-all duration-150"
+                                                        className="flex items-center justify-between p-3.5 bg-[#0f0f0f] rounded-2xl shadow-sm border border-zinc-900/40 text-xs hover:bg-zinc-900/20 transition-all duration-150"
                                                     >
-                                                        <span className="text-slate-400 font-semibold uppercase text-[10px] tracking-wider truncate pr-2 max-w-[150px]">{key}</span>
+                                                        <span className="text-zinc-400 font-semibold uppercase text-[10px] tracking-wider truncate pr-2 max-w-[150px]">{key}</span>
                                                         <div className="flex items-center gap-3">
-                                                            <span className="text-slate-200 font-bold font-mono text-xs truncate max-w-[150px]">{value}</span>
+                                                            <span className="text-zinc-200 font-bold font-mono text-xs truncate max-w-[150px]">{value}</span>
                                                             {isEditMode && (
                                                                 <button
                                                                     type="button"
@@ -1123,7 +1102,7 @@ const Customers = () => {
                                         );
                                     })()
                                 ) : (
-                                    <div className="text-center py-5 bg-slate-950/40 rounded-2xl text-slate-500 text-xs italic shadow-sm">
+                                    <div className="text-center py-5 bg-[#0f0f0f]/40 rounded-2xl text-zinc-500 text-xs italic shadow-sm">
                                         No additional parameters registered.
                                     </div>
                                 )}
@@ -1136,13 +1115,13 @@ const Customers = () => {
                                         <button
                                             type="button"
                                             onClick={() => {fetchApiDetailsData(); setShowDetailForm(true)}}
-                                            className="w-full bg-slate-950 hover:bg-slate-900 border-0 text-slate-350 hover:text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+                                            className="w-full bg-[#0f0f0f] hover:bg-zinc-900 border-0 text-zinc-350 hover:text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
                                         >
                                             + Add Additional Detail
                                         </button>
                                     ) : (
-                                        <div className="p-4 bg-slate-950 rounded-2xl space-y-3 shadow-inner relative animate-in slide-in-from-bottom-2 duration-150">
-                                            <span className="text-[9px] font-bold text-slate-500 block uppercase tracking-wider mb-1 ml-0.5">New Parameter Field</span>
+                                        <div className="p-4 bg-[#0f0f0f] rounded-2xl space-y-3 shadow-inner relative animate-in slide-in-from-bottom-2 duration-150">
+                                            <span className="text-[9px] font-bold text-zinc-500 block uppercase tracking-wider mb-1 ml-0.5">New Parameter Field</span>
                                             <div className="grid grid-cols-2 gap-2.5">
                                                 {/* Key */}
                                                 <div className="relative">
@@ -1162,10 +1141,10 @@ const Customers = () => {
                                                                 handleSaveNewDetailInline();
                                                             }
                                                         }}
-                                                        className="w-full bg-slate-900 border border-slate-800 p-2.5 rounded-xl text-xs text-white outline-none focus:border-emerald-500 transition-colors"
+                                                        className="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl text-xs text-white outline-none focus:border-emerald-500 transition-colors"
                                                     />
                                                     {detailsDropdownField === 'key' && apiDetailsData && (
-                                                        <div className="absolute left-0 right-0 mt-1 bg-slate-900 border border-slate-800 rounded-xl p-1 shadow-2xl z-50 max-h-32 overflow-y-auto">
+                                                        <div className="absolute left-0 right-0 mt-1 bg-zinc-900 border border-zinc-800 rounded-xl p-1 shadow-2xl z-50 max-h-32 overflow-y-auto">
                                                             {Object.keys(apiDetailsData)
                                                                 .filter(k => k.toLowerCase().includes(newDetailKey.toLowerCase()))
                                                                 .map(k => (
@@ -1176,7 +1155,7 @@ const Customers = () => {
                                                                             setNewDetailKey(k);
                                                                             if (apiDetailsData[k]) setNewDetailVal(apiDetailsData[k]);
                                                                         }}
-                                                                        className="w-full text-left px-2 py-1.5 text-xs hover:bg-slate-800 rounded text-slate-300 font-medium"
+                                                                        className="w-full text-left px-2 py-1.5 text-xs hover:bg-zinc-800 rounded text-zinc-300 font-medium"
                                                                     >
                                                                         {k}
                                                                     </button>
@@ -1202,15 +1181,15 @@ const Customers = () => {
                                                                 handleSaveNewDetailInline();
                                                             }
                                                         }}
-                                                        className="w-full bg-slate-900 border border-slate-800 p-2.5 rounded-xl text-xs text-white outline-none focus:border-emerald-500 transition-colors"
+                                                        className="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl text-xs text-white outline-none focus:border-emerald-500 transition-colors"
                                                     />
                                                     {detailsDropdownField === 'value' && apiDetailsData && newDetailKey && apiDetailsData[newDetailKey] && (
-                                                        <div className="absolute left-0 right-0 mt-1 bg-slate-900 border border-slate-800 rounded-xl p-1 shadow-2xl z-50 max-h-32 overflow-y-auto">
+                                                        <div className="absolute left-0 right-0 mt-1 bg-zinc-900 border border-zinc-800 rounded-xl p-1 shadow-2xl z-50 max-h-32 overflow-y-auto">
                                                             <button
                                                                 key="suggested"
                                                                 type="button"
                                                                 onMouseDown={() => setNewDetailVal(apiDetailsData[newDetailKey])}
-                                                                className="w-full text-left px-2 py-1.5 text-xs hover:bg-slate-800 rounded text-emerald-400 font-bold flex items-center justify-between"
+                                                                className="w-full text-left px-2 py-1.5 text-xs hover:bg-zinc-800 rounded text-emerald-400 font-bold flex items-center justify-between"
                                                             >
                                                                 <span>{apiDetailsData[newDetailKey]}</span>
                                                                 <span className="text-[8px] uppercase bg-emerald-500/10 text-emerald-555 px-1 py-0.5 rounded font-black">Suggested</span>
@@ -1223,7 +1202,7 @@ const Customers = () => {
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowDetailForm(false)}
-                                                    className="w-1/3 bg-slate-900 hover:bg-slate-850 text-slate-400 py-2 rounded-xl text-xs font-bold transition-colors"
+                                                    className="w-1/3 bg-zinc-900 hover:bg-zinc-850 text-zinc-400 py-2 rounded-xl text-xs font-bold transition-colors"
                                                 >
                                                     Cancel
                                                 </button>
@@ -1241,20 +1220,20 @@ const Customers = () => {
                             )}
                         </form>
 
-                        <div className="p-4 bg-slate-950/50 flex gap-3">
+                        <div className="p-4 bg-[#0f0f0f]/50 flex gap-3">
                             {!isEditMode ? (
                                 <>
-                                    <button onClick={() => setIsEditMode(true)} className="w-1/2 bg-slate-900 text-slate-200 font-bold py-3 rounded-xl flex items-center justify-center gap-2">
+                                    <button onClick={() => setIsEditMode(true)} className="w-1/2 bg-zinc-900 text-zinc-200 font-bold py-3 rounded-xl flex items-center justify-center gap-2">
                                         <Edit2 className="w-4 h-4" /> Edit
                                     </button>
-                                    <button onClick={() => { const targetId = selectedCustomerContext.id; setSelectedCustomerContext(null); setSelectedCustomerIds(new Set([targetId])); setShowTemplatePicker(true); }} className="w-1/2 bg-[#128C7E] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2">
+                                    <button onClick={() => { const targetId = selectedCustomerContext.id; setSelectedCustomerContext(null); handleMessageClick(new Set([targetId])); }} className="w-1/2 bg-[#128C7E] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2">
                                         <MessageCircle className="w-4 h-4" /> Message
                                     </button>
                                 </>
                             ) : (
                                 <>
-                                    <button type="button" onClick={() => setIsEditMode(false)} className="w-1/3 bg-slate-900 text-slate-400 font-bold py-3 rounded-xl">Cancel</button>
-                                    <button type="submit" form="contextForm" className="w-2/3 bg-blue-600 text-white font-bold py-3 rounded-xl">Save Changes</button>
+                                    <button type="button" onClick={() => setIsEditMode(false)} className="w-1/3 bg-zinc-900 text-zinc-400 font-bold py-3 rounded-xl">Cancel</button>
+                                    <button type="submit" form="contextForm" className="w-2/3 bg-indigo-600 text-white font-bold py-3 rounded-xl">Save Changes</button>
                                 </>
                             )}
                         </div>
@@ -1265,15 +1244,15 @@ const Customers = () => {
             {/* CUSTOMER DEACTIVATION DUAL-CONFIRM DIALOG OVERLAY */}
             {showDeactivationConfirm && selectedCustomerContext && (
                 <div className="fixed inset-0 z-55 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-sm" onClick={() => setShowDeactivationConfirm(false)} />
-                    <div className="relative bg-slate-900 w-full max-w-sm rounded-[2rem] p-6 space-y-5 text-center animate-in zoom-in-95 duration-150 shadow-2xl z-50">
+                    <div className="absolute inset-0 bg-[#0f0f0f]/90 backdrop-blur-sm" onClick={() => setShowDeactivationConfirm(false)} />
+                    <div className="relative bg-zinc-900 w-full max-w-sm rounded-[2rem] p-6 space-y-5 text-center animate-in zoom-in-95 duration-150 shadow-2xl z-50">
                         <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto">
                             <AlertCircle className="w-5 h-5 absolute" />
                             <AlertCircle className="w-5 h-5 animate-ping" />
                         </div>
                         <div className="space-y-2">
-                            <h3 className="text-sm font-bold text-slate-200">Confirm Deactivation</h3>
-                            <p className="text-xs text-slate-400 leading-relaxed">
+                            <h3 className="text-sm font-bold text-zinc-200">Confirm Deactivation</h3>
+                            <p className="text-xs text-zinc-400 leading-relaxed">
                                 confirm deactivating the {selectedCustomerContext.name}, the customer will no longer recieve automatic notifications and business tracking
                             </p>
                         </div>
@@ -1281,7 +1260,7 @@ const Customers = () => {
                             <button 
                                 type="button"
                                 onClick={() => setShowDeactivationConfirm(false)}
-                                className="w-1/2 bg-slate-950 hover:bg-slate-900 text-slate-400 font-bold py-3 rounded-xl text-xs"
+                                className="w-1/2 bg-[#0f0f0f] hover:bg-zinc-900 text-zinc-400 font-bold py-3 rounded-xl text-xs"
                             >
                                 Cancel
                             </button>
@@ -1301,128 +1280,113 @@ const Customers = () => {
             )}
 
             {/* BOTTOM NAV BAR INTERACTION ACTION REGISTRY */}
-            <div className="fixed bottom-5 left-4 right-4 max-w-md mx-auto z-10 animate-in fade-in duration-200">
-                <button 
-                    onClick={() => navigate('/payping/dashboard')}
-                    className="w-full bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs transition-colors"
-                >
-                    <LayoutDashboard className="w-4 h-4 text-slate-400" /> Return to Dashboard
-                </button>
+            <div className="fixed bottom-5 left-0 lg:left-64 right-0 z-10 pointer-events-none flex justify-center animate-in fade-in duration-200">
+                <div className="w-full px-4 max-w-md pointer-events-auto">
+                    {preSelectedTemplate ? (
+                        <button 
+                            onClick={() => navigate('/payping/message-templates')}
+                            className="w-full bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-300 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs transition-colors shadow-xl shadow-black"
+                        >
+                            <X className="w-4 h-4 text-zinc-400" /> Cancel Customer Selection
+                        </button>
+                    ) : (
+                        <button 
+                            onClick={() => navigate('/payping/dashboard')}
+                            className="w-full bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-300 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs transition-colors shadow-xl shadow-black"
+                        >
+                            <LayoutDashboard className="w-4 h-4 text-zinc-400" /> Return to Dashboard
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* ======================================================= */}
             {/* FULL INLINE TEMPLATE VIEW MODAL INJECTED TEMPLATE PICKER */}
             {/* ======================================================= */}
-            {showTemplatePicker && (
-                <div className="fixed inset-0 z-40 bg-slate-950 flex flex-col font-sans select-none overflow-x-hidden animate-in slide-in-from-bottom-10 duration-200">
-                    
-                    {/* Picker Header Layer */}
-                    <header className="sticky top-0 z-30 bg-slate-950 px-4 pt-5 pb-3 max-w-md lg:max-w-6xl mx-auto w-full border-b border-slate-900/50">
-                        <div className="flex items-center justify-between pb-2">
-                            <h2 className="text-xl font-bold tracking-tight flex items-center gap-2">
-                                <MessageSquare className="w-5 h-5 text-emerald-500" /> Select Template
-                            </h2>
-                            <button onClick={() => setShowTemplatePicker(false)} className="text-slate-500 hover:text-slate-300 border-0 outline-none bg-transparent">
+            {/* FINAL CONFIRMATION MODAL */}
+            {showConfirmationModal && preSelectedTemplate && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-[#0f0f0f]/90 backdrop-blur-sm" onClick={() => setShowConfirmationModal(false)} />
+                    <div className="relative bg-zinc-900 w-full max-w-md rounded-3xl p-6 shadow-2xl border border-zinc-800 z-50 animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="font-bold text-lg text-white flex items-center gap-2">
+                                <MessageCircle className="w-5 h-5 text-[#128C7E]" /> Confirm Dispatch
+                            </h3>
+                            <button onClick={() => setShowConfirmationModal(false)} className="text-zinc-500 hover:text-white transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
-                        <p className="text-[11px] text-slate-500 font-medium">Select a template to send message to your selected customers</p>
-                    </header>
-
-                    {/* Picker Core Content */}
-                    <main className="flex-1 px-4 max-w-md lg:max-w-6xl mx-auto w-full space-y-3 pt-4 overflow-y-auto pb-32">
-                        {loadingTemplates ? (
-                            <div className="py-24 text-center flex flex-col items-center justify-center gap-2 text-slate-500 text-xs font-mono">
-                                <RefreshCw className="w-4 h-4 animate-spin text-emerald-500" /> LOADING TEMPLATES...
-                            </div>
-                        ) : templates.length === 0 ? (
-                            <div className="py-20 text-center text-slate-650 text-xs space-y-2">
-                                <MessageSquare className="w-8 h-8 mx-auto opacity-10" />
-                                <p>No operational templates cataloged in workspace.</p>
-                            </div>
-                        ) : (
-                            templates.map((tmpl) => (
-                                <div 
-                                    key={tmpl.id}
-                                    onClick={() => {
-                                        setSelectedTemplate(tmpl);
-                                        setShowTemplateDetailModal(true);
-                                    }}
-                                    className="w-full bg-slate-900 p-4 rounded-xl flex items-center justify-between border border-transparent hover:border-slate-800 transition-all active:scale-[0.99] cursor-pointer"
-                                >
-                                    <div className="min-w-0 pr-2">
-                                        <h4 className="text-sm font-bold text-slate-200 truncate">{tmpl.name}</h4>
-                                        <p className="text-xs text-slate-500 truncate mt-1 font-medium">{renderTemplateWithPills(tmpl.content, false)}</p>
-                                    </div>
-                                    <ChevronLeft className="w-4 h-4 text-slate-600 rotate-180 shrink-0" />
-                                </div>
-                            ))
-                        )}
-                    </main>
-                </div>
-            )}
-
-            {/* ======================================================= */}
-            {/* COMPREHENSIVE DOSSIER DETAILED TEMPLATE POPUP VIEW      */}
-            {/* ======================================================= */}
-            {showTemplateDetailModal && selectedTemplate && (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0">
-                    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onClick={() => { setShowTemplateDetailModal(false); setSelectedTemplate(null); }} />
-                    <div className="relative bg-slate-900 w-full max-w-md rounded-t-[2.5rem] sm:rounded-3xl shadow-2xl flex flex-col max-h-[88vh] border-0 animate-in slide-in-from-bottom-10 duration-200 overflow-hidden">
                         
-                        <div className="p-5 border-b border-slate-850 flex items-center justify-between bg-slate-950/30">
-                            <div className="min-w-0 pr-4">
-                                <h3 className="font-black text-base text-slate-100 truncate tracking-tight">{selectedTemplate.name}</h3>
+                        <div className="space-y-5">
+                            {/* Alert Name Input */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Alert Name <span className="text-red-500">*</span></label>
+                                <input 
+                                    type="text" 
+                                    value={alertName}
+                                    onChange={(e) => setAlertName(e.target.value)}
+                                    placeholder="e.g. Monthly Payment Reminder"
+                                    className="w-full bg-[#050505] border border-zinc-800 text-white rounded-xl p-3 text-sm focus:border-indigo-500 outline-none transition-colors"
+                                />
                             </div>
-                            <button onClick={() => { setShowTemplateDetailModal(false); setSelectedTemplate(null); }} className="p-0 bg-transparent border-0 text-slate-500 hover:text-slate-300 outline-none">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
 
-                        <div className="p-6 space-y-5 overflow-y-auto flex-1 text-xs">
-                            <div className="space-y-1.5">
-                                <span className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Message Template</span>
-                                <div className="w-full bg-slate-950 p-4 rounded-xl text-slate-400 font-medium leading-relaxed whitespace-pre-wrap">
-                                    {renderTemplateWithPills(selectedTemplate.content, false)}
+                            {/* Selected Template Info */}
+                            <div className="bg-[#050505] border border-zinc-800 rounded-xl p-4 flex items-center justify-between">
+                                <div className="min-w-0 pr-4">
+                                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Template</p>
+                                    <p className="text-sm text-zinc-200 font-medium truncate">{preSelectedTemplate.name}</p>
                                 </div>
+                                <button 
+                                    onClick={() => navigate('/payping/message-templates', { state: { preSelectedCustomerIds: Array.from(selectedCustomerIds) } })}
+                                    className="shrink-0 text-xs text-indigo-400 hover:text-indigo-300 font-bold px-3 py-1.5 bg-indigo-500/10 rounded-lg transition-colors"
+                                >
+                                    Modify
+                                </button>
                             </div>
 
-                            <div className="space-y-1.5">
-                                <span className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Message Preview</span>
-                                <div className={`w-full p-4 rounded-xl leading-relaxed font-mono text-[11px] whitespace-pre-wrap transition-all duration-150 ${loadingDetailPreview ? 'bg-slate-950/40 text-slate-600 select-none animate-pulse' : 'bg-slate-950/50 text-slate-300'}`}>
-                                    {loadingDetailPreview ? (
-                                        <span className="flex items-center gap-1.5 font-mono text-[10px]">
-                                            <RefreshCw className="w-3 h-3 animate-spin text-blue-500" /> Connecting rendering pipeline over remote structures...
-                                        </span>
-                                    ) : detailPreviewText || "Empty response."}
+                            {/* Selected Customers Info */}
+                            <div className="bg-[#050505] border border-zinc-800 rounded-xl p-4 flex items-center justify-between">
+                                <div className="min-w-0 pr-4">
+                                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Customers</p>
+                                    <p className="text-sm text-zinc-200 font-medium">{selectedCustomerIds.size} recipient(s) selected</p>
                                 </div>
+                                <button 
+                                    onClick={() => setShowConfirmationModal(false)}
+                                    className="shrink-0 text-xs text-indigo-400 hover:text-indigo-300 font-bold px-3 py-1.5 bg-indigo-500/10 rounded-lg transition-colors"
+                                >
+                                    Modify
+                                </button>
                             </div>
-                        </div>
 
-                        {/* INTERACTION DISPATCH ACTION FOOTER */}
-                        <div className="p-5 border-t border-slate-850 bg-slate-950/50">
-                            <button
+                            <button 
+                                disabled={!alertName.trim() || isSending}
                                 onClick={async () => {
+                                    if (!alertName.trim()) return;
+                                    setIsSending(true);
                                     try {
                                         await api.post('/payping/whatsapp/send', {
-                                            templateId: selectedTemplate.id,
+                                            name: alertName.trim(),
+                                            templateId: preSelectedTemplate.id,
                                             customerIds: Array.from(selectedCustomerIds)
-                                        }, {
-                                            headers: { 'X-Trigger-Success': 'true' }
-                                        });
-                                        setShowTemplateDetailModal(false);
-                                        setShowTemplatePicker(false);
-                                        setSelectedTemplate(null);
-                                        setSelectedCustomerIds(new Set());
-                                        setIsSelectionModeActive(false);
-                                        setIsGlobalSelectAllActive(false);
+                                        }, { headers: { 'X-Trigger-Success': 'true' } });
+                                        
+                                        // Reset and navigate away
+                                        setShowConfirmationModal(false);
+                                        setAlertName('');
+                                        navigate('/payping/dashboard');
                                     } catch (err) {
-                                        console.error("Bulk template distribution error:", err);
+                                        console.error("Failed to send message", err);
+                                        setIsSending(false);
                                     }
                                 }}
-                                className="w-full bg-[#128C7E] hover:bg-[#0e7569] text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs border-0 outline-none shadow-lg shadow-[#128C7E]/10"
+                                className={`w-full font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all ${
+                                    !alertName.trim() || isSending 
+                                    ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' 
+                                    : 'bg-[#128C7E] hover:bg-[#0e7569] text-white shadow-lg shadow-[#128C7E]/20'
+                                }`}
                             >
-                                <MessageSquare className="w-4 h-4" /> Send Message to {selectedCustomerIds.size} Customers
+                                {isSending ? <RefreshCw className="w-5 h-5 animate-spin" /> : <MessageCircle className="w-5 h-5" />}
+                                {isSending ? 'Dispatching...' : 'Confirm Send Message'}
                             </button>
                         </div>
                     </div>
@@ -1434,7 +1398,7 @@ const Customers = () => {
             {/* ======================================================= */}
             {showAddCustomers && (
                 <div 
-                    className={`fixed inset-0 z-40 bg-slate-950 overflow-y-auto ${isAddCustomersClosing ? 'animate-out slide-out-to-left duration-300' : 'animate-in slide-in-from-left duration-300'}`}
+                    className={`fixed inset-0 z-40 bg-[#0f0f0f] overflow-y-auto ${isAddCustomersClosing ? 'animate-out slide-out-to-left duration-300' : 'animate-in slide-in-from-left duration-300'}`}
                     style={{
                         animationFillMode: 'forwards'
                     }}

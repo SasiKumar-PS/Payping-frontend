@@ -1,0 +1,22 @@
+{
+  "short_name": "PayPing",
+  "name": "PayPing WhatsApp CRM",
+  "icons": [
+    {
+      "src": "/payping-logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/payping-logo.png",
+      "type": "image/png",
+      "sizes": "192x192 512x512",
+      "purpose": "any"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0f0f0f",
+  "display": "standalone",
+  "theme_color": "#0f0f0f"
+}

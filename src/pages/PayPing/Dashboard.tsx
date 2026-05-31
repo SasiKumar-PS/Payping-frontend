@@ -95,8 +95,8 @@ const Dashboard = () => {
 
     if (!metrics) {
         return (
-            <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-                <div className="w-6 h-6 border-2 border-t-transparent border-blue-500 rounded-full animate-spin" />
+            <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
+                <div className="w-6 h-6 border-2 border-t-transparent border-indigo-500 rounded-full animate-spin" />
             </div>
         );
     }
@@ -124,9 +124,9 @@ const Dashboard = () => {
                                     {metrics.paymentStatus === 'GRACE_PERIOD' ? 'Action Required: Subscription Grace Period' : 'Account Dues Penalty: System Inactive'}
                                 </h4>
                                 {loadingPaymentMessage ? (
-                                    <div className="h-4 w-48 bg-slate-800 rounded animate-pulse" />
+                                    <div className="h-4 w-48 bg-zinc-800 rounded animate-pulse" />
                                 ) : (
-                                    <p className="text-xs text-slate-350 leading-relaxed">
+                                    <p className="text-xs text-zinc-350 leading-relaxed">
                                         {paymentMessage || (metrics.paymentStatus === 'GRACE_PERIOD' 
                                             ? 'Your subscription is currently in a grace period. Please settle pending dues to avoid interruption.' 
                                             : 'Please clear your billing dues to restore automatic text relays and system configurations.')}
@@ -156,7 +156,7 @@ const Dashboard = () => {
                             </div>
                             <div className="space-y-1">
                                 <h4 className="text-sm font-bold tracking-tight">WhatsApp Link Disconnected</h4>
-                                <p className="text-xs text-slate-350 leading-relaxed">
+                                <p className="text-xs text-zinc-350 leading-relaxed">
                                     your whatsapp is disconnect, please click the connect button, to connect your whatsapp
                                 </p>
                             </div>
@@ -173,42 +173,42 @@ const Dashboard = () => {
             
             {/* BLOCK 1: INTEGRATED BUSINESS METRICS SUMMARY */}
             <section className="space-y-4">
-                <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Business Summary</h3>
+                <h3 className="text-xs font-black uppercase tracking-widest text-zinc-500 ml-1">Business Summary</h3>
                 
                 {/* Unified, Borderless Stats Row & Ledger Switcher */}
-                <div className="bg-slate-900/50 rounded-[2rem] p-6 shadow-xl space-y-6">
+                <div className="bg-zinc-900/50 rounded-[2rem] p-6 shadow-xl space-y-6">
                     {/* Seamless Stats Row */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 relative">
                         <div className="space-y-1.5">
-                            <span className="text-[10px] font-bold text-slate-505 uppercase tracking-wider block">Est. Revenue</span>
-                            <div className="text-2xl font-black font-mono tracking-tight text-slate-100">
+                            <span className="text-[10px] font-bold text-zinc-505 uppercase tracking-wider block">Est. Revenue</span>
+                            <div className="text-2xl font-black font-mono tracking-tight text-zinc-100">
                                 ₹{metrics?.estimatedRevenue?.toLocaleString('en-IN') || '0'}
                             </div>
                         </div>
 
                         {/* Divider lines on wide screen */}
-                        <div className="absolute top-1/2 -translate-y-1/2 left-[25%] w-px h-8 bg-slate-800/40 hidden lg:block" />
+                        <div className="absolute top-1/2 -translate-y-1/2 left-[25%] w-px h-8 bg-zinc-800/40 hidden lg:block" />
 
                         <div className="space-y-1.5 lg:pl-6">
-                            <span className="text-[10px] font-bold text-slate-505 uppercase tracking-wider block">Collected Vol</span>
+                            <span className="text-[10px] font-bold text-zinc-505 uppercase tracking-wider block">Collected Vol</span>
                             <div className="text-2xl font-black font-mono tracking-tight text-emerald-400">
                                 ₹{metrics?.totalPaidAmount?.toLocaleString('en-IN') || '0'}
                             </div>
                         </div>
 
-                        <div className="absolute top-1/2 -translate-y-1/2 left-[50%] w-px h-8 bg-slate-800/40 hidden lg:block" />
+                        <div className="absolute top-1/2 -translate-y-1/2 left-[50%] w-px h-8 bg-zinc-800/40 hidden lg:block" />
 
                         <div className="space-y-1.5 lg:pl-6">
-                            <span className="text-[10px] font-bold text-slate-505 uppercase tracking-wider block">Outstanding Due</span>
+                            <span className="text-[10px] font-bold text-zinc-505 uppercase tracking-wider block">Outstanding Due</span>
                             <div className="text-2xl font-black font-mono tracking-tight text-amber-500">
                                 ₹{metrics?.dueAmount?.toLocaleString('en-IN') || '0'}
                             </div>
                         </div>
 
-                        <div className="absolute top-1/2 -translate-y-1/2 left-[75%] w-px h-8 bg-slate-800/40 hidden lg:block" />
+                        <div className="absolute top-1/2 -translate-y-1/2 left-[75%] w-px h-8 bg-zinc-800/40 hidden lg:block" />
 
                         <div className="space-y-1.5 lg:pl-6">
-                            <span className="text-[10px] font-bold text-slate-505 uppercase tracking-wider block flex items-center gap-1">
+                            <span className="text-[10px] font-bold text-zinc-505 uppercase tracking-wider block flex items-center gap-1">
                                 Leakage <ShieldAlert className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
                             </span>
                             <div className="text-2xl font-black font-mono tracking-tight text-rose-500">
@@ -217,31 +217,31 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    <div className="h-px bg-slate-800/30" />
+                    <div className="h-px bg-zinc-800/30" />
 
                     {/* Integrated Clickable Ledger Status Segment Controller */}
-                    <div className="grid grid-cols-3 gap-3 bg-slate-950/40 p-1.5 rounded-2xl shadow-inner">
+                    <div className="grid grid-cols-3 gap-3 bg-[#0f0f0f]/40 p-1.5 rounded-2xl shadow-inner">
                         <button 
                             onClick={() => navigate('/payping/customers', { state: { filter: 'PAID' } })}
-                            className="bg-transparent hover:bg-slate-900/50 py-3 rounded-xl text-center transition-all cursor-pointer group active:scale-[0.98] flex flex-col items-center border-0 outline-none"
+                            className="bg-transparent hover:bg-zinc-900/50 py-3 rounded-xl text-center transition-all cursor-pointer group active:scale-[0.98] flex flex-col items-center border-0 outline-none"
                         >
-                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1 group-hover:text-emerald-450 transition-colors">Paid Users</span>
-                            <span className="text-xl font-black text-slate-205 font-mono">{metrics?.paidCustomersCount || 0}</span>
+                            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1 group-hover:text-emerald-450 transition-colors">Paid Users</span>
+                            <span className="text-xl font-black text-zinc-205 font-mono">{metrics?.paidCustomersCount || 0}</span>
                         </button>
 
                         <button 
                             onClick={() => navigate('/payping/customers', { state: { filter: 'UNPAID' } })}
-                            className="bg-transparent hover:bg-slate-900/50 py-3 rounded-xl text-center transition-all cursor-pointer group active:scale-[0.98] flex flex-col items-center border-0 outline-none"
+                            className="bg-transparent hover:bg-zinc-900/50 py-3 rounded-xl text-center transition-all cursor-pointer group active:scale-[0.98] flex flex-col items-center border-0 outline-none"
                         >
-                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1 group-hover:text-amber-450 transition-colors">Unpaid</span>
-                            <span className="text-xl font-black text-slate-205 font-mono">{metrics?.unpaidCustomersCount || 0}</span>
+                            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1 group-hover:text-amber-450 transition-colors">Unpaid</span>
+                            <span className="text-xl font-black text-zinc-205 font-mono">{metrics?.unpaidCustomersCount || 0}</span>
                         </button>
 
                         <button 
                             onClick={() => navigate('/payping/customers', { state: { filter: 'OVERDUE' } })}
-                            className="bg-transparent hover:bg-slate-900/50 py-3 rounded-xl text-center transition-all cursor-pointer group active:scale-[0.98] flex flex-col items-center border-0 outline-none"
+                            className="bg-transparent hover:bg-zinc-900/50 py-3 rounded-xl text-center transition-all cursor-pointer group active:scale-[0.98] flex flex-col items-center border-0 outline-none"
                         >
-                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1 group-hover:text-rose-450 transition-colors">Overdue</span>
+                            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1 group-hover:text-rose-450 transition-colors">Overdue</span>
                             <span className="text-xl font-black text-rose-400 font-mono">{metrics?.overdueCustomersCount || 0}</span>
                         </button>
                     </div>
@@ -249,22 +249,22 @@ const Dashboard = () => {
             </section>
 
             {/* BLOCK 2: HISTORICAL CHARTS */}
-            <section className="bg-slate-900/50 rounded-[2rem] p-6 space-y-5 shadow-xl">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/40 pb-4">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Business Performance</h3>
+            <section className="bg-zinc-900/50 rounded-[2rem] p-6 space-y-5 shadow-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/40 pb-4">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400">Business Performance</h3>
                     
                     <div className="flex items-center gap-3 self-end sm:self-center">
                         {/* Chart Toggle */}
-                        <div className="flex p-0.5 bg-slate-950/80 rounded-xl text-[10px] font-bold shadow-inner border-0">
+                        <div className="flex p-0.5 bg-[#0f0f0f]/80 rounded-xl text-[10px] font-bold shadow-inner border-0">
                             <button 
                                 onClick={() => setChartMode('financial')}
-                                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer border-0 outline-none ${chartMode === 'financial' ? 'bg-blue-600 text-white shadow' : 'text-slate-550'}`}
+                                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer border-0 outline-none ${chartMode === 'financial' ? 'bg-indigo-600 text-white shadow' : 'text-zinc-550'}`}
                             >
                                 Valuation
                             </button>
                             <button 
                                 onClick={() => setChartMode('customers')}
-                                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer border-0 outline-none ${chartMode === 'customers' ? 'bg-blue-600 text-white shadow' : 'text-slate-550'}`}
+                                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer border-0 outline-none ${chartMode === 'customers' ? 'bg-indigo-600 text-white shadow' : 'text-zinc-550'}`}
                             >
                                 Volumes
                             </button>
@@ -273,26 +273,26 @@ const Dashboard = () => {
                 </div>
 
                 {/* Dynamic Chart Container */}
-                <div className="w-full h-72 bg-slate-950/30 rounded-2xl p-4 pt-14 relative flex items-center justify-center font-mono text-xs shadow-inner">
+                <div className="w-full h-72 bg-[#0f0f0f]/30 rounded-2xl p-4 pt-14 relative flex items-center justify-center font-mono text-xs shadow-inner">
                     {/* Range Delta Selector Inside Chart Container Block */}
-                    <div className="absolute top-3 right-3 z-10 flex p-0.5 bg-slate-950/90 border border-slate-900/40 rounded-xl text-[10px] font-bold shadow-2xl">
+                    <div className="absolute top-3 right-3 z-10 flex p-0.5 bg-[#0f0f0f]/90 border border-zinc-900/40 rounded-xl text-[10px] font-bold shadow-2xl">
                         {(['3M', '6M', '1Y'] as const).map((range) => (
                             <button
                                 key={range}
                                 onClick={() => setTimeFrame(range)}
-                                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer border-0 outline-none ${timeFrame === range ? 'bg-slate-800 text-white shadow' : 'text-slate-500 hover:text-slate-450'}`}
+                                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer border-0 outline-none ${timeFrame === range ? 'bg-zinc-800 text-white shadow' : 'text-zinc-500 hover:text-zinc-450'}`}
                             >
                                 {range}
                             </button>
                         ))}
                     </div>
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center gap-2 text-slate-550">
-                            <div className="w-5 h-5 border-2 border-t-transparent border-blue-500 rounded-full animate-spin" />
+                        <div className="flex flex-col items-center justify-center gap-2 text-zinc-550">
+                            <div className="w-5 h-5 border-2 border-t-transparent border-indigo-500 rounded-full animate-spin" />
                             <span className="text-[10px] uppercase font-bold tracking-wider">Syncing historical performance...</span>
                         </div>
                     ) : chartData.length === 0 ? (
-                        <span className="text-slate-600 italic">No historical traces available</span>
+                        <span className="text-zinc-600 italic">No historical traces available</span>
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
                             {chartMode === 'financial' ? (
@@ -330,33 +330,33 @@ const Dashboard = () => {
 
             {/* BLOCK 3: QUICK RELAYS */}
             <div className="flex flex-col gap-6">
-                <section className="bg-slate-900/50 rounded-[2rem] p-6 space-y-4 shadow-xl">
-                    <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Quick Vector Relays</h4>
+                <section className="bg-zinc-900/50 rounded-[2rem] p-6 space-y-4 shadow-xl">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Quick Vector Relays</h4>
                     
                     <div className="flex gap-3">
                         <button 
                             onClick={() => navigate('/payping/add-customers')}
-                            className="flex-1 bg-slate-950/40 hover:bg-slate-900/60 p-5 rounded-2xl flex flex-col items-center justify-center text-center gap-2 transition-all cursor-pointer group shadow-inner border-0 outline-none"
+                            className="flex-1 bg-[#0f0f0f]/40 hover:bg-zinc-900/60 p-5 rounded-2xl flex flex-col items-center justify-center text-center gap-2 transition-all cursor-pointer group shadow-inner border-0 outline-none"
                         >
-                            <UserPlus className="w-5 h-5 text-blue-500" />
-                            <span className="text-xs font-bold text-slate-350">Add Customer</span>
+                            <UserPlus className="w-5 h-5 text-indigo-500" />
+                            <span className="text-xs font-bold text-zinc-350">Add Customer</span>
                         </button>
                         
                         <button 
                             onClick={() => navigate('/payping/message-templates')}
-                            className="flex-1 bg-slate-950/40 hover:bg-slate-900/60 p-5 rounded-2xl flex flex-col items-center justify-center text-center gap-2 transition-all cursor-pointer group shadow-inner border-0 outline-none"
+                            className="flex-1 bg-[#0f0f0f]/40 hover:bg-zinc-900/60 p-5 rounded-2xl flex flex-col items-center justify-center text-center gap-2 transition-all cursor-pointer group shadow-inner border-0 outline-none"
                         >
                             <Send className="w-5 h-5 text-emerald-500" />
-                            <span className="text-xs font-bold text-slate-350">Manage Templates</span>
+                            <span className="text-xs font-bold text-zinc-350">Manage Templates</span>
                         </button>
                     </div>
                 </section>
 
                 {/* BLOCK 4: OPERATIONAL METADATA & SUPPORT */}
-                <section className="bg-slate-900/50 rounded-[2rem] p-6 flex flex-col justify-between gap-4 shadow-xl">
+                <section className="bg-zinc-900/50 rounded-[2rem] p-6 flex flex-col justify-between gap-4 shadow-xl">
                     <div className="space-y-1">
-                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Operational Payment Router VPA</span>
-                        <span className="text-sm font-mono font-bold text-slate-300 block truncate mt-1">
+                        <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">Operational Payment Router VPA</span>
+                        <span className="text-sm font-mono font-bold text-zinc-300 block truncate mt-1">
                             {metrics?.upiUrl || "No Active Routing Channel Registered"}
                         </span>
                     </div>
@@ -366,27 +366,27 @@ const Dashboard = () => {
                             href="https://wa.me/919876543210" 
                             target="_blank" 
                             rel="noreferrer"
-                            className="flex items-center gap-3 p-3 bg-slate-950/40 hover:bg-slate-900/60 rounded-2xl active:scale-[0.98] transition-all group shrink-0 shadow-inner"
+                            className="flex items-center gap-3 p-3 bg-[#0f0f0f]/40 hover:bg-zinc-900/60 rounded-2xl active:scale-[0.98] transition-all group shrink-0 shadow-inner"
                         >
                             <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-400 group-hover:bg-emerald-500/20 transition-colors shrink-0">
                                 <MessageCircle className="w-4 h-4" />
                             </div>
                             <div className="min-w-0">
-                                <span className="text-xs font-bold block text-slate-200">WhatsApp Help</span>
-                                <span className="text-[9px] text-slate-500 block truncate">Direct Support Node</span>
+                                <span className="text-xs font-bold block text-zinc-200">WhatsApp Help</span>
+                                <span className="text-[9px] text-zinc-500 block truncate">Direct Support Node</span>
                             </div>
                         </a>
 
                         <a 
                             href="mailto:support@payping.in"
-                            className="flex items-center gap-3 p-3 bg-slate-950/40 hover:bg-slate-900/60 rounded-2xl active:scale-[0.98] transition-all group shrink-0 shadow-inner"
+                            className="flex items-center gap-3 p-3 bg-[#0f0f0f]/40 hover:bg-zinc-900/60 rounded-2xl active:scale-[0.98] transition-all group shrink-0 shadow-inner"
                         >
-                            <div className="p-2 bg-blue-500/10 rounded-xl text-blue-400 group-hover:bg-blue-500/20 transition-colors shrink-0">
+                            <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-400 group-hover:bg-indigo-500/20 transition-colors shrink-0">
                                 <Mail className="w-4 h-4" />
                             </div>
                             <div className="min-w-0">
-                                <span className="text-xs font-bold block text-slate-200">Email Desk</span>
-                                <span className="text-[9px] text-slate-500 block truncate">Support Ticketing</span>
+                                <span className="text-xs font-bold block text-zinc-200">Email Desk</span>
+                                <span className="text-[9px] text-zinc-500 block truncate">Support Ticketing</span>
                             </div>
                         </a>
                     </div>

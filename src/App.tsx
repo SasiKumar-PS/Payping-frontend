@@ -13,12 +13,14 @@ import Dashboard from './pages/PayPing/Dashboard';
 import Customers from './pages/PayPing/Customers';
 import MessageTemplates from './pages/PayPing/MessageTemplates';
 import AutoAlerts from './pages/PayPing/AutoAlerts';
+import AlertHistory from './pages/PayPing/AlertHistory';
 import ProtectedRoute from './components/ProtectedRoute';
-
+import { InstallAppBanner } from './components/InstallAppBanner';
 
 function App() {
   return (
     <Router>
+      <InstallAppBanner />
       <Routes>
         <Route path="/" element={<WelcomePage />} />
         <Route path="/login" element={<LoginRequestPage />} />
@@ -40,6 +42,7 @@ function App() {
               <Route path="customers" element={<Customers />} />
               <Route path="message-templates" element={<MessageTemplates />} />
               <Route path="auto-alerts" element={<AutoAlerts />} />
+              <Route path="alert-history" element={<AlertHistory />} />
               
               
               {/* Add any other payping sub-pages here */}

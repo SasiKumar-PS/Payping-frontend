@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
     MessageSquare, Plus, X, Pencil, Trash2, ChevronLeft, 
     RefreshCw, LayoutDashboard, FileText, CheckCircle2, AlertCircle,
-    CheckSquare, Square, Users, ArrowUpDown, Filter, Search, Phone
+    CheckSquare, Square, Users, ArrowUpDown, Filter, Search, Phone, MessageCircle
 } from 'lucide-react';
 import api from '../../api';
 
@@ -70,6 +70,7 @@ const renderTemplateWithPills = (
 
 const MessageTemplates = () => {
     const navigate = useNavigate();
+    const location = useLocation();
 
     // ==========================================
     // 1. CORE DATA & LEDGER STATES
@@ -86,36 +87,19 @@ const MessageTemplates = () => {
     const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // ==========================================
-    // 3. INLINE CUSTOMER VIEW ARCHITECTURE STATES
+    // 3. WHATSAPP SEND FLOW STATES
     // ==========================================
-    const [showCustomerPicker, setShowCustomerPicker] = useState<boolean>(false);
-    const [customers, setCustomers] = useState<CustomerDTO[]>([]);
-    const [loadingCustomers, setLoadingCustomers] = useState<boolean>(false);
-    const [customerTotalPages, setCustomerTotalPages] = useState<number>(1);
+    const [preSelectedCustomerIds, setPreSelectedCustomerIds] = useState<string[]>([]);
+    const [showConfirmationModal, setShowConfirmationModal] = useState<boolean>(false);
+    const [alertName, setAlertName] = useState<string>('');
+    const [isSending, setIsSending] = useState<boolean>(false);
     
-    // Customer Query State
-    const [customerQuery, setCustomerQuery] = useState({
-        status: 'ACTIVE',
-        search: '',
-        sort: 'name_asc',
-        filters: { paymentStatus: [] as string[] },
-        page: 0,
-        size: 30
-    });
-    
-    // Confirmed vs. Active Picker selections
-    const [pickerSelectedCustomerIds, setPickerSelectedCustomerIds] = useState<Set<string>>(new Set());
-    const [confirmedCustomerIds, setConfirmedCustomerIds] = useState<string[]>([]);
-    const [isCustomerGlobalSelectAll, setIsCustomerGlobalSelectAll] = useState<boolean>(false);
-
-    // Picker UI Toggles
-    const [isCustSearchExpanded, setIsCustSearchExpanded] = useState<boolean>(false);
-    const [showCustStatusDropdown, setShowCustStatusDropdown] = useState<boolean>(false);
-    const [showCustSortDropdown, setShowCustSortDropdown] = useState<boolean>(false);
-    const [showCustFilterModal, setShowCustFilterModal] = useState<boolean>(false);
-    const [custFilterDraft, setCustFilterDraft] = useState<string[]>([]);
-    const custSearchInputRef = useRef<HTMLInputElement>(null);
-    const custDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    useEffect(() => {
+        const state = location.state as { preSelectedCustomerIds?: string[] } | null;
+        if (state?.preSelectedCustomerIds) {
+            setPreSelectedCustomerIds(state.preSelectedCustomerIds);
+        }
+    }, [location.state]);
 
     // ==========================================
     // 4. MODALS & MUTATION STATES
@@ -193,36 +177,7 @@ const MessageTemplates = () => {
         fetchDetailPreview();
     }, [selectedTemplate]);
 
-    // Fetch Picker Customers whenever query properties shift
-    const fetchPickerCustomers = useCallback(async () => {
-        if (!showCustomerPicker) return;
-        try {
-            setLoadingCustomers(true);
-            const res = await api.post('/payping/customers/get', customerQuery);
-            const dataContent = res.data || res.data.content || [];
-            setCustomers(dataContent);
-            setCustomerTotalPages(res.data.totalPages || 1);
-        } catch (err) {
-            console.error("Failed to load picker customers:", err);
-        } finally {
-            setLoadingCustomers(false);
-        }
-    }, [customerQuery, showCustomerPicker]);
 
-    useEffect(() => {
-        fetchPickerCustomers();
-    }, [fetchPickerCustomers]);
-
-    // Handle Global Select All across paginated sets inside Picker
-    useEffect(() => {
-        if (isCustomerGlobalSelectAll && customers.length > 0) {
-            setPickerSelectedCustomerIds(prev => {
-                const updated = new Set(prev);
-                customers.forEach(c => updated.add(c.id));
-                return updated;
-            });
-        }
-    }, [customers, isCustomerGlobalSelectAll]);
 
     // ==========================================
     // 6. TEMPLATE SELECTION MECHANICS (LONG-PRESS)
@@ -257,7 +212,6 @@ const MessageTemplates = () => {
             handleTemplateCheckboxToggle(tmpl.id);
         } else {
             setSelectedTemplate(tmpl);
-            setConfirmedCustomerIds([]); // Flush stale audience tracks on entering new profile context
             setShowDetailModal(true);
         }
     };
@@ -557,62 +511,14 @@ const MessageTemplates = () => {
         setSelectedTemplate(null);
     };
 
-    // ==========================================
-    // 9. CLIENT TARGET AUDIENCE DISPATCH COUPLER
-    // ==========================================
-    const executeTemplateBroadcastDispatch = async () => {
-        if (!selectedTemplate || confirmedCustomerIds.length === 0) return;
-        try {
-            await api.post('/payping/whatsapp/send', {
-                templateId: selectedTemplate.id,
-                customerIds: confirmedCustomerIds
-            }, {
-                headers: { 'X-Trigger-Success': 'true' }
-            });
-            setShowDetailModal(false);
-            setConfirmedCustomerIds([]);
-            console.log("Broadcast triggered successfully!");
-        } catch (err) {
-            console.error("Bulk template distribution error:", err);
-        }
-    };
-
-    // Picker Action Controls
-    const handleCustSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        if (custDebounceTimerRef.current) clearTimeout(custDebounceTimerRef.current);
-        custDebounceTimerRef.current = setTimeout(() => {
-            setCustomerQuery(prev => ({ ...prev, search: value, page: 0 }));
-        }, 500);
-    };
-
-    const toggleCustPickerGlobalSelect = () => {
-        if (isCustomerGlobalSelectAll) {
-            setPickerSelectedCustomerIds(new Set());
-            setIsCustomerGlobalSelectAll(false);
-        } else {
-            const allIds = customers.map(c => c.id);
-            setPickerSelectedCustomerIds(new Set(allIds));
-            setIsCustomerGlobalSelectAll(true);
-        }
-    };
-
-    const handlePickerRowToggle = (id: string) => {
-        setPickerSelectedCustomerIds(prev => {
-            const updated = new Set(prev);
-            if (updated.has(id)) updated.delete(id);
-            else updated.add(id);
-            return updated;
-        });
-    };
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white flex flex-col font-sans select-none overflow-x-hidden pb-28 relative">
+        <div className="min-h-screen bg-[#0f0f0f] text-white flex flex-col font-sans select-none overflow-x-hidden pb-28 relative">
             
             {/* ======================================================= */}
             {/* MAIN HEADER WINDOW PORT (ZONES 1 & 2 CONTROL ARRAYS)     */}
             {/* ======================================================= */}
-            <header className="sticky top-0 z-20 bg-slate-950 px-4 pt-5 pb-4 max-w-md lg:max-w-6xl mx-auto w-full border-b border-slate-900/50">
+            <header className="sticky top-0 z-20 bg-[#0f0f0f] px-4 pt-5 pb-4 max-w-md lg:max-w-6xl mx-auto w-full border-b border-zinc-900/50">
                 <div className="flex items-center justify-between h-10">
                     <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
                         <MessageSquare className="w-5 h-5 text-emerald-500" /> Templates
@@ -628,7 +534,7 @@ const MessageTemplates = () => {
                     ) : (
                         <button 
                             onClick={() => setSelectedTemplateIds(new Set())}
-                            className="text-xs font-bold text-slate-400 hover:text-white"
+                            className="text-xs font-bold text-zinc-400 hover:text-white"
                         >
                             Cancel Selection
                         </button>
@@ -651,11 +557,11 @@ const MessageTemplates = () => {
             {/* MAIN SYSTEM CATALOGUE DIRECTORY WORKSPACE */}
             <main className="flex-1 px-4 max-w-md lg:max-w-6xl mx-auto w-full pt-4 space-y-3 animate-in fade-in duration-300">
                 {loadingLedger ? (
-                    <div className="py-24 text-center flex flex-col items-center justify-center gap-2 text-slate-500 text-xs font-mono">
+                    <div className="py-24 text-center flex flex-col items-center justify-center gap-2 text-zinc-500 text-xs font-mono">
                         <RefreshCw className="w-4 h-4 animate-spin text-emerald-500" /> SYNCHRONIZING TEMPLATE REGISTRY...
                     </div>
                 ) : templates.length === 0 ? (
-                    <div className="py-20 text-center text-slate-655 text-xs space-y-2">
+                    <div className="py-20 text-center text-zinc-655 text-xs space-y-2">
                         <FileText className="w-8 h-8 mx-auto opacity-10" />
                         <p>No operational templates cataloged in workspace.</p>
                     </div>
@@ -671,20 +577,20 @@ const MessageTemplates = () => {
                                     onMouseDown={() => handleTemplateTouchStart(tmpl.id)}
                                     onMouseUp={handleTemplateTouchEnd}
                                     onClick={() => handleTemplateClick(tmpl)}
-                                    className={`w-full bg-slate-900 p-4 rounded-xl flex items-center justify-between border transition-all active:scale-[0.99] cursor-pointer ${isChecked ? 'border-red-500 bg-slate-900' : 'border-transparent hover:bg-slate-800/40'}`}
+                                    className={`w-full bg-transparent p-4 rounded-xl flex items-center justify-between border transition-all active:scale-[0.99] cursor-pointer ${isChecked ? 'border-red-500 bg-zinc-900/60' : 'border-zinc-800/60 hover:bg-zinc-900/40'}`}
                                 >
                                     <div className="flex items-center gap-3 min-w-0 pr-2">
                                         {isTemplateSelectionMode && (
                                             <div className="shrink-0">
-                                                {isChecked ? <CheckSquare className="w-4 h-4 text-red-500" /> : <Square className="w-4 h-4 text-slate-600" />}
+                                                {isChecked ? <CheckSquare className="w-4 h-4 text-red-500" /> : <Square className="w-4 h-4 text-zinc-600" />}
                                             </div>
                                         )}
                                         <div className="min-w-0">
-                                            <h4 className="text-sm font-bold text-slate-200 truncate">{tmpl.name}</h4>
-                                            <p className="text-xs text-slate-500 truncate mt-1 font-medium">{renderTemplateWithPills(tmpl.content, false)}</p>
+                                            <h4 className="text-sm font-bold text-zinc-200 truncate">{tmpl.name}</h4>
+                                            <p className="text-xs text-zinc-500 truncate mt-1 font-medium">{renderTemplateWithPills(tmpl.content, false)}</p>
                                         </div>
                                     </div>
-                                    <ChevronLeft className="w-4 h-4 text-slate-600 rotate-180 shrink-0" />
+                                    <ChevronLeft className="w-4 h-4 text-zinc-600 rotate-180 shrink-0" />
                                 </div>
                             );
                         })}
@@ -693,13 +599,24 @@ const MessageTemplates = () => {
             </main>
 
             {/* BOTTOM NAV BAR INTERACTION ACTION REGISTRY */}
-            <div className="fixed bottom-5 left-4 right-4 max-w-md mx-auto z-10">
-                <button 
-                    onClick={() => navigate('/payping/dashboard')}
-                    className="w-full bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs transition-colors"
-                >
-                    <LayoutDashboard className="w-4 h-4" /> Return to Dashboard
-                </button>
+            <div className="fixed bottom-5 left-0 lg:left-64 right-0 z-10 pointer-events-none flex justify-center animate-in fade-in duration-200">
+                <div className="w-full px-4 max-w-md pointer-events-auto">
+                    {preSelectedCustomerIds.length > 0 ? (
+                        <button 
+                            onClick={() => navigate('/payping/customers')}
+                            className="w-full bg-zinc-900/80 hover:bg-zinc-900 backdrop-blur-md border border-zinc-800 text-zinc-300 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs transition-colors shadow-xl shadow-black"
+                        >
+                            <X className="w-4 h-4 text-zinc-400" /> Cancel Template Selection
+                        </button>
+                    ) : (
+                        <button 
+                            onClick={() => navigate('/payping/dashboard')}
+                            className="w-full bg-zinc-900/80 hover:bg-zinc-900 backdrop-blur-md border border-zinc-800 text-zinc-300 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs transition-colors shadow-xl shadow-black"
+                        >
+                            <LayoutDashboard className="w-4 h-4" /> Return to Dashboard
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* ======================================================= */}
@@ -707,19 +624,19 @@ const MessageTemplates = () => {
             {/* ======================================================= */}
             {showDeleteConfirmation && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-sm" onClick={() => setShowDeleteConfirmation(false)} />
-                    <div className="relative bg-slate-900 w-full max-w-sm rounded-2xl p-6 space-y-5 text-center animate-in zoom-in-95 duration-150">
+                    <div className="absolute inset-0 bg-[#0f0f0f]/90 backdrop-blur-sm" onClick={() => setShowDeleteConfirmation(false)} />
+                    <div className="relative bg-[#0f0f0f] border border-zinc-800/60 w-full max-w-sm rounded-2xl p-6 space-y-5 text-center animate-in zoom-in-95 duration-150">
                         <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto">
                             <Trash2 className="w-5 h-5" />
                         </div>
                         <div className="space-y-1.5">
-                            <h3 className="text-sm font-bold text-slate-200 first-letter:uppercase">{deleteModalHeader}</h3>
-                            <p className="text-xs text-slate-500">Action is not reversible. Data will be dropped completely.</p>
+                            <h3 className="text-sm font-bold text-zinc-200 first-letter:uppercase">{deleteModalHeader}</h3>
+                            <p className="text-xs text-zinc-500">Action is not reversible. Data will be dropped completely.</p>
                         </div>
                         <div className="flex gap-3 pt-2">
                             <button 
                                 onClick={() => setShowDeleteConfirmation(false)}
-                                className="w-1/2 bg-slate-950 text-slate-400 font-bold py-3 rounded-xl text-xs border-0 outline-none"
+                                className="w-1/2 bg-[#0f0f0f] text-zinc-400 font-bold py-3 rounded-xl text-xs border-0 outline-none"
                             >
                                 Cancel
                             </button>
@@ -739,44 +656,44 @@ const MessageTemplates = () => {
             {/* ======================================================= */}
             {showUpsertModal && (
                 <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center p-0">
-                    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onClick={() => { setShowUpsertModal(false); clearFormState(); }} />
-                    <div className="relative bg-slate-900 w-full max-w-md rounded-t-[2.5rem] sm:rounded-3xl shadow-2xl flex flex-col max-h-[92vh] border-0 text-sm overflow-hidden animate-in slide-in-from-bottom-10 duration-200">
+                    <div className="absolute inset-0 bg-[#0f0f0f]/80 backdrop-blur-md" onClick={() => { setShowUpsertModal(false); clearFormState(); }} />
+                    <div className="relative bg-[#0f0f0f] border border-zinc-800/60 w-full max-w-2xl rounded-t-[2.5rem] sm:rounded-2xl shadow-2xl flex flex-col max-h-[92vh] text-sm overflow-hidden animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200">
                         
-                        <div className="p-5 border-b border-slate-850 flex items-center justify-between bg-slate-950/30 shrink-0">
-                            <h3 className="font-extrabold text-sm text-slate-200 tracking-tight">
+                        <div className="p-5 border-b border-zinc-850 flex items-center justify-between bg-[#0f0f0f]/30 shrink-0">
+                            <h3 className="font-extrabold text-sm text-zinc-200 tracking-tight">
                                 {isEditMode ? "Modify Message Template" : "Add New Message Template"}
                             </h3>
-                            <button onClick={() => { setShowUpsertModal(false); clearFormState(); }} className="text-slate-500 hover:text-slate-300 border-0 outline-none bg-transparent"><X className="w-5 h-5" /></button>
+                            <button onClick={() => { setShowUpsertModal(false); clearFormState(); }} className="text-zinc-500 hover:text-zinc-300 border-0 outline-none bg-transparent"><X className="w-5 h-5" /></button>
                         </div>
 
                         <div className="p-5 overflow-y-auto flex-1 space-y-5 pb-8">
                             <div className="space-y-1.5">
-                                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Template Label Identity Name</label>
+                                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Template Label Identity Name</label>
                                 <input 
                                     type="text"
                                     placeholder="e.g., Late Fee Penalty Reminder"
                                     value={templateName}
                                     onChange={(e) => setTemplateName(e.target.value)}
-                                    className="w-full bg-slate-950 text-white text-sm font-semibold p-3.5 rounded-xl outline-none border border-transparent focus:border-slate-850 transition-colors"
+                                    className="w-full bg-[#0f0f0f] text-white text-sm font-semibold p-3.5 rounded-xl outline-none border border-transparent focus:border-zinc-850 transition-colors"
                                 />
                             </div>
 
                             {/* BLOCK 1: DYNAMIC TOKEN INJECTION PILLS */}
-                            <div className="space-y-2 bg-slate-950/40 p-4 rounded-2xl border border-slate-850/30">
-                                <span className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Inline Tags</span>
+                            <div className="space-y-2 bg-[#0f0f0f]/40 p-4 rounded-2xl border border-zinc-850/30">
+                                <span className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest">Inline Tags</span>
                                 <div className="flex flex-wrap gap-1.5 pt-1">
                                     {serverTags.map((tag) => {
                                         const textContainsPill = templateContent.includes(`{${tag}}`);
                                         return (
                                             <div 
                                                 key={tag} 
-                                                className={`inline-flex items-center text-[10px] font-mono font-bold tracking-wide rounded-lg overflow-hidden transition-all duration-150 ${textContainsPill ? 'bg-blue-600/10 text-blue-400' : 'bg-slate-950 text-slate-400'}`}
+                                                className={`inline-flex items-center text-[10px] font-mono font-bold tracking-wide rounded-lg overflow-hidden transition-all duration-150 ${textContainsPill ? 'bg-indigo-600/10 text-indigo-400' : 'bg-[#0f0f0f] text-zinc-400'}`}
                                             >
                                                 <button type="button" onClick={() => injectTagPillShortcut(tag)} className="px-2.5 py-1.5 font-bold border-0 bg-transparent text-inherit outline-none">
                                                     {tag}
                                                 </button>
                                                 {textContainsPill && (
-                                                    <button type="button" onClick={() => ejectTagPillFromText(tag)} className="px-1.5 py-1.5 border-l border-blue-500/10 hover:bg-red-500/20 hover:text-red-400 transition-colors bg-transparent outline-none">
+                                                    <button type="button" onClick={() => ejectTagPillFromText(tag)} className="px-1.5 py-1.5 border-l border-indigo-500/10 hover:bg-red-500/20 hover:text-red-400 transition-colors bg-transparent outline-none">
                                                         <X className="w-3 h-3" />
                                                     </button>
                                                 )}
@@ -784,21 +701,21 @@ const MessageTemplates = () => {
                                         );
                                     })}
                                 </div>
-                                <p className="text-[10px] leading-relaxed text-slate-500 font-medium pt-1.5 border-t border-slate-950/60">
+                                <p className="text-[10px] leading-relaxed text-zinc-500 font-medium pt-1.5 border-t border-zinc-950/60">
                                     Tap dynamic parameter badges to safely append vectors straight into text cursor ranges. You can safely clear links using individual cancel crosses.
                                 </p>
                             </div>
 
                               {/* BLOCK 2: BLUEPRINT INPUT BOX FRAME */}
                               <div className="space-y-1.5">
-                                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Message Template Editor</label>
+                                  <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Message Template Editor</label>
                                   <div 
                                       ref={contentEditableRef}
                                       contentEditable
                                       onInput={handleContentEditableInput}
                                       onClick={handleContentEditableClick}
-                                      placeholder="Type data string contents here..."
-                                      className="w-full h-32 bg-slate-950 text-white text-sm font-medium p-3.5 rounded-xl outline-none border border-transparent focus:border-slate-850 overflow-y-auto leading-relaxed whitespace-pre-wrap break-words select-text focus:outline-none empty:before:content-[attr(placeholder)] empty:before:text-slate-500 empty:before:font-medium empty:before:pointer-events-none"
+                                      data-placeholder="Type data string contents here..."
+                                      className="w-full h-32 bg-[#0f0f0f] text-white text-sm font-medium p-3.5 rounded-xl outline-none border border-transparent focus:border-zinc-850 overflow-y-auto leading-relaxed whitespace-pre-wrap break-words select-text focus:outline-none empty:before:content-[attr(placeholder)] empty:before:text-zinc-500 empty:before:font-medium empty:before:pointer-events-none"
                                       style={{
                                           boxSizing: 'border-box'
                                       }}
@@ -809,13 +726,13 @@ const MessageTemplates = () => {
                              {/* BLOCK 3: RENDERING LOG OVERVIEW PREVIEW BOX */}
                              {isPreviewed && (
                                  <div className="space-y-2 animate-in fade-in slide-in-from-top-3 duration-200">
-                                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1.5">
+                                     <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 flex items-center gap-1.5">
                                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Message Preview
                                      </label>
-                                     <div className={`w-full p-4 rounded-xl font-medium text-xs leading-relaxed whitespace-pre-wrap transition-all duration-150 ${loadingPreview ? 'bg-slate-950/40 text-slate-600 select-none animate-pulse' : isContentDull ? 'bg-slate-950/70 text-slate-500 line-clamp-none' : 'bg-slate-950 text-slate-300'}`}>
+                                     <div className={`w-full p-4 rounded-xl font-medium text-xs leading-relaxed whitespace-pre-wrap transition-all duration-150 ${loadingPreview ? 'bg-[#0f0f0f]/40 text-zinc-600 select-none animate-pulse' : isContentDull ? 'bg-[#0f0f0f]/70 text-zinc-500 line-clamp-none' : 'bg-[#0f0f0f] text-zinc-300'}`}>
                                          {loadingPreview ? (
                                              <span className="flex items-center gap-1.5 font-mono text-[10px]">
-                                                 <RefreshCw className="w-3 h-3 animate-spin text-blue-500" /> Connecting rendering pipeline over remote structures...
+                                                 <RefreshCw className="w-3 h-3 animate-spin text-indigo-500" /> Connecting rendering pipeline over remote structures...
                                              </span>
                                          ) : previewText}
                                      </div>
@@ -828,13 +745,13 @@ const MessageTemplates = () => {
                             )}
                         </div>
 
-                        <div className="p-5 border-t border-slate-850 bg-slate-950/60 shrink-0">
+                        <div className="p-5 border-t border-zinc-850 bg-[#0f0f0f]/60 shrink-0">
                             {(!isPreviewed || isContentDull) ? (
                                 <button 
                                     type="button"
                                     onClick={requestServerPreview}
                                     disabled={!templateName.trim() || !templateContent.trim() || loadingPreview}
-                                    className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-20 text-white font-bold py-3.5 rounded-xl text-xs tracking-wider uppercase border-0 outline-none shadow-lg shadow-blue-600/10"
+                                    className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-20 text-white font-bold py-3.5 rounded-xl text-xs tracking-wider uppercase border-0 outline-none shadow-lg shadow-indigo-600/10"
                                 >
                                     Generate Preview
                                 </button>
@@ -857,35 +774,35 @@ const MessageTemplates = () => {
             {/* ======================================================= */}
             {showDetailModal && selectedTemplate && (
                 <div className="fixed inset-0 z-30 flex items-end sm:items-center justify-center p-0">
-                    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onClick={() => { setShowDetailModal(false); setSelectedTemplate(null); }} />
-                    <div className="relative bg-slate-900 w-full max-w-md rounded-t-[2.5rem] sm:rounded-3xl shadow-2xl flex flex-col max-h-[88vh] border-0 animate-in slide-in-from-bottom-10 duration-200 overflow-hidden">
+                    <div className="absolute inset-0 bg-[#0f0f0f]/80 backdrop-blur-md" onClick={() => { setShowDetailModal(false); setSelectedTemplate(null); }} />
+                    <div className="relative bg-[#0f0f0f] border border-zinc-800/60 w-full max-w-2xl rounded-t-[2.5rem] sm:rounded-2xl shadow-2xl flex flex-col max-h-[88vh] animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200 overflow-hidden">
                         
-                        <div className="p-5 border-b border-slate-850 flex items-center justify-between bg-slate-950/30">
+                        <div className="p-5 border-b border-zinc-850 flex items-center justify-between bg-[#0f0f0f]/30">
                             <div className="min-w-0 pr-4">
-                                <h3 className="font-black text-base text-slate-100 truncate tracking-tight">{selectedTemplate.name}</h3>
+                                <h3 className="font-black text-base text-zinc-100 truncate tracking-tight">{selectedTemplate.name}</h3>
                             </div>
                             
-                            <div className="flex items-center gap-5 shrink-0 text-slate-400">
-                                <button onClick={triggerEditWorkflow} className="p-0 bg-transparent border-0 text-blue-400 hover:text-blue-300 outline-none"><Pencil className="w-4 h-4" /></button>
+                            <div className="flex items-center gap-5 shrink-0 text-zinc-400">
+                                <button onClick={triggerEditWorkflow} className="p-0 bg-transparent border-0 text-indigo-400 hover:text-indigo-300 outline-none"><Pencil className="w-4 h-4" /></button>
                                 <button onClick={() => initSingleDeleteWorkflow(selectedTemplate)} className="p-0 bg-transparent border-0 text-red-400 hover:text-red-300 outline-none"><Trash2 className="w-4 h-4" /></button>
-                                <button onClick={() => { setShowDetailModal(false); setSelectedTemplate(null); }} className="p-0 bg-transparent border-0 text-slate-500 hover:text-slate-300 outline-none"><X className="w-5 h-5" /></button>
+                                <button onClick={() => { setShowDetailModal(false); setSelectedTemplate(null); }} className="p-0 bg-transparent border-0 text-zinc-500 hover:text-zinc-300 outline-none"><X className="w-5 h-5" /></button>
                             </div>
                         </div>
 
                          <div className="p-6 space-y-5 overflow-y-auto flex-1 text-xs">
                             <div className="space-y-1.5">
-                                <span className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Message Template</span>
-                                <div className="w-full bg-slate-950 p-4 rounded-xl text-slate-400 font-medium leading-relaxed whitespace-pre-wrap">
+                                <span className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest">Message Template</span>
+                                <div className="w-full bg-[#0f0f0f] p-4 rounded-xl text-zinc-400 font-medium leading-relaxed whitespace-pre-wrap">
                                     {renderTemplateWithPills(selectedTemplate.content, false)}
                                 </div>
                             </div>
 
                             <div className="space-y-1.5">
-                                <span className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Message Preview</span>
-                                <div className={`w-full p-4 rounded-xl leading-relaxed font-mono text-[11px] whitespace-pre-wrap transition-all duration-150 ${loadingDetailPreview ? 'bg-slate-950/40 text-slate-600 select-none animate-pulse' : 'bg-slate-950/50 text-slate-300'}`}>
+                                <span className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest">Message Preview</span>
+                                <div className={`w-full p-4 rounded-xl leading-relaxed font-mono text-[11px] whitespace-pre-wrap transition-all duration-150 ${loadingDetailPreview ? 'bg-[#0f0f0f]/40 text-zinc-600 select-none animate-pulse' : 'bg-[#0f0f0f]/50 text-zinc-300'}`}>
                                     {loadingDetailPreview ? (
                                         <span className="flex items-center gap-1.5 font-mono text-[10px]">
-                                            <RefreshCw className="w-3 h-3 animate-spin text-blue-500" /> Connecting rendering pipeline over remote structures...
+                                            <RefreshCw className="w-3 h-3 animate-spin text-indigo-500" /> Connecting rendering pipeline over remote structures...
                                         </span>
                                     ) : detailPreviewText || "Empty response."}
                                 </div>
@@ -893,248 +810,117 @@ const MessageTemplates = () => {
                         </div>
 
                         {/* INTERACTION DISPATCH SELECTION ACTIONS FOOTER CORE COMPONENT */}
-                        <div className="p-5 border-t border-slate-850 bg-slate-950/50">
-                            {confirmedCustomerIds.length === 0 ? (
+                        <div className="p-5 border-t border-zinc-850 bg-[#0f0f0f]/50">
+                            {preSelectedCustomerIds.length === 0 ? (
                                 <button
-                                    onClick={() => {
-                                        setPickerSelectedCustomerIds(new Set());
-                                        setIsCustomerGlobalSelectAll(false);
-                                        setShowCustomerPicker(true);
-                                    }}
+                                    onClick={() => navigate('/payping/customers', { state: { preSelectedTemplate: selectedTemplate } })}
                                     className="w-full bg-[#128C7E] hover:bg-[#0e7569] text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs border-0 outline-none shadow-lg shadow-[#128C7E]/10"
                                 >
                                     <Users className="w-4 h-4" /> Select Message Recipients
                                 </button>
                             ) : (
-                                <div className="space-y-3">
-                                    <button
-                                        onClick={executeTemplateBroadcastDispatch}
-                                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs border-0 outline-none shadow-lg shadow-emerald-600/10"
-                                    >
-                                        <MessageSquare className="w-4 h-4" /> Send Message to {confirmedCustomerIds.length} Customers
-                                    </button>
-                                    <button 
-                                        onClick={() => setShowCustomerPicker(true)}
-                                        className="w-full text-center text-[10px] font-bold text-slate-500 hover:text-slate-300 transition-colors uppercase tracking-wider"
-                                    >
-                                        Adjust Target Selection List
-                                    </button>
-                                </div>
+                                <button
+                                    onClick={() => {
+                                        setShowDetailModal(false);
+                                        setShowConfirmationModal(true);
+                                    }}
+                                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs border-0 outline-none shadow-lg shadow-emerald-600/10"
+                                >
+                                    <MessageSquare className="w-4 h-4" /> Send Message to {preSelectedCustomerIds.length} Customers
+                                </button>
                             )}
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* ======================================================= */}
-            {/* FULL INLINE CUSTOMER VIEW MODAL INJECTED RECIPIENT PICKER */}
-            {/* ======================================================= */}
-            {showCustomerPicker && (
-                <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col font-sans select-none overflow-x-hidden animate-in slide-in-from-bottom-10 duration-200">
-                    
-                    {/* Picker Header Layer (Zones 1 & 2 structural matching rows) */}
-                    <header className="sticky top-0 z-30 bg-slate-950 px-4 pt-5 pb-3 max-w-md mx-auto w-full">
-                        <div className="flex items-center justify-between pb-5">
-                            <h2 className="text-xl font-bold tracking-tight flex items-center gap-2">
-                                <Users className="w-5 h-5 text-blue-500" /> Select Targets
-                            </h2>
-                            <button onClick={() => setShowCustomerPicker(false)} className="text-slate-500 hover:text-slate-300"><X className="w-5 h-5" /></button>
-                        </div>
-
-                        <div className="h-8 relative">
-                            {!isCustSearchExpanded ? (
-                                <div className="flex items-center justify-between h-full">
-                                    <div className="relative">
-                                        <button onClick={() => setShowCustStatusDropdown(true)} className="flex items-center gap-1.5 text-xs font-bold text-slate-300 tracking-wider uppercase">
-                                            {customerQuery.status} REGISTRY <ChevronLeft className="w-4 h-4 text-slate-500 -rotate-90" />
-                                        </button>
-                                        {showCustStatusDropdown && (
-                                            <>
-                                                <div onClick={() => setShowCustStatusDropdown(false)} className="fixed inset-0 z-40" />
-                                                <div className="absolute left-0 mt-3 w-40 bg-slate-900 rounded-xl p-1.5 shadow-2xl z-50">
-                                                    {['ACTIVE', 'INACTIVE', 'ALL'].map((opt) => (
-                                                        <button 
-                                                            key={opt}
-                                                            onClick={() => { setCustomerQuery(prev => ({ ...prev, status: opt, page: 0 })); setShowCustStatusDropdown(false); }}
-                                                            className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-800 font-semibold text-xs text-slate-300"
-                                                        >
-                                                            {opt} DIRECTORY
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-
-                                    <div className="flex items-center gap-5 text-slate-400">
-                                        <div className="relative">
-                                            <button onClick={() => setShowCustSortDropdown(true)} className="hover:text-white"><ArrowUpDown className="w-4 h-4" /></button>
-                                            {showCustSortDropdown && (
-                                                <>
-                                                    <div onClick={() => setShowCustSortDropdown(false)} className="fixed inset-0 z-40" />
-                                                    <div className="absolute right-0 mt-3 w-48 bg-slate-900 rounded-xl p-1.5 shadow-2xl z-50">
-                                                        {[
-                                                            { key: 'name_asc', label: 'Name (A-Z)' },
-                                                            { key: 'name_desc', label: 'Name (Z-A)' },
-                                                            { key: 'amount_desc', label: 'Amount (High-Low)' },
-                                                            { key: 'amount_asc', label: 'Amount (Low-High)' }
-                                                        ].map((opt) => (
-                                                            <button
-                                                                key={opt.key}
-                                                                onClick={() => { setCustomerQuery(prev => ({ ...prev, sort: opt.key, page: 0 })); setShowCustSortDropdown(false); }}
-                                                                className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-semibold ${customerQuery.sort === opt.key ? 'text-blue-400 bg-blue-500/10' : 'text-slate-300 hover:bg-slate-800'}`}
-                                                            >
-                                                                {opt.label}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </>
-                                            )}
-                                        </div>
-
-                                        <button onClick={() => { setShowCustFilterModal(true); setCustFilterDraft(customerQuery.filters.paymentStatus); }} className="relative hover:text-white">
-                                            <Filter className="w-4 h-4" />
-                                            {customerQuery.filters.paymentStatus.length > 0 && <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full" />}
-                                        </button>
-                                        <button onClick={() => { setIsCustSearchExpanded(true); setTimeout(() => custSearchInputRef.current?.focus(), 50); }} className="hover:text-white"><Search className="w-4 h-4" /></button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="flex items-center gap-3 h-full">
-                                    <div className="flex-1 bg-slate-900 rounded-lg px-3 h-full flex items-center gap-2">
-                                        <Search className="w-4 h-4 text-slate-500" />
-                                        <input 
-                                            ref={custSearchInputRef}
-                                            type="text"
-                                            placeholder="Search parameters..."
-                                            defaultValue={customerQuery.search}
-                                            onChange={handleCustSearchChange}
-                                            className="bg-transparent text-sm text-white outline-none w-full placeholder:text-slate-500"
-                                        />
-                                    </div>
-                                    <button onClick={() => { setIsCustSearchExpanded(false); if(customerQuery.search) setCustomerQuery(prev => ({...prev, search: '', page:0})); }} className="text-xs font-bold text-slate-400">Cancel</button>
-                                </div>
-                            )}
-                        </div>
-                    </header>
-
-                    {/* Picker Core Main Flow Content */}
-                    <main className="flex-1 px-4 max-w-md mx-auto w-full space-y-4 pt-3 overflow-y-auto pb-32">
-                        <div className="flex items-center justify-between">
-                            <button onClick={toggleCustPickerGlobalSelect} className="flex items-center gap-2 text-xs font-bold text-slate-300">
-                                {isCustomerGlobalSelectAll ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4 text-slate-500" />}
-                                SELECT LEDGER TOTAL
+            {/* FINAL CONFIRMATION MODAL */}
+            {showConfirmationModal && selectedTemplate && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-[#0f0f0f]/90 backdrop-blur-sm" onClick={() => setShowConfirmationModal(false)} />
+                    <div className="relative bg-zinc-900 w-full max-w-md rounded-3xl p-6 shadow-2xl border border-zinc-800 z-50 animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="font-bold text-lg text-white flex items-center gap-2">
+                                <MessageCircle className="w-5 h-5 text-[#128C7E]" /> Confirm Dispatch
+                            </h3>
+                            <button onClick={() => setShowConfirmationModal(false)} className="text-zinc-500 hover:text-white transition-colors">
+                                <X className="w-5 h-5" />
                             </button>
-                            {pickerSelectedCustomerIds.size > 0 && <span className="text-xs font-mono text-slate-400">SELECTED: {pickerSelectedCustomerIds.size}</span>}
                         </div>
-
-                        {/* Filter Pill Badges */}
-                        {customerQuery.filters.paymentStatus.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
-                                {customerQuery.filters.paymentStatus.map(pill => (
-                                    <div key={pill} className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-900 rounded-full text-xs font-mono text-slate-300">
-                                        {pill}
-                                        <button onClick={() => setCustomerQuery(prev => ({ ...prev, page: 0, filters: { paymentStatus: prev.filters.paymentStatus.filter(f => f !== pill) } }))}><X className="w-3 h-3" /></button>
-                                    </div>
-                                ))}
+                        
+                        <div className="space-y-5">
+                            {/* Alert Name Input */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Alert Name <span className="text-red-500">*</span></label>
+                                <input 
+                                    type="text" 
+                                    value={alertName}
+                                    onChange={(e) => setAlertName(e.target.value)}
+                                    placeholder="e.g. Monthly Payment Reminder"
+                                    className="w-full bg-[#050505] border border-zinc-800 text-white rounded-xl p-3 text-sm focus:border-indigo-500 outline-none transition-colors"
+                                />
                             </div>
-                        )}
 
-                        {/* Customer Dynamic Content Matrix Grid */}
-                        <section className="space-y-3">
-                            {loadingCustomers && customers.length === 0 ? (
-                                <div className="py-20 text-center flex flex-col items-center gap-2 text-slate-500 text-xs font-mono">
-                                    <RefreshCw className="w-4 h-4 animate-spin text-blue-500" /> LOADING SELECTION ROW TILES...
-                                </div>
-                            ) : customers.length === 0 ? (
-                                <div className="py-16 text-center text-slate-500 text-xs">No records matching profile filter criteria found.</div>
-                            ) : (
-                                customers.map((customer) => {
-                                    const isChecked = pickerSelectedCustomerIds.has(customer.id);
-                                    let badgeStyle = customer.paymentStatus === 'PAID' ? 'bg-emerald-500/10 text-emerald-400' : customer.paymentStatus === 'UNPAID' ? 'bg-amber-500/10 text-amber-500' : 'bg-red-500/10 text-red-400';
-                                    return (
-                                        <div 
-                                            key={customer.id}
-                                            onClick={() => handlePickerRowToggle(customer.id)}
-                                            className={`w-full bg-slate-900 p-4 rounded-xl flex items-center justify-between gap-3 transition-colors ${isChecked ? 'ring-1 ring-blue-500 bg-slate-800' : ''}`}
-                                        >
-                                            <div className="flex items-center gap-3 min-w-0">
-                                                <div className="shrink-0">{isChecked ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4 text-slate-600" />}</div>
-                                                <div className="w-10 h-10 rounded-lg bg-slate-950 font-bold text-xs text-slate-400 flex items-center justify-center uppercase shrink-0">{customer.name.substring(0, 2)}</div>
-                                                <div className="min-w-0">
-                                                    <h4 className="text-sm font-bold text-slate-200 truncate">{customer.name}</h4>
-                                                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">{customer.phone}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right shrink-0 space-y-1">
-                                                <div className="text-sm font-bold text-slate-100">₹{customer.amount}</div>
-                                                <span className={`inline-block px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded ${badgeStyle}`}>{customer.paymentStatus}</span>
-                                            </div>
-                                        </div>
-                                    );
-                                })
-                            )}
-                        </section>
-
-                        {/* Picker Pagination Footer */}
-                        {customerTotalPages > 1 && (
-                            <div className="flex items-center justify-between pt-2 pb-6 text-xs text-slate-500 font-bold tracking-wider">
-                                <button disabled={customerQuery.page === 0 || loadingCustomers} onClick={() => setCustomerQuery(prev => ({ ...prev, page: prev.page - 1 }))} className="px-4 py-2 bg-slate-900 rounded-lg disabled:opacity-30">PREV</button>
-                                <span>PAGE {customerQuery.page + 1} OF {customerTotalPages}</span>
-                                <button disabled={customerQuery.page + 1 >= customerTotalPages || loadingCustomers} onClick={() => setCustomerQuery(prev => ({ ...prev, page: prev.page + 1 }))} className="px-4 py-2 bg-slate-900 rounded-lg disabled:opacity-30">NEXT</button>
-                            </div>
-                        )}
-                    </main>
-
-                    {/* CONFIRM RECIPIENT CAPTURE FOOTER HUB BAR */}
-                    <div className="fixed bottom-5 left-4 right-4 max-w-md mx-auto z-40 bg-slate-950 pt-2">
-                        <button
-                            onClick={() => {
-                                setConfirmedCustomerIds(Array.from(pickerSelectedCustomerIds));
-                                setShowCustomerPicker(false);
-                            }}
-                            disabled={pickerSelectedCustomerIds.size === 0}
-                            className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-20 text-white font-bold py-4 rounded-xl text-xs uppercase tracking-wider border-0 outline-none shadow-xl shadow-blue-600/10"
-                        >
-                            Confirm Selection ({pickerSelectedCustomerIds.size} Customers Chosen)
-                        </button>
-                    </div>
-
-                    {/* INNER FILTERS MODAL FOR PICKER ARCHITECTURE VIEWPORT */}
-                    {showCustFilterModal && (
-                        <div className="fixed inset-0 z-50 flex items-end justify-center p-0">
-                            <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setShowCustFilterModal(false)} />
-                            <div className="relative bg-slate-900 w-full max-w-md rounded-t-3xl p-6 space-y-6 animate-in slide-in-from-bottom-10 duration-200">
-                                <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                                    <h3 className="font-bold text-base flex items-center gap-2"><Filter className="w-4 h-4 text-blue-500" /> Filters</h3>
-                                    <button onClick={() => setShowCustFilterModal(false)} className="text-slate-500"><X className="w-5 h-5" /></button>
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Payment Status</label>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {['PAID', 'UNPAID', 'OVERDUE'].map(val => {
-                                            const isSel = custFilterDraft.includes(val);
-                                            return (
-                                                <button
-                                                    key={val}
-                                                    onClick={() => setCustFilterDraft(prev => isSel ? prev.filter(i => i !== val) : [...prev, val])}
-                                                    className={`py-2 text-center text-xs font-bold rounded-lg ${isSel ? 'bg-blue-500 text-white' : 'bg-slate-950 text-slate-400'}`}
-                                                >
-                                                    {val}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
+                            {/* Selected Template Info */}
+                            <div className="bg-[#050505] border border-zinc-800 rounded-xl p-4 flex items-center justify-between">
+                                <div className="min-w-0 pr-4">
+                                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Template</p>
+                                    <p className="text-sm text-zinc-200 font-medium truncate">{selectedTemplate.name}</p>
                                 </div>
                                 <button 
-                                    onClick={() => { setCustomerQuery(prev => ({ ...prev, page: 0, filters: { paymentStatus: custFilterDraft } })); setShowCustFilterModal(false); }}
-                                    className="w-full bg-white text-black font-bold py-3.5 rounded-xl text-sm"
+                                    onClick={() => setShowConfirmationModal(false)}
+                                    className="shrink-0 text-xs text-indigo-400 hover:text-indigo-300 font-bold px-3 py-1.5 bg-indigo-500/10 rounded-lg transition-colors"
                                 >
-                                    Apply Filters
+                                    Modify
                                 </button>
                             </div>
+
+                            {/* Selected Customers Info */}
+                            <div className="bg-[#050505] border border-zinc-800 rounded-xl p-4 flex items-center justify-between">
+                                <div className="min-w-0 pr-4">
+                                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Customers</p>
+                                    <p className="text-sm text-zinc-200 font-medium">{preSelectedCustomerIds.length} recipient(s) selected</p>
+                                </div>
+                                <button 
+                                    onClick={() => navigate('/payping/customers', { state: { preSelectedTemplate: selectedTemplate } })}
+                                    className="shrink-0 text-xs text-indigo-400 hover:text-indigo-300 font-bold px-3 py-1.5 bg-indigo-500/10 rounded-lg transition-colors"
+                                >
+                                    Modify
+                                </button>
+                            </div>
+
+                            <button 
+                                disabled={!alertName.trim() || isSending}
+                                onClick={async () => {
+                                    if (!alertName.trim()) return;
+                                    setIsSending(true);
+                                    try {
+                                        await api.post('/payping/whatsapp/send', {
+                                            name: alertName.trim(),
+                                            templateId: selectedTemplate.id,
+                                            customerIds: preSelectedCustomerIds
+                                        }, { headers: { 'X-Trigger-Success': 'true' } });
+                                        
+                                        // Reset and navigate away
+                                        setShowConfirmationModal(false);
+                                        setAlertName('');
+                                        navigate('/payping/dashboard');
+                                    } catch (err) {
+                                        console.error("Failed to send message", err);
+                                        setIsSending(false);
+                                    }
+                                }}
+                                className={`w-full font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all ${
+                                    !alertName.trim() || isSending 
+                                    ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' 
+                                    : 'bg-[#128C7E] hover:bg-[#0e7569] text-white shadow-lg shadow-[#128C7E]/20'
+                                }`}
+                            >
+                                {isSending ? <RefreshCw className="w-5 h-5 animate-spin" /> : <MessageCircle className="w-5 h-5" />}
+                                {isSending ? 'Dispatching...' : 'Confirm Send Message'}
+                            </button>
                         </div>
-                    )}
+                    </div>
                 </div>
             )}
         </div>

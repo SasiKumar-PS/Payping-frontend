@@ -39,18 +39,18 @@ const LoginRequestPage = () => {
     };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-950 px-4">
-      <div className="w-full max-w-md p-8 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl">
+    <div className="flex items-center justify-center min-h-screen bg-[#0f0f0f] px-4">
+      <div className="w-full max-w-md p-8 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl">
         
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-white mb-2">Login to Vantus</h2>
-          <p className="text-slate-400">Enter your number to receive a WhatsApp OTP</p>
+          <p className="text-zinc-400">Enter your number to receive a WhatsApp OTP</p>
         </div>
 
         <form onSubmit={handleSendOtp} className="space-y-6">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-              <span className="text-slate-500 font-medium">+91</span>
+              <span className="text-zinc-500 font-medium">+91</span>
             </div>
             <input
               type="tel"
@@ -58,14 +58,14 @@ const LoginRequestPage = () => {
               placeholder="98765 43210"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              className="w-full pl-14 pr-4 py-3 bg-slate-800 border border-slate-700 text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600"
+              className="w-full pl-14 pr-4 py-3 bg-zinc-800 border border-zinc-700 text-white rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all placeholder:text-zinc-600"
             />
           </div>
 
           <button
             type="submit"
             disabled={isLoading || phoneNumber.length < 10}
-            className="w-full flex items-center justify-center py-3 px-4 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all group cursor-pointer"
+            className="w-full flex items-center justify-center py-3 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all group cursor-pointer"
           >
             {isLoading ? (
               <Loader2 className="w-5 h-5 animate-spin" />

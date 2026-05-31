@@ -32,26 +32,26 @@ const RegisterPage = () => {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-slate-950 text-white">
-            <form onSubmit={handleSubmit} className="bg-slate-900 p-8 rounded-2xl border border-slate-800 w-full max-w-md space-y-5">
+        <div className="flex items-center justify-center min-h-screen bg-[#0f0f0f] text-white">
+            <form onSubmit={handleSubmit} className="bg-zinc-900 p-8 rounded-2xl border border-zinc-800 w-full max-w-md space-y-5">
                 <h2 className="text-3xl font-bold">Complete Profile</h2>
                 
                 <div>
-                    <label className="block text-sm text-slate-400 mb-1">Phone Number</label>
-                    <input type="text" value={phone} readOnly className="w-full p-3 bg-slate-800 rounded-xl border border-slate-700 text-slate-500 cursor-not-allowed" />
+                    <label className="block text-sm text-zinc-400 mb-1">Phone Number</label>
+                    <input type="text" value={phone} readOnly className="w-full p-3 bg-zinc-800 rounded-xl border border-zinc-700 text-zinc-500 cursor-not-allowed" />
                 </div>
 
                 <div>
-                    <label className="block text-sm text-slate-400 mb-1">Full Name</label>
-                    <input required type="text" onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full p-3 bg-slate-800 rounded-xl border border-slate-700 outline-none focus:ring-2 focus:ring-blue-500" placeholder="John Doe" />
+                    <label className="block text-sm text-zinc-400 mb-1">Full Name</label>
+                    <input required type="text" onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full p-3 bg-zinc-800 rounded-xl border border-zinc-700 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="John Doe" />
                 </div>
 
                 <div>
-                    <label className="block text-sm text-slate-400 mb-1">Business Name</label>
-                    <input required type="text" onChange={(e) => setFormData({...formData, businessName: e.target.value})} className="w-full p-3 bg-slate-800 rounded-xl border border-slate-700 outline-none focus:ring-2 focus:ring-blue-500" placeholder="Acme Corp" />
+                    <label className="block text-sm text-zinc-400 mb-1">Business Name</label>
+                    <input required type="text" onChange={(e) => setFormData({...formData, businessName: e.target.value})} className="w-full p-3 bg-zinc-800 rounded-xl border border-zinc-700 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Acme Corp" />
                 </div>
 
-                <button className="w-full bg-blue-600 py-3 rounded-xl font-bold hover:bg-blue-500 transition-all">
+                <button className="w-full bg-indigo-600 py-3 rounded-xl font-bold hover:bg-indigo-500 transition-all">
                     Finish Registration
                 </button>
             </form>

@@ -32,20 +32,20 @@ const VerifyOtpPage = () => {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 text-white">
-            <div className="bg-slate-900 p-8 rounded-2xl border border-slate-800 w-full max-w-md">
+        <div className="flex flex-col items-center justify-center min-h-screen bg-[#0f0f0f] text-white">
+            <div className="bg-zinc-900 p-8 rounded-2xl border border-zinc-800 w-full max-w-md">
                 <h2 className="text-2xl font-bold mb-4">Verify OTP</h2>
-                <p className="text-slate-400 mb-6">Sent to +91 {phone}</p>
+                <p className="text-zinc-400 mb-6">Sent to +91 {phone}</p>
                 <form onSubmit={handleVerify} className="space-y-4">
                     <input 
                         type="text" 
                         maxLength={6}
                         value={otp}
                         onChange={(e) => setOtp(e.target.value)}
-                        className="w-full p-3 bg-slate-800 rounded-xl border border-slate-700 outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full p-3 bg-zinc-800 rounded-xl border border-zinc-700 outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="000000"
                     />
-                    <button className="w-full bg-blue-600 py-3 rounded-xl font-bold hover:bg-blue-500 transition-all">
+                    <button className="w-full bg-indigo-600 py-3 rounded-xl font-bold hover:bg-indigo-500 transition-all">
                         Verify & Continue
                     </button>
                 </form>

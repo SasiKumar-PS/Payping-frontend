@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://localhost:8080/api/v1/',
-    // baseURL: 'http://10.11.111.244:8080/api/v1/',
+    // baseURL: 'http://localhost:8080/api/v1/',
+    baseURL: 'http://10.11.111.244:8080/api/v1/',
 });
 
 // The "Interceptor": Runs before every request
@@ -46,7 +46,7 @@ api.interceptors.response.use(
     }
 );
 
-function showError(errorMessage, status) {
+function showError(errorMessage: string, status: number) {
     if (status === 401) {
         localStorage.removeItem('token');
         sessionStorage.clear();

@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { 
     Loader2, Menu, X, User, MessageCircle, TrendingUp, Users, 
-    MessageSquare, Send, History, Settings, LogOut, Bell 
+    MessageSquare, Send, History, Settings, LogOut, Bell, BotMessageSquare
 } from 'lucide-react';
 import api from '../../api';
 import ErrorBanner from '../../components/ErrorBanner';
@@ -142,6 +142,7 @@ const Gatekeeper = () => {
         { path: '/payping/customers', label: 'Customer Ledger', icon: Users },
         { path: '/payping/message-templates', label: 'Alert Templates', icon: MessageSquare },
         { path: '/payping/auto-alerts', label: 'Auto Alerts', icon: Bell },
+        { path: '/payping/alert-history', label: 'Alert History', icon: History },
         { path: '/payping/connect', label: 'WhatsApp Connect', icon: MessageCircle },
         { path: '/payping/business-details', label: 'Node Configuration', icon: Settings },
     ];
@@ -158,8 +159,8 @@ const Gatekeeper = () => {
                             onClick={() => { setIsDrawerOpen(false); navigate(item.path); }} 
                             className={`w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold rounded-xl text-left transition-all border ${
                                 isActive 
-                                    ? 'text-blue-400 bg-blue-500/5 border-blue-500/10' 
-                                    : 'text-slate-400 hover:text-white hover:bg-slate-850/60 border-transparent'
+                                    ? 'text-indigo-400 bg-gradient-to-b from-indigo-500/10 to-transparent border-indigo-500/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' 
+                                    : 'text-zinc-400 hover:text-white hover:bg-zinc-800/40 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] border-transparent'
                             }`}
                         >
                             <Icon className="w-4 h-4 shrink-0" /> {item.label}
@@ -172,21 +173,21 @@ const Gatekeeper = () => {
 
     const renderProfileCard = () => {
         return (
-            <div className="p-4 m-4 bg-slate-950 border border-slate-850/60 rounded-2xl flex flex-col gap-3">
+            <div className="p-4 m-4 bg-gradient-to-b from-zinc-900 to-[#0f0f0f] ring-1 ring-zinc-800/60 rounded-2xl flex flex-col gap-3 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
                 <div className="flex items-center justify-between min-w-0">
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className="p-2.5 bg-slate-900 rounded-xl text-slate-400 border border-slate-800 shrink-0">
+                        <div className="p-2.5 bg-[#0f0f0f] rounded-xl text-zinc-400 shadow-inner shrink-0">
                             <User className="w-4 h-4" />
                         </div>
                         <div className="min-w-0">
-                            <h4 className="text-xs font-bold truncate text-slate-200">{metrics?.businessName || "Workspace"}</h4>
-                            <p className="text-[10px] text-slate-500 font-mono truncate mt-0.5">{metrics?.phone || "Disconnected"}</p>
+                            <h4 className="text-xs font-bold truncate text-zinc-200">{metrics?.businessName || "Workspace"}</h4>
+                            <p className="text-[10px] text-zinc-500 font-mono truncate mt-0.5">{metrics?.phone || "Disconnected"}</p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0 pl-2">
                         <span className={`w-1.5 h-1.5 rounded-full ${metrics?.whatsappStatus ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse' : 'bg-rose-500'}`} />
-                        <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400">
                             {metrics?.whatsappStatus ? "Active" : "Inactive"}
                         </span>
                     </div>
@@ -207,10 +208,10 @@ const Gatekeeper = () => {
 
     const renderSignOutButton = () => {
         return (
-            <div className="p-4 border-t border-slate-800/80 bg-slate-950/40 shrink-0">
+            <div className="p-4 border-t border-zinc-800/80 bg-[#0f0f0f]/40 shrink-0">
                 <button 
                     onClick={handleSignOut}
-                    className="w-full flex items-center justify-center gap-2 py-3 border border-slate-800 hover:border-red-500/30 hover:bg-red-500/5 text-slate-400 hover:text-red-400 font-bold text-xs rounded-xl transition-all cursor-pointer"
+                    className="w-full flex items-center justify-center gap-2 py-3 border border-zinc-800 hover:border-red-500/30 hover:bg-red-500/5 text-zinc-400 hover:text-red-400 font-bold text-xs rounded-xl transition-all cursor-pointer"
                 >
                     <LogOut className="w-4 h-4" /> Terminate Session
                 </button>
@@ -220,15 +221,15 @@ const Gatekeeper = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center space-y-4">
-                <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
-                <p className="text-slate-500 text-sm animate-pulse">Checking workspace configuration...</p>
+            <div className="min-h-screen bg-[#0f0f0f] flex flex-col items-center justify-center space-y-4">
+                <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
+                <p className="text-zinc-500 text-sm animate-pulse">Checking workspace configuration...</p>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white flex flex-col font-sans select-none overflow-x-hidden relative">
+        <div className="min-h-screen bg-[#0f0f0f] text-white flex flex-col font-sans select-none overflow-x-hidden relative">
             {/* Global Error & Success Banners */}
             <ErrorBanner message={globalError} />
             <SuccessBanner message={globalSuccess} />
@@ -237,10 +238,13 @@ const Gatekeeper = () => {
             <div className="flex flex-1 relative min-h-0">
                 
                 {/* 1. Permanent docked sidebar on computer screens (lg and up) */}
-                <aside className="hidden lg:flex flex-col w-64 bg-slate-900 border-r border-slate-800 shrink-0 h-screen sticky top-0 justify-between z-20">
+                <aside className="hidden lg:flex flex-col w-64 bg-[#0f0f0f] border-r border-zinc-800 shrink-0 h-screen sticky top-0 justify-between z-20">
                     <div className="flex-1 flex flex-col min-h-0">
-                        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-                            <span className="font-black italic tracking-tighter text-xl bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">PayPing</span>
+                        <div className="p-5 border-b border-zinc-800/50 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <BotMessageSquare className="w-7 h-7 text-indigo-500 transform scale-x-[-1]" />
+                                <span className="font-black italic tracking-tighter text-2xl bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">PayPing</span>
+                            </div>
                         </div>
                         {renderProfileCard()}
                         {renderNavLinks()}
@@ -252,13 +256,16 @@ const Gatekeeper = () => {
                 <div className={`fixed inset-0 z-50 transition-all duration-300 lg:hidden ${isDrawerOpen ? 'visible pointer-events-auto' : 'invisible pointer-events-none'}`}>
                     <div 
                         onClick={() => setIsDrawerOpen(false)}
-                        className={`absolute inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity duration-300 ${isDrawerOpen ? 'opacity-100' : 'opacity-0'}`} 
+                        className={`absolute inset-0 bg-[#0f0f0f]/60 backdrop-blur-sm transition-opacity duration-300 ${isDrawerOpen ? 'opacity-100' : 'opacity-0'}`} 
                     />
-                    <aside className={`absolute top-0 bottom-0 left-0 w-[280px] bg-slate-900 border-r border-slate-800 flex flex-col justify-between transition-transform duration-300 transform ${isDrawerOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                    <aside className={`absolute top-0 bottom-0 left-0 w-[280px] bg-zinc-900 border-r border-zinc-800 flex flex-col justify-between transition-transform duration-300 transform ${isDrawerOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                         <div className="flex-1 flex flex-col min-h-0">
-                            <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-                                <span className="font-black italic tracking-tighter text-lg">WORKSPACE</span>
-                                <button onClick={() => setIsDrawerOpen(false)} className="p-1 hover:bg-slate-850 rounded-lg text-slate-400">
+                            <div className="p-5 border-b border-zinc-800 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <BotMessageSquare className="w-6 h-6 text-indigo-500 transform scale-x-[-1]" />
+                                    <span className="font-black italic tracking-tighter text-xl bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">PayPing</span>
+                                </div>
+                                <button onClick={() => setIsDrawerOpen(false)} className="p-1 hover:bg-zinc-850 rounded-lg text-zinc-400">
                                     <X className="w-5 h-5" />
                                 </button>
                             </div>
@@ -272,20 +279,23 @@ const Gatekeeper = () => {
                 {/* 3. Main Workspace Area */}
                 <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-y-auto">
                     {/* Sticky top layout header */}
-                    <header className="sticky top-0 z-30 bg-slate-950/80 backdrop-blur-md px-5 py-4 border-b border-slate-900 flex items-center justify-between shrink-0">
+                    <header className="sticky top-0 z-30 bg-[#0f0f0f]/80 backdrop-blur-md px-5 py-4 border-b border-zinc-900 flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-3.5">
                             {/* Hamburger menu - visible only on mobile/tablet */}
                             <button 
                                 onClick={() => setIsDrawerOpen(true)}
-                                className="lg:hidden p-1.5 active:bg-slate-900 rounded-xl transition-colors text-slate-300 border-0 bg-transparent outline-none cursor-pointer"
+                                className="lg:hidden p-1.5 active:bg-zinc-900 rounded-xl transition-colors text-zinc-300 border-0 bg-transparent outline-none cursor-pointer"
                             >
                                 <Menu className="w-6 h-6" />
                             </button>
-                            <span className="text-xl font-black italic tracking-tighter bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent lg:hidden">
-                                PayPing
-                            </span>
+                            <div className="flex items-center gap-2 lg:hidden">
+                                <BotMessageSquare className="w-5 h-5 text-indigo-500 transform scale-x-[-1]" />
+                                <span className="text-xl font-black italic tracking-tighter bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+                                    PayPing
+                                </span>
+                            </div>
                             
-                            <span className="hidden lg:inline text-sm font-bold text-slate-400">
+                            <span className="hidden lg:inline text-sm font-bold text-zinc-400">
                                 Operational Environment
                             </span>
                         </div>
@@ -293,7 +303,7 @@ const Gatekeeper = () => {
                         {/* Profile Quick Avatar */}
                         <div 
                             onClick={() => navigate('/payping/business-details')}
-                            className="w-9 h-9 rounded-full bg-blue-600/10 border border-blue-500/20 text-blue-400 font-bold text-sm flex items-center justify-center active:scale-95 transition-transform cursor-pointer"
+                            className="w-9 h-9 rounded-full bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 font-bold text-sm flex items-center justify-center active:scale-95 transition-transform cursor-pointer"
                         >
                             {metrics?.ownerName?.charAt(0).toUpperCase() || 'U'}
                         </div>
