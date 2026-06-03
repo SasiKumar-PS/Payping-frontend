@@ -302,7 +302,8 @@ const MessageTemplates = () => {
                     childText += extractText(child);
                 });
                 if (el.tagName === 'DIV' || el.tagName === 'P') {
-                    return childText + '\n';
+                    const suffix = childText.endsWith('\n') ? '' : '\n';
+                    return childText + suffix;
                 }
                 return childText;
             }
@@ -311,6 +312,7 @@ const MessageTemplates = () => {
 
         let text = extractText(tempDiv);
         text = text.replace(/\u00a0/g, ' '); // Replace NBSP with normal space
+        text = text.replace(/\u200B/g, '');  // Remove zero-width spaces used for cursor placement!
         return text.replace(/\n$/, ''); // Remove trailing newline inserted by browsers
     };
 
@@ -328,6 +330,37 @@ const MessageTemplates = () => {
             const updatedText = parseHTMLToBrackets(html);
             lastContentRef.current = updatedText;
             handleTextModification(updatedText);
+        }
+    };
+
+    const handleContentEditableKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            
+            const selection = window.getSelection();
+            if (!selection || selection.rangeCount === 0) return;
+            
+            const range = selection.getRangeAt(0);
+            range.deleteContents();
+            
+            // Insert a BR element at cursor
+            const brNode = document.createElement('br');
+            range.insertNode(brNode);
+            
+            // Insert a zero-width space node right after the BR to enable typing on next line reliably
+            const zeroWidthSpace = document.createTextNode('\u200B');
+            brNode.after(zeroWidthSpace);
+            
+            // Move caret directly after the zero-width space
+            const newRange = document.createRange();
+            newRange.setStartAfter(zeroWidthSpace);
+            newRange.collapse(true);
+            
+            selection.removeAllRanges();
+            selection.addRange(newRange);
+            
+            // Trigger input sync
+            handleContentEditableInput();
         }
     };
 
@@ -674,7 +707,7 @@ const MessageTemplates = () => {
                                     placeholder="e.g., Late Fee Penalty Reminder"
                                     value={templateName}
                                     onChange={(e) => setTemplateName(e.target.value)}
-                                    className="w-full bg-[#0f0f0f] text-white text-sm font-semibold p-3.5 rounded-xl outline-none border border-transparent focus:border-zinc-850 transition-colors"
+                                    className="w-full bg-[#050505] text-white text-sm font-semibold p-3.5 rounded-xl outline-none border border-zinc-800 focus:border-indigo-500 transition-colors"
                                 />
                             </div>
 
@@ -713,9 +746,10 @@ const MessageTemplates = () => {
                                       ref={contentEditableRef}
                                       contentEditable
                                       onInput={handleContentEditableInput}
+                                      onKeyDown={handleContentEditableKeyDown}
                                       onClick={handleContentEditableClick}
                                       data-placeholder="Type data string contents here..."
-                                      className="w-full h-32 bg-[#0f0f0f] text-white text-sm font-medium p-3.5 rounded-xl outline-none border border-transparent focus:border-zinc-850 overflow-y-auto leading-relaxed whitespace-pre-wrap break-words select-text focus:outline-none empty:before:content-[attr(placeholder)] empty:before:text-zinc-500 empty:before:font-medium empty:before:pointer-events-none"
+                                      className="w-full h-32 bg-[#050505] text-white text-sm font-medium p-3.5 rounded-xl outline-none border border-zinc-800 focus:border-indigo-500 overflow-y-auto leading-relaxed whitespace-pre-wrap break-words select-text focus:outline-none empty:before:content-[attr(placeholder)] empty:before:text-zinc-500 empty:before:font-medium empty:before:pointer-events-none transition-colors"
                                       style={{
                                           boxSizing: 'border-box'
                                       }}
@@ -729,7 +763,7 @@ const MessageTemplates = () => {
                                      <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 flex items-center gap-1.5">
                                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Message Preview
                                      </label>
-                                     <div className={`w-full p-4 rounded-xl font-medium text-xs leading-relaxed whitespace-pre-wrap transition-all duration-150 ${loadingPreview ? 'bg-[#0f0f0f]/40 text-zinc-600 select-none animate-pulse' : isContentDull ? 'bg-[#0f0f0f]/70 text-zinc-500 line-clamp-none' : 'bg-[#0f0f0f] text-zinc-300'}`}>
+                                     <div className={`w-full p-4 rounded-xl font-medium text-xs leading-relaxed whitespace-pre-wrap transition-all duration-150 border border-zinc-800 ${loadingPreview ? 'bg-[#050505]/40 text-zinc-600 select-none animate-pulse' : isContentDull ? 'bg-[#050505]/70 text-zinc-500 line-clamp-none' : 'bg-[#050505] text-zinc-300'}`}>
                                          {loadingPreview ? (
                                              <span className="flex items-center gap-1.5 font-mono text-[10px]">
                                                  <RefreshCw className="w-3 h-3 animate-spin text-indigo-500" /> Connecting rendering pipeline over remote structures...

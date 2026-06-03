@@ -6,7 +6,7 @@ import RegisterPage from './pages/IAM/RegisterPage';
 import ProfilePage from './pages/IAM/ProfilePage';
 import Onboard from './pages/PayPing/Onboard';
 import WhatsAppConnect from './pages/PayPing/WhatsAppConnect';
-import AddCustomers from './pages/PayPing/AddCustomers';
+
 import Gatekeeper from './pages/PayPing/Gatekeeper';
 import BusinessDetails from './pages/PayPing/BusinessDetails';
 import Dashboard from './pages/PayPing/Dashboard';
@@ -28,16 +28,20 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/profile" element={<ProfilePage />} />
 
+
+        
+
         {/* Protected Routes (Only for logged-in users) */}
         <Route element={<ProtectedRoute />}>
+
+          <Route path="/payping/onboard" element={<Onboard />} />
             {/* With gatekeeper comment started */}
             <Route path="/payping" element={<Gatekeeper />}>
               {/* These sub-routes are what <Outlet /> renders */}
-
-              <Route path="onboard" element={<Onboard />} />
+              
               <Route path="connect" element={<WhatsAppConnect />} />
               <Route path="business-details" element={<BusinessDetails />} />
-              <Route path="add-customers" element={<AddCustomers />} />
+
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="customers" element={<Customers />} />
               <Route path="message-templates" element={<MessageTemplates />} />
@@ -52,7 +56,7 @@ function App() {
             {/* <Route path="/payping/onboard" element={<Onboard />} />
             <Route path="/payping/connect" element={<WhatsAppConnect />} />
             <Route path="/payping/business-details" element={<BusinessDetails />} />
-            <Route path="/payping/add-customers" element={<AddCustomers />} />
+
             <Route path="/payping/dashboard" element={<Dashboard />} /> */}
         </Route>
       </Routes>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Building2, Info } from 'lucide-react';
 import api from '../../api';
@@ -8,17 +8,29 @@ const BusinessDetails = () => {
     const navigate = useNavigate();
     const data = location.state?.data
 
-    const [formData, setFormData] = useState({
-        phone: data.phone,
-        upiUrl: '',
-        subscriptionAmount: '',
-        expiryDate: '',
-        overdueDate: '',
-        reviewType: 'Immediate', // Default
-        staticReviewTime: ''
+    const [formData, setFormData] = useState(() => {
+        const saved = sessionStorage.getItem('payping_business_details_form');
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.error("Failed to parse saved business details draft", e);
+            }
+        }
+        return {
+            phone: data?.phone || '',
+            upiUrl: '',
+            subscriptionAmount: '',
+            expiryDate: '',
+            overdueOffSet: '',
+            reviewType: 'IMMEDIATE', // Keep backend expectation
+            staticReviewTime: ''
+        };
     });
 
-    
+    useEffect(() => {
+        sessionStorage.setItem('payping_business_details_form', JSON.stringify(formData));
+    }, [formData]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -26,7 +38,8 @@ const BusinessDetails = () => {
             await api.post(`/payping/accounts/business-details`, formData, {
                 headers: { 'X-Trigger-Success': 'true' }
             });
-            navigate('/payping/add-customers');
+            sessionStorage.removeItem('payping_business_details_form');
+            navigate('/payping/dashboard');
         } catch (err) {
             console.error("Failed to save details:", err);
         }
@@ -50,6 +63,7 @@ const BusinessDetails = () => {
                             required
                             placeholder="upi://pay?pa=yourname@bank..."
                             className="w-full bg-[#0f0f0f] border border-zinc-800 p-3 rounded-xl focus:border-indigo-500 outline-none transition-all"
+                            value={formData.upiUrl}
                             onChange={(e) => setFormData({...formData, upiUrl: e.target.value})}
                         />
                     </div>
@@ -61,6 +75,7 @@ const BusinessDetails = () => {
                             type="number"
                             placeholder="₹ 0.00"
                             className="w-full bg-[#0f0f0f] border border-zinc-800 p-3 rounded-xl outline-none"
+                            value={formData.subscriptionAmount}
                             onChange={(e) => setFormData({...formData, subscriptionAmount: e.target.value})}
                         />
                         <p className="text-[10px] text-zinc-500 mt-1">Flat rate applied to all users by default.</p>
@@ -70,8 +85,9 @@ const BusinessDetails = () => {
                     <div>
                         <label className="block text-sm font-medium text-zinc-400 mb-2">Expiry Date</label>
                         <input 
-                            type="number"
+                            type="date"
                             className="w-full bg-[#0f0f0f] border border-zinc-800 p-3 rounded-xl outline-none"
+                            value={formData.expiryDate}
                             onChange={(e) => setFormData({...formData, expiryDate: e.target.value})}
                         />
                     </div>
@@ -82,7 +98,8 @@ const BusinessDetails = () => {
                         <input 
                             type="number"
                             className="w-full bg-[#0f0f0f] border border-zinc-800 p-3 rounded-xl outline-none"
-                            onChange={(e) => setFormData({...formData, overdueDate: e.target.value})}
+                            value={formData.overdueOffSet}
+                            onChange={(e) => setFormData({...formData, overdueOffSet: e.target.value})}
                         />
                     </div>
 
@@ -94,10 +111,10 @@ const BusinessDetails = () => {
                             value={formData.reviewType}
                             onChange={(e) => setFormData({...formData, reviewType: e.target.value})}
                         >
-                            <option value="Immediate">Immediate</option>
-                            <option value="Static">Static</option>
-                            <option value="Both">Both</option>
-                            <option value="Inactive">Inactive</option>
+                            <option value="IMMEDIATE">Immediate</option>
+                            <option value="STATIC">Static</option>
+                            <option value="BOTH">Both</option>
+                            <option value="INACTIVE">Inactive</option>
                         </select>
                     </div>
                 </div>
@@ -106,21 +123,22 @@ const BusinessDetails = () => {
                 <div className="bg-[#0f0f0f]/30 p-4 rounded-xl flex gap-3 italic">
                     <Info className="w-5 h-5 text-zinc-500 shrink-0" />
                     <p className="text-xs text-zinc-400">
-                        {formData.reviewType === 'Immediate' && "Notifications sent the moment a payment is detected."}
-                        {formData.reviewType === 'Static' && "Summarized notifications sent at a specific time daily."}
-                        {formData.reviewType === 'Both' && "Real-time alerts plus a daily summarized report."}
-                        {formData.reviewType === 'Inactive' && "No payment review notifications will be sent."}
+                        {formData.reviewType === 'IMMEDIATE' && "Notifications sent the moment a payment is detected."}
+                        {formData.reviewType === 'STATIC' && "Summarized notifications sent at a specific time daily."}
+                        {formData.reviewType === 'BOTH' && "Real-time alerts plus a daily summarized report."}
+                        {formData.reviewType === 'INACTIVE' && "No payment review notifications will be sent."}
                     </p>
                 </div>
 
                 {/* Conditional Input for Static Time */}
-                {(formData.reviewType === 'Static' || formData.reviewType === 'Both') && (
+                {(formData.reviewType === 'STATIC' || formData.reviewType === 'BOTH') && (
                     <div className="animate-in fade-in slide-in-from-top-2">
                         <label className="block text-sm font-medium text-zinc-400 mb-2">Daily Review Time</label>
                         <input 
                             type="time"
                             required
                             className="w-full bg-[#0f0f0f] border border-zinc-800 p-3 rounded-xl outline-none focus:border-indigo-500"
+                            value={formData.staticReviewTime}
                             onChange={(e) => setFormData({...formData, staticReviewTime: e.target.value})}
                         />
                     </div>

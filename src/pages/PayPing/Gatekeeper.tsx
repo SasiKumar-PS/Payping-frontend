@@ -11,8 +11,6 @@ import SuccessBanner from '../../components/SuccessBanner';
 const Gatekeeper = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const [isVerified, setIsVerified] = useState(false);
-    const [loading, setLoading] = useState(true);
     
     // Global notification states
     const [globalError, setGlobalError] = useState<string>('');
@@ -22,24 +20,36 @@ const Gatekeeper = () => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
     // Global Account Metrics State
-    const [metrics, setMetrics] = useState<any>(null);
+    const [metrics, setMetrics] = useState<any>(() => {
+        const saved = sessionStorage.getItem('payping_global_metrics');
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.error("Failed to parse saved global metrics", e);
+            }
+        }
+        return null;
+    });
 
     // Fetch metrics callback
     const fetchDashboardCorePayload = useCallback(async () => {
         try {
             const res = await api.get('/payping/dashboard/getdata');
             setMetrics(res.data);
+            sessionStorage.setItem('payping_global_metrics', JSON.stringify(res.data));
         } catch (err) {
             console.error("Failed to load global metrics:", err);
         }
     }, []);
 
-    // Fetch once verified
+    const currentAccountId = localStorage.getItem('selected_account_id');
+
+    // Fetch core metrics when account ID changes or on mount
     useEffect(() => {
-        if (isVerified) {
-            fetchDashboardCorePayload();
-        }
-    }, [isVerified, fetchDashboardCorePayload]);
+        setMetrics(null);
+        fetchDashboardCorePayload();
+    }, [currentAccountId, fetchDashboardCorePayload]);
 
     // ==========================================
     // EFFECT 1: CENTRALIZED NETWORK ERROR/SUCCESS CAPTURE
@@ -85,48 +95,7 @@ const Gatekeeper = () => {
         };
     }, [navigate, fetchDashboardCorePayload]);
 
-    // ==========================================
-    // EFFECT 2: PRE-EXISTING ONBOARDING ROUTE CHECKS
-    // ==========================================
-    useEffect(() => {
-        const sessionVerified = sessionStorage.getItem('payping_setup_verified');
-
-        if (sessionVerified === 'true') {
-            setIsVerified(true);
-            setLoading(false);
-            return;
-        }
-
-        const runSetupCheck = async () => {
-            try {
-                const res = await api.get('/payping/accounts/status');
-                const { hasAccount, hasWhatsapp, hasBusinessDetails, hasCustomers } = res.data || {};
-                // const targetPath = location.pathname === '/payping' ? '/payping/dashboard' : location.pathname;
-                const targetPath = '/payping/dashboard';    // testing
-
-                if (!hasAccount) {
-                    navigate('/payping/onboard');
-                } else if (!hasWhatsapp) {
-                    navigate('/payping/connect');
-                } else if (!hasBusinessDetails) {
-                    navigate('/payping/business-details');
-                } else if (!hasCustomers) {
-                    navigate('/payping/add-customers');
-                } else {
-                    sessionStorage.setItem('payping_setup_verified', 'true');
-                    setIsVerified(true);
-                    navigate(targetPath, { replace: true });
-                }
-            } catch (err) {
-                console.error("Setup check failed", err);
-                navigate('/'); 
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        runSetupCheck();
-    }, [navigate, location.pathname]);
+    // Removed PRE-EXISTING ONBOARDING ROUTE CHECKS as requested
 
     // ==========================================
     // DYNAMIC RENDER INTERACTION HELPERS
@@ -218,15 +187,6 @@ const Gatekeeper = () => {
             </div>
         );
     };
-
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-[#0f0f0f] flex flex-col items-center justify-center space-y-4">
-                <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
-                <p className="text-zinc-500 text-sm animate-pulse">Checking workspace configuration...</p>
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen bg-[#0f0f0f] text-white flex flex-col font-sans select-none overflow-x-hidden relative">

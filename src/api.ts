@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-    // baseURL: 'http://localhost:8080/api/v1/',
-    baseURL: 'http://10.11.111.244:8080/api/v1/',
+    baseURL: 'http://localhost:8080/api/v1/',
+    // baseURL: 'http://10.11.111.244:8080/api/v1/',
 });
 
 // The "Interceptor": Runs before every request
@@ -10,6 +10,11 @@ api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    const accountId = localStorage.getItem('selected_account_id');
+    if (accountId) {
+        config.headers['X-Account-Id'] = accountId;
     }
 
     // to hide the error popup
@@ -41,7 +46,7 @@ api.interceptors.response.use(
         return response;
     },
     (error) => {
-        showError(error.response?.data?.error || error.response?.data?.message || "Unknown error occurred.", error.response?.data?.status);
+        showError(error.response?.data?.message || error.response?.data?.error || "Unknown error occurred.", error.response?.data?.status || error.response?.status);
         return Promise.reject(error);
     }
 );

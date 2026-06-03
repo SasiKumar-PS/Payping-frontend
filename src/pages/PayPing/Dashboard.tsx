@@ -27,6 +27,8 @@ interface DashboardData {
     unpaidCustomersCount: number;
     overdueCustomersCount: number;
     paymentStatus?: string;
+    hasBusinessDetails: boolean;
+    hasCustomers: boolean;
 }
 
 interface ChartRecord {
@@ -54,6 +56,8 @@ const Dashboard = () => {
     const [loadingPaymentMessage, setLoadingPaymentMessage] = useState<boolean>(false);
 
     useEffect(() => {
+        // Fetch dashboard data on mount (this ensures Gatekeeper always syncs when viewing dashboard)
+        refreshMetrics();
         // Initial performance charts load
         fetchDashboardPerformance();
     }, []);
@@ -148,7 +152,7 @@ const Dashboard = () => {
                 )}
 
                 {/* 2. WhatsApp Disconnection Warning Box */}
-                {!metrics.whatsappStatus && (
+                {metrics.whatsappStatus === false && (
                     <div className="p-5 rounded-[1.75rem] bg-rose-500/10 text-rose-200 border border-rose-500/10 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-300 shadow-xl">
                         <div className="flex items-start gap-4">
                             <div className="p-3 bg-rose-500/10 rounded-2xl text-rose-400 shrink-0">
@@ -163,9 +167,55 @@ const Dashboard = () => {
                         </div>
                         <button 
                             onClick={() => navigate('/payping/connect')}
-                            className="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold py-2.5 px-5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-600/10 shrink-0 cursor-pointer self-start md:self-center"
+                            className="bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-bold py-2.5 px-5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-rose-600/10 shrink-0 cursor-pointer self-start md:self-center"
                         >
-                            Connect WhatsApp
+                            Connect
+                        </button>
+                    </div>
+                )}
+
+                {/* 3. Business Details Warning Box */}
+                {metrics.hasBusinessDetails === false && (
+                    <div className="p-5 rounded-[1.75rem] bg-orange-500/10 text-orange-200 border border-orange-500/10 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-300 shadow-xl">
+                        <div className="flex items-start gap-4">
+                            <div className="p-3 bg-orange-500/10 rounded-2xl text-orange-400 shrink-0">
+                                <Settings className="w-6 h-6 animate-pulse" />
+                            </div>
+                            <div className="space-y-1">
+                                <h4 className="text-sm font-bold tracking-tight">Complete Business Details</h4>
+                                <p className="text-xs text-zinc-350 leading-relaxed">
+                                    Your business profile is incomplete. Please provide the necessary details to configure automated reminders.
+                                </p>
+                            </div>
+                        </div>
+                        <button 
+                            onClick={() => navigate('/payping/business-details')}
+                            className="bg-orange-600 hover:bg-orange-500 active:scale-95 text-white font-bold py-2.5 px-5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-orange-600/10 shrink-0 cursor-pointer self-start md:self-center"
+                        >
+                            <Settings className="w-4 h-4" /> Setup Details
+                        </button>
+                    </div>
+                )}
+
+                {/* 4. Add Customers Warning Box */}
+                {metrics.hasCustomers === false && (
+                    <div className="p-5 rounded-[1.75rem] bg-orange-500/10 text-orange-200 border border-orange-500/10 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-300 shadow-xl">
+                        <div className="flex items-start gap-4">
+                            <div className="p-3 bg-orange-500/10 rounded-2xl text-orange-400 shrink-0">
+                                <UserPlus className="w-6 h-6 animate-pulse" />
+                            </div>
+                            <div className="space-y-1">
+                                <h4 className="text-sm font-bold tracking-tight">Add Your Customers</h4>
+                                <p className="text-xs text-zinc-350 leading-relaxed">
+                                    You have no customers in your registry. Add customers to start tracking and sending reminders.
+                                </p>
+                            </div>
+                        </div>
+                        <button 
+                            onClick={() => navigate('/payping/customers', { state: { action: 'add' } })}
+                            className="bg-orange-600 hover:bg-orange-500 active:scale-95 text-white font-bold py-2.5 px-5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-orange-600/10 shrink-0 cursor-pointer self-start md:self-center"
+                        >
+                            <UserPlus className="w-4 h-4" /> Add Customers
                         </button>
                     </div>
                 )}
