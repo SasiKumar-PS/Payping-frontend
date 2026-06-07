@@ -21,18 +21,15 @@ const SuccessBanner = ({ message }: SuccessBannerProps) => {
     
     return createPortal(
         <div 
-            className={`fixed left-4 right-4 z-[999999] p-4 max-w-sm sm:max-w-md mx-auto transform transition-all duration-500 ease-out ${
+            className={`fixed left-1/2 -translate-x-1/2 z-[999999] px-4 max-w-md w-full transform transition-all duration-500 ease-out ${
                 isVisible 
-                    ? 'top-4 opacity-100 translate-y-0' 
+                    ? 'top-6 opacity-100 translate-y-0' 
                     : 'top-0 opacity-0 -translate-y-full'
             }`}
         >
-            <div className="w-full bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl flex items-start gap-3 text-emerald-400 text-sm shadow-2xl backdrop-blur-md">
-                <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5 text-emerald-400 animate-pulse" />
-                <div>
-                    <span className="font-bold block text-emerald-250 mb-0.5">Operation Successful</span>
-                    <p className="text-xs leading-relaxed text-emerald-400/90">{message}</p>
-                </div>
+            <div className="w-full bg-emerald-50 dark:bg-[#0c1f16] border border-emerald-200/60 dark:border-emerald-900/40 px-5 py-3 rounded-full flex items-center gap-2.5 text-emerald-800 dark:text-emerald-300 text-xs font-medium shadow-xl backdrop-blur-md">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <span className="truncate">{message}</span>
             </div>
         </div>,
         document.body

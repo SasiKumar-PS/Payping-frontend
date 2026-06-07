@@ -21,18 +21,15 @@ const ErrorBanner = ({ message }: ErrorBannerProps) => {
     
     return createPortal(
         <div 
-            className={`fixed left-4 right-4 z-[999999] p-4 max-w-sm sm:max-w-md mx-auto transform transition-all duration-500 ease-out ${
+            className={`fixed left-1/2 -translate-x-1/2 z-[999999] px-4 max-w-md w-full transform transition-all duration-500 ease-out ${
                 isVisible 
-                    ? 'top-4 opacity-100 translate-y-0' 
+                    ? 'top-6 opacity-100 translate-y-0' 
                     : 'top-0 opacity-0 -translate-y-full'
             }`}
         >
-            <div className="w-full bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-start gap-3 text-red-400 text-sm shadow-2xl backdrop-blur-md">
-                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                <div>
-                    <span className="font-bold block text-red-200 mb-0.5">Error Encountered</span>
-                    <p className="text-xs leading-relaxed text-red-400/90">{message}</p>
-                </div>
+            <div className="w-full bg-rose-50 dark:bg-[#2b1416] border border-rose-200/60 dark:border-rose-900/40 px-5 py-3 rounded-full flex items-center gap-2.5 text-rose-800 dark:text-rose-300 text-xs font-medium shadow-xl backdrop-blur-md">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-450" />
+                <span className="truncate">{message}</span>
             </div>
         </div>,
         document.body

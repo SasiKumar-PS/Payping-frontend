@@ -1,128 +1,242 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Montserrat:wght@100..900&family=DM+Serif+Display&display=swap');
 @import "tailwindcss";
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --color-bg-main: #FAF9F6;
+  --color-bg-sidebar: #F9F9F7;
+  --color-bg-card: #FFFFFF;
+  --color-border: #E5E7EB;
+  --color-text-primary: #111827;
+  --color-text-muted: #6B7280;
+  --color-accent: #4F46E5; /* Indigo accent color for light mode */
+  --color-accent-tint: #EEF2F6; /* Indigo tint */
+  --color-negative: #EF4444;
+  --color-positive: #10B981;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+.dark {
+  --color-bg-main: #161A1A;
+  --color-bg-sidebar: #0E1111;
+  --color-bg-card: #1E2222;
+  --color-border: #2E3232;
+  --color-text-primary: #FFFFFF;
+  --color-text-muted: #9CA3AF;
+  --color-accent: #6366F1; /* Indigo accent color for dark mode */
+  --color-accent-tint: rgba(99, 102, 241, 0.1);
+  --color-negative: #F87171;
+  --color-positive: #34D399;
+}
 
 @theme {
-  --font-sans: "Uni Sans", "Outfit", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-sans: Inter, system-ui, -apple-system, sans-serif;
+  --font-display: Inter, system-ui, -apple-system, sans-serif;
+  --color-bg-main: var(--color-bg-main);
+  --color-bg-sidebar: var(--color-bg-sidebar);
+  --color-bg-card: var(--color-bg-card);
+  --color-border: var(--color-border);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-muted: var(--color-text-muted);
+  --color-accent: var(--color-accent);
+  --color-accent-tint: var(--color-accent-tint);
+  --color-negative: var(--color-negative);
+  --color-positive: var(--color-positive);
 }
 
-@layer base {
-  html {
-    font-family: var(--font-sans);
-  }
+html {
+  font-size: 14.5px !important;
 }
 
-
-
-/* precoded 
- :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+html, body, button, input, select, textarea {
+  font-family: var(--font-sans);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+/* Heading Sizes Override (Shrunk for sleeker, compact aesthetic) */
+h1 {
+  font-size: 1.45rem !important;
+  font-weight: 800 !important;
+}
+h2 {
+  font-size: 1.3rem !important;
+  font-weight: 800 !important;
+}
+h3 {
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+* {
   box-sizing: border-box;
 }
 
 body {
+  background-color: var(--color-bg-main);
+  color: var(--color-text-primary);
   margin: 0;
+  padding: 0;
+  font-size: 14px;
+  line-height: 20px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+
+h4:not(.font-mono):not(code):not(.counter) {
+  font-family: Montserrat, system-ui, -apple-system, sans-serif;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
+input, select, textarea, button {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
 }
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
+
+label {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 20px !important;
+  color: var(--color-text-muted) !important;
 }
-p {
-  margin: 0;
+
+.text-s {
+  font-size: 0.875rem !important;
 }
 
 code,
+.font-mono,
 .counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
-} */
+button,
+input[type="button"],
+input[type="submit"] {
+  font-weight: 500 !important;
+}
+
+/* Hide native spinbutton arrows in number inputs */
+.no-spinbutton::-webkit-outer-spin-button,
+.no-spinbutton::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spinbutton {
+  -moz-appearance: textfield;
+  appearance: none;
+}
+
+/* Specific styling for the brand logo */
+.brand-logo-text {
+  font-family: 'Montserrat', system-ui, -apple-system, sans-serif !important;
+  font-size: 20px !important;
+  font-weight: 400 !important;
+  line-height: 28px !important;
+}
+
+/* Large display text (Hero metrics) */
+.hero-metric {
+  font-size: 36px !important;
+  font-weight: 800 !important;
+  line-height: 40px !important;
+  letter-spacing: -0.02em !important;
+}
+
+/* Uppercase category labels */
+.category-label {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  color: var(--color-text-muted) !important;
+}
+
+/* Premium Neo-Minimalist Card Component Styles */
+.premium-card {
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
+}
+
+.premium-card:hover {
+  border-color: var(--color-accent);
+}
+
+.no-card-hover:hover {
+  border-color: var(--color-border) !important;
+}
+
+/* Input elements styling */
+.premium-input {
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--color-text-primary);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.premium-input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-tint);
+}
+
+/* Button styles */
+.premium-btn-primary {
+  background-color: var(--color-accent);
+  color: white;
+  border-radius: 8px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.premium-btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.premium-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.premium-btn-secondary {
+  background-color: transparent;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-weight: 500;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.premium-btn-secondary:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* Scrollbar customizations */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
