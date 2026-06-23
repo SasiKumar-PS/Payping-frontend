@@ -32,8 +32,11 @@ const PayPingOnboard = () => {
 
     const handleGetStarted = async () => {
         try {
-            // Trigger the Cobalt session initialization on the backend
-            await api.post('/payping/accounts/register', formData);
+            const payload = {
+                ...formData,
+                phone: (formData.phone || '').replace(/\D/g, '').slice(-10)
+            };
+            await api.post('/payping/accounts/register', payload);
 
             sessionStorage.removeItem('payping_onboard_form');
 
@@ -45,45 +48,48 @@ const PayPingOnboard = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-[#09090b] text-slate-800 dark:text-white flex items-center justify-center p-4 sm:p-6">
-            <div className="max-w-md w-full space-y-8 bg-white dark:bg-[#0f0f0f] p-8 sm:p-10 rounded-2xl border border-slate-200/50 dark:border-zinc-800/40 shadow-sm">
+        <div className="min-h-screen bg-bg-main text-text-heading flex items-center justify-center p-4 sm:p-6">
+            <div className="max-w-md w-full space-y-8 bg-bg-card p-8 sm:p-10 rounded-2xl border border-border/50 shadow-sm">
                 <div className="text-center">
                     <div className="inline-flex p-3 bg-emerald-500/10 rounded-2xl mb-4">
                         <ShieldCheck className="w-10 h-10 text-emerald-600 dark:text-emerald-500" />
                     </div>
-                    <h2 className="font-sans text-2xl font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">PayPing <span className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider ml-1">CRM</span></h2>
+                    <h2 className="font-sans text-2xl font-extrabold uppercase tracking-wider text-text-heading">PayPing <span className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider ml-1">CRM</span></h2>
                     <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm font-medium">Confirm your business details to begin.</p>
                 </div>
 
                 <div className="space-y-4">
                     {/* Your Name Input */}
                     <div>
-                        <label className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase ml-1 tracking-wider">Your Name</label>
+                        <label className="text-[10px] font-bold text-text-muted uppercase ml-1 tracking-wider">Your Name</label>
                         <input
                             type="text"
                             required
                             placeholder="John Doe"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            className="w-full bg-white dark:bg-[#0f0f0f] border border-slate-200 dark:border-slate-800 p-4 rounded-lg focus:border-slate-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none transition-colors text-slate-800 dark:text-zinc-200"
+                            className="w-full bg-bg-card border border-border p-4 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none transition-colors text-text-primary"
                         />
                     </div>
                     <div>
-                        <label className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase ml-1 tracking-wider">Business Name</label>
+                        <label className="text-[10px] font-bold text-text-muted uppercase ml-1 tracking-wider">Business Name</label>
                         <input
                             value={formData.businessName}
                             onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
                             placeholder="My Business"
-                            className="w-full bg-white dark:bg-[#0f0f0f] border border-slate-200 dark:border-slate-800 p-4 rounded-lg focus:border-slate-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none text-slate-800 dark:text-zinc-200"
+                            className="w-full bg-bg-card border border-slate-200 dark:border-slate-800 p-4 rounded-lg focus:border-slate-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none text-text-primary"
                         />
                     </div>
                     <div>
-                        <label className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase ml-1 tracking-wider">Support Phone</label>
+                        <label className="text-[10px] font-bold text-text-muted uppercase ml-1 tracking-wider">Support Phone</label>
                         <input
-                            value={formData.phone}
-                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                            placeholder="+91 99999 99999"
-                            className="w-full bg-white dark:bg-[#0f0f0f] border border-slate-200 dark:border-slate-800 p-4 rounded-lg focus:border-slate-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none text-slate-800 dark:text-zinc-200"
+                            value={(formData.phone || '').replace(/\D/g, '').slice(-10)}
+                            onChange={(e) => {
+                                const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                setFormData({ ...formData, phone: val });
+                            }}
+                            placeholder="9999999999"
+                            className="w-full bg-bg-card border border-slate-200 dark:border-slate-800 p-4 rounded-lg focus:border-slate-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none text-text-primary"
                         />
                     </div>
                 </div>

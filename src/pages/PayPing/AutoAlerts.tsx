@@ -41,6 +41,7 @@ export interface AutoAlertDTO {
     status: 'ACTIVE' | 'INACTIVE';
     templateId: string;
     template?: TemplateDTO;
+    recipientsCount: number;
     filters: Record<string, string[]>;
     nextTriggerDate?: string;
 }
@@ -151,6 +152,7 @@ const MOCK_ALERTS: AutoAlertDTO[] = [
         templateId: "tmpl-1",
         template: MOCK_TEMPLATES[0],
         filters: { paymentStatus: ["UNPAID", "OVERDUE"], status: ["ACTIVE"] },
+        recipientsCount: 14,
         nextTriggerDate: "2026-05-29"
     },
     {
@@ -163,6 +165,7 @@ const MOCK_ALERTS: AutoAlertDTO[] = [
         templateId: "tmpl-3",
         template: MOCK_TEMPLATES[2],
         filters: { paymentStatus: ["PAID"] },
+        recipientsCount: 32,
         nextTriggerDate: "2026-06-01"
     },
     {
@@ -175,6 +178,7 @@ const MOCK_ALERTS: AutoAlertDTO[] = [
         templateId: "tmpl-2",
         template: MOCK_TEMPLATES[1],
         filters: { paymentStatus: ["OVERDUE"] },
+        recipientsCount: 32,
         nextTriggerDate: "2026-06-05"
     }
 ];
@@ -310,7 +314,7 @@ const renderTemplatePreviewSingleLine = (content: string) => {
     if (!content) return null;
     const parts = content.split(/({[^{}]+})/g);
     return (
-        <span className="text-[11px] text-slate-500 dark:text-zinc-400 truncate mt-0.5 font-medium block">
+        <span className="text-[11px] text-text-muted truncate mt-0.5 font-medium block">
             {parts.map((part, index) => {
                 const match = part.match(/^{(.+)}$/);
                 if (match) {
@@ -723,9 +727,9 @@ export const AutoAlerts = () => {
                 {list.map((tag, idx) => (
                     <span
                         key={idx}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-bg-subtle border border-border rounded-xl text-xs font-bold text-text-primary"
                     >
-                        <span className="text-[10px] text-slate-400 dark:text-zinc-500 uppercase tracking-widest">{tag.category.replace(/([A-Z])/g, ' $1')}:</span>
+                        <span className="text-[10px] text-text-muted uppercase tracking-widest">{tag.category.replace(/([A-Z])/g, ' $1')}:</span>
                         <span>{tag.val}</span>
                     </span>
                 ))}
@@ -1003,6 +1007,7 @@ export const AutoAlerts = () => {
                 id: `alert-${Date.now()}`,
                 templateId: newTemplate?.id || '',
                 template: newTemplate,
+                recipientsCount: 0,
                 nextTriggerDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
             };
             setAlerts(prev => [...prev, mockRecord]);
@@ -1189,10 +1194,10 @@ export const AutoAlerts = () => {
     };
 
     return (
-        <div className="min-h-screen bg-transparent text-slate-800 dark:text-zinc-200 flex flex-col font-sans select-none overflow-x-hidden pb-28 relative">
+        <div className="min-h-screen bg-transparent text-text-primary flex flex-col font-sans select-none overflow-x-hidden pb-28 relative">
 
             {/* Header section with Stats Bar */}
-            <header className="sticky top-0 z-20 bg-slate-50 dark:bg-[#0f0f0f] px-4 md:px-8 pt-4 pb-3 max-w-none mx-auto w-full border-b border-slate-200/60 dark:border-zinc-800/40 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <header className="sticky top-0 z-20 bg-bg-subtle px-4 md:px-8 pt-4 pb-3 max-w-none mx-auto w-full border-b border-border/40 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
                 <div className="flex items-center gap-3">
                     {selectedAlert && (
                         <button
@@ -1200,17 +1205,17 @@ export const AutoAlerts = () => {
                                 setSelectedAlert(null);
                                 setIsEditMode(false);
                             }}
-                            className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900/50 dark:hover:bg-zinc-800 rounded-lg border border-slate-200 dark:border-zinc-800/60 transition-colors cursor-pointer text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white shadow-sm outline-none shrink-0"
+                            className="p-2 bg-bg-subtle hover:bg-bg-hover rounded-lg border border-border/60 transition-colors cursor-pointer text-text-primary hover:text-text-heading shadow-sm outline-none shrink-0"
                             title="Back to Alerts"
                         >
                             <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                     )}
                     <div>
-                        <h1 className="text-2xl font-extrabold uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
+                        <h1 className="text-2xl font-extrabold uppercase tracking-wider text-text-heading flex items-center gap-2">
                             <Bell className="w-5 h-5 text-indigo-600 dark:text-indigo-500" /> Auto Alerts
                         </h1>
-                        <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+                        <p className="text-xs text-text-muted mt-1">
                             Configure event-triggered automation schedules.
                         </p>
                     </div>
@@ -1226,14 +1231,14 @@ export const AutoAlerts = () => {
             </header>            {loading ? (
                 <div className="flex-1 flex flex-col items-center justify-center py-20 space-y-3">
                     <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
-                    <p className="text-xs font-medium text-slate-400 dark:text-zinc-500">Loading configurations...</p>
+                    <p className="text-xs font-medium text-text-muted">Loading configurations...</p>
                 </div>
             ) : (
                 <main className="flex-1 px-4 md:px-8 max-w-none mx-auto w-full pt-3 space-y-2.5 pb-20 flex flex-col">
                     {(loadingAlertDetails || initialLoadingAlertId) && !selectedAlert ? (
                         <div className="flex-1 flex flex-col items-center justify-center py-20 space-y-3">
                             <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
-                            <p className="text-xs font-medium text-slate-400 dark:text-zinc-500">Loading alert details...</p>
+                            <p className="text-xs font-medium text-text-muted">Loading alert details...</p>
                         </div>
                     ) : selectedAlert ? (
                         /* Inline Split layout */
@@ -1241,7 +1246,7 @@ export const AutoAlerts = () => {
                             {/* Left Column: Alert details (Schedule properties, Target customers, Message template) */}
                             <div className="lg:col-span-5 space-y-4">
                                 {/* Actions Row */}
-                                <div className="flex items-center justify-end gap-2 pb-2 border-b border-slate-200 dark:border-zinc-800/60 w-full">
+                                <div className="flex items-center justify-end gap-2 pb-2 border-b border-border/60 w-full">
                                     {isEditMode ? (
                                         <>
                                             <button
@@ -1252,7 +1257,7 @@ export const AutoAlerts = () => {
                                             </button>
                                             <button
                                                 onClick={() => setIsEditMode(false)}
-                                                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-white font-bold rounded-lg text-xs flex items-center gap-1.5 outline-none transition-colors border border-slate-200 dark:border-transparent cursor-pointer"
+                                                className="px-4 py-2 bg-bg-subtle hover:bg-bg-hover text-text-heading font-bold rounded-lg text-xs flex items-center gap-1.5 outline-none transition-colors border border-border dark:border-transparent cursor-pointer"
                                             >
                                                 <X className="w-4 h-4" /> Cancel
                                             </button>
@@ -1267,7 +1272,7 @@ export const AutoAlerts = () => {
                                                     fetchFiltersMetadata();
                                                     fetchTags();
                                                 }}
-                                                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-white font-bold rounded-lg text-xs flex items-center gap-1.5 outline-none transition-colors border border-slate-200 dark:border-transparent cursor-pointer"
+                                                className="px-4 py-2 bg-bg-subtle hover:bg-bg-hover text-text-heading font-bold rounded-lg text-xs flex items-center gap-1.5 outline-none transition-colors border border-border dark:border-transparent cursor-pointer"
                                             >
                                                 <Edit className="w-4 h-4" /> Edit
                                             </button>
@@ -1282,7 +1287,7 @@ export const AutoAlerts = () => {
                                 </div>
 
                                 {/* BLOCK 1: SCHEDULE PROPERTIES */}
-                                <div className="bg-white dark:bg-[#09090b]/20 border border-slate-200/60 dark:border-zinc-800/60 rounded-2xl p-5 space-y-4 shadow-sm">
+                                <div className="bg-bg-elevated/20 border border-border/60 rounded-2xl p-5 space-y-4 shadow-sm">
                                     {!isEditMode ? (
                                          <>
                                              <div className="flex items-center gap-3 flex-wrap border-b border-slate-100 dark:border-zinc-800/40 pb-3 mb-2">
@@ -1290,34 +1295,34 @@ export const AutoAlerts = () => {
                                                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border tracking-wider uppercase select-none ${
                                                      selectedAlert.status === 'ACTIVE'
                                                          ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-200/30 dark:border-indigo-500/20'
-                                                         : 'bg-slate-200 dark:bg-zinc-800/50 text-slate-500 dark:text-zinc-400 border-slate-300/40 dark:border-zinc-700/50'
+                                                         : 'bg-border/50 text-text-muted border-border/40'
                                                  }`}>
                                                      {selectedAlert.status === 'ACTIVE' ? 'Active' : 'Inactive'}
                                                  </span>
                                              </div>
                                              <div className="grid grid-cols-2 gap-4 text-xs">
                                                  <div className="space-y-1">
-                                                     <div className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">Trigger Event</div>
-                                                     <div className="font-bold text-slate-800 dark:text-zinc-200 inline-flex items-center gap-1.5">
+                                                     <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Trigger Event</div>
+                                                     <div className="font-bold text-text-primary inline-flex items-center gap-1.5">
                                                          <Bell className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
                                                          {formatEventName(selectedAlert.event)}
                                                      </div>
                                                  </div>
                                                  <div className="space-y-1">
-                                                     <div className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">Time Offset</div>
-                                                     <div className="font-bold text-slate-800 dark:text-zinc-200">
+                                                     <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Time Offset</div>
+                                                     <div className="font-bold text-text-primary">
                                                          {selectedAlert.offsetDays === 0 ? "On Event Day" : `${selectedAlert.offsetDays > 0 ? '+' : ''}${selectedAlert.offsetDays} Days`}
                                                      </div>
                                                  </div>
                                                  <div className="space-y-1">
-                                                     <div className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">Delivery Time</div>
-                                                     <div className="font-bold text-slate-800 dark:text-zinc-200 inline-flex items-center gap-1.5">
+                                                     <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Delivery Time</div>
+                                                     <div className="font-bold text-text-primary inline-flex items-center gap-1.5">
                                                          <Clock className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
                                                          {formatTimeDisplay(selectedAlert.time)}
                                                      </div>
                                                  </div>
                                                  <div className="space-y-1 col-span-2">
-                                                     <div className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">Next Run</div>
+                                                     <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Next Run</div>
                                                      <div className="font-bold text-emerald-700 dark:text-emerald-400 inline-flex items-center gap-1.5">
                                                          <Calendar className="w-3.5 h-3.5" />
                                                          {formatDateToReadable(selectedAlert.nextTriggerDate) || "Pending"}
@@ -1328,12 +1333,12 @@ export const AutoAlerts = () => {
                                     ) : (
                                          <>
                                              <div className="flex items-center gap-2.5 border-b border-slate-100 dark:border-zinc-800/40 pb-3 mb-3">
-                                                 <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest shrink-0">Editing</span>
-                                                 <h3 className="text-sm font-extrabold text-slate-800 dark:text-zinc-100 truncate uppercase tracking-wide">{editAlertName || selectedAlert.name}</h3>
+                                                 <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest shrink-0">Editing</span>
+                                                 <h3 className="text-sm font-extrabold text-text-heading truncate uppercase tracking-wide">{editAlertName || selectedAlert.name}</h3>
                                                  <span className={`ml-auto shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold border tracking-wider uppercase select-none ${
                                                      editStatus === 'ACTIVE'
                                                          ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-200/30 dark:border-indigo-500/20'
-                                                         : 'bg-slate-200 dark:bg-zinc-800/50 text-slate-500 dark:text-zinc-400 border-slate-300/40 dark:border-zinc-700/50'
+                                                         : 'bg-border/50 text-text-muted border-border/40'
                                                  }`}>
                                                      {editStatus === 'ACTIVE' ? 'Active' : 'Inactive'}
                                                  </span>
@@ -1341,25 +1346,25 @@ export const AutoAlerts = () => {
                                              <div className="space-y-4">
                                              <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-1.5">
-                                                    <label className="text-xs font-medium text-slate-700 dark:text-zinc-300">Alert Name</label>
+                                                    <label className="text-xs font-medium text-text-primary">Alert Name</label>
                                                     <input
                                                         type="text"
                                                         value={editAlertName}
                                                         onChange={(e) => setEditAlertName(e.target.value)}
-                                                        className="w-full bg-slate-50 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-700/50 rounded-lg p-2.5 text-xs text-slate-800 dark:text-zinc-200 outline-none focus:border-slate-400 dark:focus:border-zinc-500 transition-colors"
+                                                        className="w-full bg-bg-subtle border border-border/50 rounded-lg p-2.5 text-xs text-text-primary outline-none focus:border-accent/50 transition-colors"
                                                     />
                                                 </div>
                                                 <div className="space-y-1.5 flex flex-col justify-end">
-                                                    <label className="text-xs font-medium text-slate-700 dark:text-zinc-300">Status</label>
+                                                    <label className="text-xs font-medium text-text-primary">Status</label>
                                                     <div className="flex items-center justify-between h-[38px] w-full px-1">
-                                                        <span className={`text-xs font-bold ${editStatus === 'ACTIVE' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-zinc-500'}`}>
+                                                        <span className={`text-xs font-bold ${editStatus === 'ACTIVE' ? 'text-indigo-600 dark:text-indigo-400' : 'text-text-muted'}`}>
                                                             {editStatus === 'ACTIVE' ? 'Active' : 'Inactive'}
                                                         </span>
                                                         <button
                                                             type="button"
                                                             onClick={() => handleToggleStatusClick(selectedAlert)}
                                                             className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                                                editStatus === 'ACTIVE' ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-zinc-700'
+                                                                editStatus === 'ACTIVE' ? 'bg-indigo-600' : 'bg-border'
                                                             }`}
                                                         >
                                                             <span
@@ -1389,32 +1394,32 @@ export const AutoAlerts = () => {
 
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div className="space-y-1.5">
-                                                    <label className="text-xs font-medium text-slate-700 dark:text-zinc-300">Trigger Event</label>
+                                                    <label className="text-xs font-medium text-text-primary">Trigger Event</label>
                                                     <div className="relative">
                                                         <select
                                                             value={editEvent}
                                                             onChange={(e) => setEditEvent(e.target.value)}
-                                                            className="w-full appearance-none bg-slate-50 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-700/50 rounded-lg p-2.5 pr-10 text-xs text-slate-800 dark:text-zinc-200 outline-none focus:border-slate-400 dark:focus:border-zinc-500 cursor-pointer"
+                                                            className="w-full appearance-none bg-bg-subtle border border-border/50 rounded-lg p-2.5 pr-10 text-xs text-text-primary outline-none focus:border-accent/50 cursor-pointer"
                                                         >
                                                         {events.map((ev) => (
                                                             <option key={ev} value={ev}>{formatEventName(ev)}</option>
                                                         ))}
                                                     </select>
-                                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
                                                 </div>
                                             </div>
 
                                                 <div className="space-y-1.5">
-                                                    <label className="text-xs font-medium text-slate-700 dark:text-zinc-300 block">
-                                                        Offset: <span className="text-slate-800 dark:text-zinc-100">{editOffset > 0 ? `+${editOffset}` : editOffset} days</span>
+                                                    <label className="text-xs font-medium text-text-primary block">
+                                                        Offset: <span className="text-text-heading">{editOffset > 0 ? `+${editOffset}` : editOffset} days</span>
                                                     </label>
                                                     <div className="flex items-center gap-1.5">
                                                         <button
                                                             type="button"
                                                             onClick={() => setEditOffset(prev => Math.max(-28, prev - 1))}
-                                                            className="w-8 h-8 shrink-0 rounded-lg border border-slate-200 dark:border-zinc-700/50 hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center cursor-pointer transition-colors bg-slate-50 dark:bg-transparent"
+                                                            className="w-8 h-8 shrink-0 rounded-lg border border-border/50 hover:bg-bg-hover flex items-center justify-center cursor-pointer transition-colors bg-bg-subtle"
                                                         >
-                                                            <Minus className="w-3 h-3 text-slate-600 dark:text-zinc-300" />
+                                                            <Minus className="w-3 h-3 text-text-primary" />
                                                         </button>
                                                         <input
                                                             type="range"
@@ -1422,14 +1427,14 @@ export const AutoAlerts = () => {
                                                             max="28"
                                                             value={editOffset}
                                                             onChange={(e) => setEditOffset(Number(e.target.value))}
-                                                            className="flex-1 min-w-0 accent-slate-600 dark:accent-zinc-400 h-1 bg-slate-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer"
+                                                            className="flex-1 min-w-0 accent-slate-600 dark:accent-zinc-400 h-1 bg-border rounded-lg appearance-none cursor-pointer"
                                                         />
                                                         <button
                                                             type="button"
                                                             onClick={() => setEditOffset(prev => Math.min(28, prev + 1))}
-                                                            className="w-8 h-8 shrink-0 rounded-lg border border-slate-200 dark:border-zinc-700/50 hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center cursor-pointer transition-colors bg-slate-50 dark:bg-transparent"
+                                                            className="w-8 h-8 shrink-0 rounded-lg border border-border/50 hover:bg-bg-hover flex items-center justify-center cursor-pointer transition-colors bg-bg-subtle"
                                                         >
-                                                            <Plus className="w-3 h-3 text-slate-600 dark:text-zinc-300" />
+                                                            <Plus className="w-3 h-3 text-text-primary" />
                                                         </button>
                                                     </div>
                                                 </div>
@@ -1437,22 +1442,22 @@ export const AutoAlerts = () => {
 
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div className="space-y-1.5">
-                                                    <label className="text-xs font-medium text-slate-700 dark:text-zinc-300">Time</label>
+                                                    <label className="text-xs font-medium text-text-primary">Time</label>
                                                     <div className="grid grid-cols-[1fr_auto_1fr_1fr] gap-1 items-center">
                                                         <select
                                                             value={editTimeHour}
                                                             onChange={(e) => setEditTimeHour(e.target.value)}
-                                                            className="w-full min-w-0 bg-slate-50 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-700/50 rounded-lg py-2 px-1 text-xs text-slate-800 dark:text-zinc-200 text-center outline-none cursor-pointer"
+                                                            className="w-full min-w-0 bg-bg-subtle border border-border/50 rounded-lg py-2 px-1 text-xs text-text-primary text-center outline-none cursor-pointer"
                                                         >
                                                             {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')).map(h => (
                                                                 <option key={h} value={h}>{h}</option>
                                                             ))}
                                                         </select>
-                                                        <span className="text-slate-400 dark:text-zinc-500 font-bold px-0.5">:</span>
+                                                        <span className="text-text-muted font-bold px-0.5">:</span>
                                                         <select
                                                             value={editTimeMin}
                                                             onChange={(e) => setEditTimeMin(e.target.value)}
-                                                            className="w-full min-w-0 bg-slate-50 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-700/50 rounded-lg py-2 px-1 text-xs text-slate-800 dark:text-zinc-200 text-center outline-none cursor-pointer"
+                                                            className="w-full min-w-0 bg-bg-subtle border border-border/50 rounded-lg py-2 px-1 text-xs text-text-primary text-center outline-none cursor-pointer"
                                                         >
                                                             {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0')).map(m => (
                                                                 <option key={m} value={m}>{m}</option>
@@ -1461,7 +1466,7 @@ export const AutoAlerts = () => {
                                                         <select
                                                             value={editTimeAmpm}
                                                             onChange={(e) => setEditTimeAmpm(e.target.value)}
-                                                            className="w-full min-w-0 bg-slate-50 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-700/50 rounded-lg py-2 px-1 text-xs text-slate-800 dark:text-zinc-200 text-center outline-none cursor-pointer"
+                                                            className="w-full min-w-0 bg-bg-subtle border border-border/50 rounded-lg py-2 px-1 text-xs text-text-primary text-center outline-none cursor-pointer"
                                                         >
                                                             <option value="AM">AM</option>
                                                             <option value="PM">PM</option>
@@ -1474,13 +1479,13 @@ export const AutoAlerts = () => {
                                 </div>
 
                                 {/* BLOCK 2: TARGET CUSTOMERS */}
-                                <div className="bg-white dark:bg-[#09090b]/20 border border-slate-200/60 dark:border-zinc-800/60 rounded-2xl p-5 space-y-4 shadow-sm">
+                                <div className="bg-bg-elevated/20 border border-border/60 rounded-2xl p-5 space-y-4 shadow-sm">
                                     <div className="flex items-center justify-between">
-                                        <h3 className="text-sm font-bold text-slate-800 dark:text-zinc-200">Target Customers</h3>
+                                        <h3 className="text-sm font-bold text-text-primary">Target Customers</h3>
                                         {isEditMode && (
                                             <button
                                                 onClick={() => openFiltersPopup('EDIT_DRAFT')}
-                                                className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition-colors text-xs font-bold cursor-pointer flex items-center gap-1.5 border border-slate-200 dark:border-zinc-700/50"
+                                                className="px-3 py-1.5 rounded-lg bg-bg-subtle hover:bg-bg-hover text-text-primary transition-colors text-xs font-bold cursor-pointer flex items-center gap-1.5 border border-border/50"
                                             >
                                                 <Filter className="w-3.5 h-3.5" /> Change Filters
                                             </button>
@@ -1490,18 +1495,18 @@ export const AutoAlerts = () => {
                                     <div className="space-y-3">
                                         <div className="flex items-center justify-between">
                                             <div className="space-y-1">
-                                                <span className="text-[10px] text-slate-500 dark:text-zinc-500 font-bold uppercase tracking-wider">Targeted Segment Size</span>
+                                                <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Targeted Segment Size</span>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-xl font-bold text-slate-900 dark:text-zinc-100">
+                                                    <span className="text-xl font-bold text-text-heading">
                                                         {customerCounts[selectedAlert.id] ?? 0}
                                                     </span>
-                                                    <span className="text-xs text-slate-500 dark:text-zinc-400">customers</span>
+                                                    <span className="text-xs text-text-muted">customers</span>
                                                 </div>
                                             </div>
                                             {!isEditMode && (
                                                 <button
                                                     onClick={launchShowCustomersOverlay}
-                                                    className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 dark:border-zinc-800 dark:hover:bg-zinc-800/60 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors text-xs font-bold cursor-pointer bg-slate-50 dark:bg-transparent"
+                                                    className="px-3 py-1.5 rounded-lg border border-border hover:bg-bg-hover text-text-primary hover:text-text-heading transition-colors text-xs font-bold cursor-pointer bg-bg-subtle"
                                                 >
                                                     View Customers
                                                 </button>
@@ -1509,20 +1514,20 @@ export const AutoAlerts = () => {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest block">Active Filters</span>
+                                            <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest block">Active Filters</span>
                                             {renderTagsList(isEditMode ? editFilters : selectedAlert.filters)}
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* BLOCK 3: MESSAGE TEMPLATE */}
-                                <div className="bg-white dark:bg-[#09090b]/20 border border-slate-200/60 dark:border-zinc-800/60 rounded-2xl p-5 space-y-4 shadow-sm">
+                                <div className="bg-bg-elevated/20 border border-border/60 rounded-2xl p-5 space-y-4 shadow-sm">
                                     <div className="flex items-center justify-between">
-                                        <h3 className="text-sm font-bold text-slate-800 dark:text-zinc-200">Message Template</h3>
+                                        <h3 className="text-sm font-bold text-text-primary">Message Template</h3>
                                         {isEditMode ? (
                                             <button
                                                 onClick={() => openTemplateSelectionPopup('EDIT_DRAFT')}
-                                                className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800/80 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition-colors text-xs font-bold cursor-pointer flex items-center gap-1.5 border border-slate-200 dark:border-zinc-700/50"
+                                                className="px-3 py-1.5 rounded-lg bg-bg-subtle hover:bg-bg-hover text-text-primary transition-colors text-xs font-bold cursor-pointer flex items-center gap-1.5 border border-border/50"
                                             >
                                                 <RefreshCw className="w-3.5 h-3.5" /> Change Template
                                             </button>
@@ -1539,10 +1544,10 @@ export const AutoAlerts = () => {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <p className="text-xs text-slate-500 dark:text-zinc-400">
-                                            Currently using: <span className="text-slate-800 dark:text-zinc-200 font-bold">{(isEditMode ? editTemplate : selectedAlert.template)?.name || "No Associated Template"}</span>
+                                        <p className="text-xs text-text-muted">
+                                            Currently using: <span className="text-text-primary font-bold">{(isEditMode ? editTemplate : selectedAlert.template)?.name || "No Associated Template"}</span>
                                         </p>
-                                        <div className="bg-slate-50 dark:bg-zinc-900/40 rounded-lg border border-slate-200/60 dark:border-zinc-800/60 min-h-[80px] p-4 text-xs text-slate-700 dark:text-zinc-300 leading-relaxed">
+                                        <div className="bg-bg-subtle rounded-lg border border-border/60 min-h-[80px] p-4 text-xs text-text-primary leading-relaxed">
                                             {renderTemplatePreviewWithPills((isEditMode ? editTemplate : selectedAlert.template)?.content || "")}
                                         </div>
                                     </div>
@@ -1551,11 +1556,11 @@ export const AutoAlerts = () => {
 
                             {/* Right Column: Execution History logs */}
                             <div className="lg:col-span-7 space-y-4">
-                                <div className="bg-white dark:bg-[#09090b]/20 border border-slate-200/60 dark:border-zinc-800/60 rounded-2xl p-5 space-y-4 shadow-sm">
+                                <div className="bg-bg-elevated/20 border border-border/60 rounded-2xl p-5 space-y-4 shadow-sm">
                                     <div className="flex items-center justify-between">
-                                        <h3 className="text-sm font-bold text-slate-800 dark:text-zinc-200">Execution History</h3>
+                                        <h3 className="text-sm font-bold text-text-primary">Execution History</h3>
                                         <button
-                                            className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors cursor-pointer flex items-center gap-1 border border-slate-200 dark:border-zinc-800 rounded-lg bg-slate-50 dark:bg-zinc-900/50 hover:bg-slate-100 dark:hover:bg-zinc-800/50 font-bold"
+                                            className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors cursor-pointer flex items-center gap-1 border border-border rounded-lg bg-bg-subtle hover:bg-bg-hover/50 font-bold"
                                             onClick={() => loadAlertDetails(selectedAlert.id, true)}
                                             disabled={refreshingHistory}
                                         >
@@ -1565,7 +1570,7 @@ export const AutoAlerts = () => {
 
                                     <div className="relative">
                                         {refreshingHistory && (
-                                            <div className="absolute inset-0 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-[1px] flex items-center justify-center z-20 rounded-lg animate-in fade-in duration-150">
+                                            <div className="absolute inset-0 bg-bg-card/70 backdrop-blur-[1px] flex items-center justify-center z-20 rounded-lg animate-in fade-in duration-150">
                                                 <div className="flex flex-col items-center gap-2 text-indigo-650 dark:text-indigo-405 font-mono text-[10px] font-bold">
                                                     <RefreshCw className="w-5 h-5 animate-spin" />
                                                     REFRESHING HISTORY...
@@ -1574,28 +1579,28 @@ export const AutoAlerts = () => {
                                         )}
 
                                         {history.length === 0 ? (
-                                            <div className="p-8 text-center bg-slate-50/50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-800/60 rounded-lg">
-                                                <HistoryIcon className="w-5 h-5 text-slate-400 dark:text-zinc-600 mx-auto mb-2" />
-                                                <p className="text-xs text-slate-500 dark:text-zinc-400">No execution history available.</p>
+                                            <div className="p-8 text-center bg-bg-subtle border border-border/60 rounded-lg">
+                                                <HistoryIcon className="w-5 h-5 text-text-muted mx-auto mb-2" />
+                                                <p className="text-xs text-text-muted">No execution history available.</p>
                                             </div>
                                         ) : (
                                             <div className="relative space-y-4 pt-2 max-h-[60vh] overflow-y-auto pr-1 scrollbar-none">
-                                                <div className="absolute top-4 bottom-4 left-[11px] w-px bg-slate-200 dark:bg-zinc-800/60"></div>
+                                                <div className="absolute top-4 bottom-4 left-[11px] w-px bg-border/60"></div>
                                                 {history.map((hist, idx) => (
                                                     <div
                                                         key={hist.id}
                                                         onClick={() => navigate('/payping/alert-history', { state: { selectedId: hist.id, source: 'auto-alerts', returnToAlertId: selectedAlert.id } })}
-                                                        className="relative group flex gap-4 pl-1 p-2 hover:bg-slate-100/50 dark:hover:bg-zinc-900/50 rounded-lg transition-colors cursor-pointer"
+                                                        className="relative group flex gap-4 pl-1 p-2 hover:bg-bg-hover rounded-lg transition-colors cursor-pointer"
                                                     >
                                                         <div className={`w-3.5 h-3.5 mt-1 rounded-full ring-4 ring-white dark:ring-[#0f0f0f] z-10 shrink-0 ${renderHistoryCircle(hist.status)}`}></div>
 
                                                         <div className="space-y-1 flex-1 min-w-0">
                                                             <div className="flex items-center justify-between">
-                                                                <span className="text-xs font-bold text-slate-800 dark:text-zinc-200">{formatDateToReadable(hist.triggeredAt)}</span>
+                                                                <span className="text-xs font-bold text-text-primary">{formatDateToReadable(hist.triggeredAt)}</span>
                                                                 {renderHistoryBadge(hist.status)}
                                                             </div>
-                                                            <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">{hist.logMessage}</p>
-                                                            <div className="flex items-center gap-1.5 text-[10px] text-slate-400 dark:text-zinc-500 pt-1">
+                                                            <p className="text-xs text-text-muted leading-relaxed">{hist.logMessage}</p>
+                                                            <div className="flex items-center gap-1.5 text-[10px] text-text-muted pt-1">
                                                                 <Users className="w-3.5 h-3.5" />
                                                                 <span>Sent to {hist.customerCount} segment subscribers</span>
                                                             </div>
@@ -1611,18 +1616,18 @@ export const AutoAlerts = () => {
                     ) : (
                         /* Alerts List View */
                         alerts.length === 0 ? (
-                            <div className="bg-white dark:bg-[#09090b]/30 p-12 text-center flex flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200/60 dark:border-zinc-800/50 shadow-sm">
-                                <Bell className="w-5 h-5 text-slate-400 dark:text-zinc-600 mb-2" />
-                                <h3 className="text-xs font-medium text-slate-700 dark:text-zinc-300">No scheduled notifications active</h3>
-                                <p className="text-xs text-slate-500 dark:text-zinc-400">
+                            <div className="bg-bg-elevated/30 p-12 text-center flex flex-col items-center justify-center gap-3 rounded-2xl border border-border/50 shadow-sm">
+                                <Bell className="w-5 h-5 text-text-muted mb-2" />
+                                <h3 className="text-xs font-medium text-text-primary">No scheduled notifications active</h3>
+                                <p className="text-xs text-text-muted">
                                     Create a new auto-trigger configuration to begin scheduling.
                                 </p>
                             </div>
                         ) : (
                             <div className="w-full space-y-1.5">
                                 {alerts.map((alert, index) => {
-                                    const tgtCount = customerCounts[alert.id] ?? 0;
-                                    const rowBg = 'bg-white dark:bg-[#09090b]/40 border-slate-200/60 dark:border-zinc-800/40 hover:bg-slate-50 dark:hover:bg-zinc-900/50';
+                                    const tgtCount = customerCounts[alert.id] ?? alert.recipientsCount ?? 0;
+                                    const rowBg = 'bg-bg-elevated/40 border-border/40 hover:bg-bg-hover';
                                     return (
                                         <div
                                             key={alert.id}
@@ -1631,49 +1636,50 @@ export const AutoAlerts = () => {
                                                 setIsEditingInfo(false);
                                                 setIsEditingTemplate(false);
                                             }}
-                                            className={`w-full p-2.5 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between border transition-colors cursor-pointer group gap-2.5 ${rowBg}`}
+                                            className={`w-full p-2.5 rounded-lg flex flex-row items-center justify-between border transition-colors cursor-pointer group gap-2.5 ${rowBg}`}
                                         >
                                             <div className="min-w-0 flex-grow space-y-0.5">
                                                 <div className="flex items-center gap-3">
-                                                    <h4 className="text-slate-800 dark:text-zinc-200 truncate group-hover:text-slate-900 dark:group-hover:text-zinc-50 transition-colors">{alert.name}</h4>
+                                                    <h4 className="text-text-primary truncate group-hover:text-text-heading transition-colors">{alert.name}</h4>
                                                     <span className={`px-2 py-0.5 rounded-full text-[9px] font-medium border ${alert.status === 'ACTIVE'
                                                             ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-200/30 dark:border-indigo-500/20'
-                                                            : 'bg-slate-200 dark:bg-zinc-800/50 text-slate-500 dark:text-zinc-400 border-slate-300/40 dark:border-zinc-700/50'
+                                                            : 'bg-border/50 text-text-muted border-border/40'
                                                         }`}>
                                                         {alert.status === 'ACTIVE' ? 'Active' : 'Inactive'}
                                                     </span>
                                                 </div>
 
-                                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 dark:text-zinc-400 mt-2">
-                                                    <span className="truncate flex items-center gap-1.5">
-                                                        <Bell className="w-3 h-3 text-slate-400 dark:text-zinc-600" />
-                                                        {formatEventName(alert.event)} {alert.offsetDays === 0 ? "(On Event)" : `(${alert.offsetDays > 0 ? '+' : ''}${alert.offsetDays}d)`}
-                                                    </span>
-                                                    <span className="text-slate-300 dark:text-zinc-800 shrink-0 select-none">•</span>
-                                                    <span className="flex items-center gap-1.5 shrink-0">
-                                                        <Clock className="w-3 h-3 text-slate-400 dark:text-zinc-600" />
-                                                        {formatTimeDisplay(alert.time)}
-                                                    </span>
-                                                    <span className="text-slate-300 dark:text-zinc-800 shrink-0 select-none hidden sm:block">•</span>
-                                                    <span className="hidden sm:flex items-center gap-1.5 shrink-0 text-indigo-600 dark:text-indigo-400 font-medium">
-                                                        <Calendar className="w-3 h-3" />
-                                                        {formatDateToReadable(alert.nextTriggerDate) || "Pending"}
-                                                    </span>
-                                                    <span className="text-slate-300 dark:text-zinc-800 shrink-0 select-none hidden sm:block">•</span>
-                                                    <span className="hidden sm:flex items-center gap-1.5 shrink-0 text-sky-600 dark:sky-400/80 font-medium">
-                                                        <Activity className="w-3 h-3" />
-                                                        {alert.status === 'ACTIVE' ? "Scheduled" : "Not Started"}
-                                                    </span>
+                                                <div className="text-[11px] text-text-muted mt-2 space-y-1">
+                                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                                        <span className="truncate flex items-center gap-1.5">
+                                                            <Bell className="w-3 h-3 text-text-muted" />
+                                                            {formatEventName(alert.event)} {alert.offsetDays === 0 ? "(On Event)" : `(${alert.offsetDays > 0 ? '+' : ''}${alert.offsetDays}d)`}
+                                                        </span>
+                                                        <span className="text-border shrink-0 select-none hidden sm:inline">•</span>
+                                                        <span className="hidden sm:flex items-center gap-1.5 shrink-0 text-indigo-600 dark:text-indigo-400 font-medium">
+                                                            <Calendar className="w-3 h-3" />
+                                                            {formatDateToReadable(alert.nextTriggerDate) || "Pending"}
+                                                        </span>
+                                                        <span className="text-border shrink-0 select-none hidden sm:inline">•</span>
+                                                        <span className="hidden sm:flex items-center gap-1.5 shrink-0 text-sky-600 dark:sky-400/80 font-medium">
+                                                            <Activity className="w-3 h-3" />
+                                                            {alert.status === 'ACTIVE' ? "Scheduled" : "Not Started"}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 mt-1 text-text-muted text-[10.5px]">
+                                                        <Clock className="w-3 h-3 text-text-muted" />
+                                                        <span>{formatTimeDisplay(alert.time)}</span>
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            <div className="flex items-center gap-3 shrink-0 sm:pl-3">
-                                                <div className="flex items-center gap-1 bg-slate-200/50 dark:bg-zinc-800/40 px-2 py-1 rounded-lg border border-slate-200/60 dark:border-zinc-800/60">
-                                                    <Users className="w-3.5 h-3.5 text-slate-500 dark:text-zinc-400" />
-                                                    <span className="text-xs font-semibold text-slate-800 dark:text-zinc-200">{tgtCount}</span>
-                                                    <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-500">recipients</span>
+                                            <div className="flex items-center gap-3 shrink-0 ml-auto pl-2">
+                                                <div className="flex items-center gap-1 bg-bg-subtle px-2 py-1 rounded-lg border border-border/60">
+                                                    <Users className="w-3.5 h-3.5 text-text-muted" />
+                                                    <span className="text-xs font-semibold text-text-primary">{tgtCount}</span>
+                                                    <span className="text-[10px] font-medium text-text-muted">recipients</span>
                                                 </div>
-                                                <ChevronRight className="w-4 h-4 text-slate-400 dark:text-zinc-600 group-hover:text-slate-600 dark:group-hover:text-zinc-400 transition-colors" />
+                                                <ChevronRight className="w-4 h-4 text-text-muted group-hover:text-text-muted transition-colors" />
                                             </div>
                                         </div>
                                     );
@@ -1689,14 +1695,14 @@ export const AutoAlerts = () => {
                ========================================== */}
             {showAddModal && (
                 <div className="fixed inset-0 flex items-center justify-center p-4 animate-in fade-in duration-150" style={{ zIndex: 50 }}>
-                    <div className="absolute inset-0 bg-slate-900/40 dark:bg-zinc-950/80 backdrop-blur-sm" onClick={() => setShowAddModal(false)} />
-                    <div className="relative bg-white dark:bg-[#0f0f0f] w-full max-w-xl rounded-2xl border border-slate-200 dark:border-zinc-800/60 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] text-slate-800 dark:text-zinc-200">
+                    <div className="absolute inset-0 bg-overlay backdrop-blur-sm" onClick={() => setShowAddModal(false)} />
+                    <div className="relative bg-bg-card w-full max-w-xl rounded-2xl border border-border/60 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] text-text-primary">
 
-                        <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-zinc-800/60 p-6 shrink-0 bg-transparent">
-                            <h3 className="text-lg font-medium text-slate-900 dark:text-zinc-100 tracking-tight">
+                        <div className="flex items-center justify-between border-b border-border/60 p-6 shrink-0 bg-transparent">
+                            <h3 className="text-lg font-medium text-text-heading tracking-tight">
                                 Add Auto Alert
                             </h3>
-                            <button onClick={() => setShowAddModal(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors bg-transparent border-0 outline-none cursor-pointer">
+                            <button onClick={() => setShowAddModal(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-text-primary hover:bg-bg-hover transition-colors bg-transparent border-0 outline-none cursor-pointer">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -1705,45 +1711,45 @@ export const AutoAlerts = () => {
 
                             {/* Alert Name Input */}
                             <div className="space-y-1.5">
-                                <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300">Alert Name</label>
+                                <label className="block text-xs font-medium text-text-primary">Alert Name</label>
                                 <input
                                     type="text"
                                     placeholder="e.g., Unpaid Bill 3-Day Buffer"
                                     value={newAlertName}
                                     onChange={(e) => setNewAlertName(e.target.value)}
-                                    className="w-full bg-slate-50 dark:bg-zinc-900/50 text-slate-800 dark:text-zinc-200 text-sm p-3 rounded-lg outline-none border border-slate-200 dark:border-zinc-800/60 focus:border-slate-400 dark:focus:border-zinc-500 transition-colors"
+                                    className="w-full bg-bg-subtle text-text-primary text-sm p-3 rounded-lg outline-none border border-border/60 focus:border-accent/50 transition-colors"
                                 />
                             </div>
 
                             {/* Event & Offset row with Step adjustment buttons */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div className="space-y-1.5">
-                                    <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300">Trigger Event</label>
+                                    <label className="block text-xs font-medium text-text-primary">Trigger Event</label>
                                     <div className="relative">
                                         <select
                                             value={newEvent}
                                             onChange={(e) => setNewEvent(e.target.value)}
-                                            className="w-full appearance-none bg-slate-50 dark:bg-zinc-900/50 text-slate-800 dark:text-zinc-200 text-sm p-3 pr-10 rounded-lg outline-none border border-slate-200 dark:border-zinc-800/60 focus:border-slate-400 dark:focus:border-zinc-500 transition-colors cursor-pointer"
+                                            className="w-full appearance-none bg-bg-subtle text-text-primary text-sm p-3 pr-10 rounded-lg outline-none border border-border/60 focus:border-accent/50 transition-colors cursor-pointer"
                                         >
                                             {events.map((ev) => (
                                                 <option key={ev} value={ev}>{formatEventName(ev)}</option>
                                             ))}
                                         </select>
-                                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
                                     </div>
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300">
-                                        Offset: <span className="text-slate-800 dark:text-zinc-100 font-bold">{newOffset > 0 ? `+${newOffset}` : newOffset} days</span>
+                                    <label className="block text-xs font-medium text-text-primary">
+                                        Offset: <span className="text-text-heading font-bold">{newOffset > 0 ? `+${newOffset}` : newOffset} days</span>
                                     </label>
                                     <div className="flex items-center gap-1.5">
                                         <button
                                             type="button"
                                             onClick={() => setNewOffset(prev => Math.max(-28, prev - 1))}
-                                            className="w-10 h-10 shrink-0 rounded-lg border border-slate-200 dark:border-zinc-700/50 hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center cursor-pointer transition-colors bg-slate-50 dark:bg-transparent"
+                                            className="w-10 h-10 shrink-0 rounded-lg border border-border/50 hover:bg-bg-hover flex items-center justify-center cursor-pointer transition-colors bg-bg-subtle"
                                         >
-                                            <Minus className="w-4 h-4 text-slate-600 dark:text-zinc-300" />
+                                            <Minus className="w-4 h-4 text-text-primary" />
                                         </button>
                                         <input
                                             type="range"
@@ -1751,14 +1757,14 @@ export const AutoAlerts = () => {
                                             max="28"
                                             value={newOffset}
                                             onChange={(e) => setNewOffset(Number(e.target.value))}
-                                            className="flex-1 min-w-0 accent-slate-600 dark:accent-zinc-400 h-1 bg-slate-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer"
+                                            className="flex-1 min-w-0 accent-slate-600 dark:accent-zinc-400 h-1 bg-border rounded-lg appearance-none cursor-pointer"
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setNewOffset(prev => Math.min(28, prev + 1))}
-                                            className="w-10 h-10 shrink-0 rounded-lg border border-slate-200 dark:border-zinc-700/50 hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center cursor-pointer transition-colors bg-slate-50 dark:bg-transparent"
+                                            className="w-10 h-10 shrink-0 rounded-lg border border-border/50 hover:bg-bg-hover flex items-center justify-center cursor-pointer transition-colors bg-bg-subtle"
                                         >
-                                            <Plus className="w-4 h-4 text-slate-600 dark:text-zinc-300" />
+                                            <Plus className="w-4 h-4 text-text-primary" />
                                         </button>
                                     </div>
                                 </div>
@@ -1766,22 +1772,22 @@ export const AutoAlerts = () => {
 
                             {/* Time Clock Picker */}
                             <div className="space-y-1.5">
-                                <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300">Execution Time</label>
+                                <label className="block text-xs font-medium text-text-primary">Execution Time</label>
                                 <div className="flex gap-2 max-w-sm">
                                     <select
                                         value={newTimeHour}
                                         onChange={(e) => setNewTimeHour(e.target.value)}
-                                        className="flex-1 bg-slate-50 dark:bg-zinc-900/50 text-slate-800 dark:text-zinc-200 text-sm p-3 rounded-lg outline-none border border-slate-200 dark:border-zinc-800/60 focus:border-slate-400 dark:focus:border-zinc-500 transition-colors text-center"
+                                        className="flex-1 bg-bg-subtle text-text-primary text-sm p-3 rounded-lg outline-none border border-border/60 focus:border-accent/50 transition-colors text-center"
                                     >
                                         {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')).map(h => (
                                             <option key={h} value={h}>{h}</option>
                                         ))}
                                     </select>
-                                    <span className="self-center text-slate-400 dark:text-zinc-500">:</span>
+                                    <span className="self-center text-text-muted">:</span>
                                     <select
                                         value={newTimeMin}
                                         onChange={(e) => setNewTimeMin(e.target.value)}
-                                        className="flex-1 bg-slate-50 dark:bg-zinc-900/50 text-slate-800 dark:text-zinc-200 text-sm p-3 rounded-lg outline-none border border-slate-200 dark:border-zinc-800/60 focus:border-slate-400 dark:focus:border-zinc-500 transition-colors text-center"
+                                        className="flex-1 bg-bg-subtle text-text-primary text-sm p-3 rounded-lg outline-none border border-border/60 focus:border-accent/50 transition-colors text-center"
                                     >
                                         {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0')).map(m => (
                                             <option key={m} value={m}>{m}</option>
@@ -1790,7 +1796,7 @@ export const AutoAlerts = () => {
                                     <select
                                         value={newTimeAmpm}
                                         onChange={(e) => setNewTimeAmpm(e.target.value)}
-                                        className="flex-1 bg-slate-50 dark:bg-zinc-900/50 text-slate-800 dark:text-zinc-200 text-sm p-3 rounded-lg outline-none border border-slate-200 dark:border-zinc-800/60 focus:border-slate-400 dark:focus:border-zinc-500 transition-colors text-center"
+                                        className="flex-1 bg-bg-subtle text-text-primary text-sm p-3 rounded-lg outline-none border border-border/60 focus:border-accent/50 transition-colors text-center"
                                     >
                                         <option value="AM">AM</option>
                                         <option value="PM">PM</option>
@@ -1801,11 +1807,11 @@ export const AutoAlerts = () => {
                             {/* Target customers Selector Block */}
                             <div className="space-y-4 pt-2">
                                 <div className="flex items-center justify-between">
-                                    <label className="text-xs font-medium text-slate-700 dark:text-zinc-300">Target Customers</label>
+                                    <label className="text-xs font-medium text-text-primary">Target Customers</label>
                                     <button
                                         type="button"
                                         onClick={() => openFiltersPopup('CREATE')}
-                                        className="px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-600 hover:text-slate-800 dark:text-zinc-300 dark:hover:text-zinc-100 transition-colors text-xs font-bold border border-slate-200 dark:border-zinc-700 cursor-pointer"
+                                        className="px-3 py-1.5 rounded-lg hover:bg-bg-hover text-text-muted hover:text-text-primary transition-colors text-xs font-bold border border-border cursor-pointer"
                                     >
                                         {Object.keys(newFilters).length > 0 ? "Edit Filters" : "Add Filters"}
                                     </button>
@@ -1814,9 +1820,9 @@ export const AutoAlerts = () => {
                                 <div className="space-y-3">
                                     {renderTagsList(newFilters)}
 
-                                    <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-zinc-300 bg-slate-50 dark:bg-zinc-900/50 px-3 py-2 rounded-lg border border-slate-200 dark:border-zinc-800 w-fit">
+                                    <div className="flex items-center gap-2 text-sm text-text-primary bg-bg-subtle px-3 py-2 rounded-lg border border-border w-fit">
                                         <Users className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                                        <span className="font-bold">{newCustomerCount} <span className="font-medium text-slate-500 dark:text-zinc-400">customers matched</span></span>
+                                        <span className="font-bold">{newCustomerCount} <span className="font-medium text-text-muted">customers matched</span></span>
                                     </div>
                                 </div>
                             </div>
@@ -1824,44 +1830,44 @@ export const AutoAlerts = () => {
                             {/* Template mapper Selection Block */}
                             <div className="space-y-4 pt-2">
                                 <div className="flex items-center justify-between">
-                                    <label className="text-xs font-medium text-slate-700 dark:text-zinc-300">Message Template</label>
+                                    <label className="text-xs font-medium text-text-primary">Message Template</label>
                                     <button
                                         type="button"
                                         onClick={() => openTemplateSelectionPopup('CREATE')}
-                                        className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800/80 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700/55 transition-colors text-xs font-bold cursor-pointer"
+                                        className="px-3 py-1.5 rounded-lg bg-bg-subtle hover:bg-bg-hover text-text-primary border border-border/55 transition-colors text-xs font-bold cursor-pointer"
                                     >
                                         {newTemplate ? "Change Template" : "Select Template"}
                                     </button>
                                 </div>
 
                                 {newTemplate ? (
-                                    <div className="bg-slate-50 dark:bg-zinc-900/40 p-4 rounded-lg border border-slate-200 dark:border-zinc-800/60 space-y-3">
-                                        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-zinc-400 border-b border-slate-200/60 dark:border-zinc-800/60 pb-3">
+                                    <div className="bg-bg-subtle p-4 rounded-lg border border-border/60 space-y-3">
+                                        <div className="flex items-center justify-between text-xs text-text-muted border-b border-border/60 pb-3">
                                             <span className="font-bold">{newTemplate.name}</span>
                                         </div>
-                                        <div className="text-sm text-slate-700 dark:text-zinc-300 leading-relaxed font-sans whitespace-pre-wrap break-all">
+                                        <div className="text-sm text-text-primary leading-relaxed font-sans whitespace-pre-wrap break-all">
                                             {newTemplate.content}
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="p-6 text-center border border-dashed border-slate-200 dark:border-zinc-700/50 rounded-lg text-slate-400 dark:text-zinc-500 text-sm">
+                                    <div className="p-6 text-center border border-dashed border-border/50 rounded-lg text-text-muted text-sm">
                                         No template selected.
                                     </div>
                                 )}
                             </div>
 
                             {/* Live trigger sentence builder Preview Block */}
-                            <div className="p-4 bg-slate-50 dark:bg-zinc-900/30 border border-slate-200 dark:border-zinc-800 rounded-lg text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
-                                <span className="font-bold text-slate-800 dark:text-zinc-200">Summary: </span>
-                                Send <span className="text-slate-800 dark:text-zinc-200 font-bold">"{newTemplate?.name || 'Template'}"</span> to <span className="text-slate-800 dark:text-zinc-200 font-bold">{newCustomerCount}</span> customers {newOffset === 0 ? "exactly on" : `${Math.abs(newOffset)} days ${newOffset < 0 ? 'before' : 'after'}`} <span className="text-slate-800 dark:text-zinc-200 font-bold">{formatEventName(newEvent) || 'event'}</span> at <span className="text-slate-800 dark:text-zinc-200 font-bold">{newTimeHour}:{newTimeMin} {newTimeAmpm}</span>.
+                            <div className="p-4 bg-bg-subtle/30 border border-border rounded-lg text-sm text-text-muted leading-relaxed">
+                                <span className="font-bold text-text-primary">Summary: </span>
+                                Send <span className="text-text-primary font-bold">"{newTemplate?.name || 'Template'}"</span> to <span className="text-text-primary font-bold">{newCustomerCount}</span> customers {newOffset === 0 ? "exactly on" : `${Math.abs(newOffset)} days ${newOffset < 0 ? 'before' : 'after'}`} <span className="text-text-primary font-bold">{formatEventName(newEvent) || 'event'}</span> at <span className="text-text-primary font-bold">{newTimeHour}:{newTimeMin} {newTimeAmpm}</span>.
                             </div>
 
                         </div>
 
-                        <div className="border-t border-slate-200/60 dark:border-zinc-800/60 p-6 shrink-0 bg-transparent flex items-center justify-end gap-3">
+                        <div className="border-t border-border/60 p-6 shrink-0 bg-transparent flex items-center justify-end gap-3">
                             <button
                                 onClick={() => setShowAddModal(false)}
-                                className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-zinc-800/60 text-slate-600 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 rounded-lg text-sm font-bold transition-colors cursor-pointer border-0 outline-none"
+                                className="px-4 py-2 hover:bg-bg-hover/60 text-text-muted hover:text-text-primary rounded-lg text-sm font-bold transition-colors cursor-pointer border-0 outline-none"
                             >
                                 Cancel
                             </button>
@@ -1882,35 +1888,35 @@ export const AutoAlerts = () => {
             {/* ======================================================= */}
             {showTemplatePicker && (
                 <div className="fixed inset-0 flex items-center justify-center p-4 animate-in fade-in duration-150" style={{ zIndex: 60 }}>
-                    <div className="absolute inset-0 bg-slate-900/40 dark:bg-zinc-950/80 backdrop-blur-sm" onClick={() => setShowTemplatePicker(false)} />
-                    <div className="relative bg-white dark:bg-[#0f0f0f] w-full max-w-2xl rounded-2xl border border-slate-200/60 dark:border-zinc-800/60 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+                    <div className="absolute inset-0 bg-overlay backdrop-blur-sm" onClick={() => setShowTemplatePicker(false)} />
+                    <div className="relative bg-bg-card w-full max-w-2xl rounded-2xl border border-border/60 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
 
                         {/* Header */}
-                        <div className="p-5 border-b border-slate-200/60 dark:border-zinc-800/60 flex items-center justify-between bg-transparent shrink-0">
+                        <div className="p-5 border-b border-border/60 flex items-center justify-between bg-transparent shrink-0">
                             <div className="flex items-center gap-2">
                                 <MessageSquare className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                                <h3 className="font-bold text-sm text-slate-900 dark:text-zinc-100 tracking-tight uppercase">Select Message Template</h3>
+                                <h3 className="font-bold text-sm text-text-heading tracking-tight uppercase">Select Message Template</h3>
                             </div>
-                            <button onClick={() => setShowTemplatePicker(false)} className="text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors bg-transparent border-0 outline-none cursor-pointer">
+                            <button onClick={() => setShowTemplatePicker(false)} className="text-slate-400 hover:text-text-primary transition-colors bg-transparent border-0 outline-none cursor-pointer">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <div className="px-6 py-4 bg-slate-50/50 dark:bg-zinc-900/20 border-b border-slate-200/60 dark:border-zinc-800/60 shrink-0">
-                            <p className="text-[10px] text-slate-500 dark:text-zinc-500 font-bold tracking-wider uppercase select-none mb-2">Select a message template blueprint from alert catalog to map to the Scheduled alert trigger</p>
+                        <div className="px-6 py-4 bg-bg-subtle border-b border-border/60 shrink-0">
+                            <p className="text-[10px] text-text-muted font-bold tracking-wider uppercase select-none mb-2">Select a message template blueprint from alert catalog to map to the Scheduled alert trigger</p>
                             <input
                                 type="text"
                                 placeholder="Search templates inside alert catalog..."
                                 value={templateSearchQuery}
                                 onChange={(e) => setTemplateSearchQuery(e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-zinc-900/50 text-slate-800 dark:text-zinc-200 text-xs font-semibold p-3 border border-slate-200 dark:border-zinc-800/60 rounded-xl outline-none focus:border-slate-400 dark:focus:border-zinc-700"
+                                className="w-full bg-bg-subtle text-text-primary text-xs font-semibold p-3 border border-border/60 rounded-xl outline-none focus:border-accent/50"
                             />
                         </div>
 
                         {/* Picker Core Content */}
                         <div className="flex-1 p-6 space-y-3 overflow-y-auto scrollbar-none">
                             {filteredTemplatesList.length === 0 ? (
-                                <div className="py-12 text-center text-slate-400 dark:text-zinc-500 text-xs space-y-2 bg-slate-50 dark:bg-zinc-900/40 rounded-2xl border border-slate-200 dark:border-zinc-800/60">
+                                <div className="py-12 text-center text-text-muted text-xs space-y-2 bg-bg-subtle rounded-2xl border border-border/60">
                                     <MessageSquare className="w-8 h-8 mx-auto opacity-20" />
                                     <p>No operational templates matched the search queries.</p>
                                 </div>
@@ -1920,15 +1926,15 @@ export const AutoAlerts = () => {
                                         <div
                                             key={tmpl.id}
                                             onClick={() => setCandidateTemplate(tmpl)}
-                                            className="w-full bg-slate-50 dark:bg-zinc-900/40 p-3 rounded-xl flex items-center justify-between border border-slate-200/60 dark:border-zinc-800/60 hover:border-slate-300 dark:hover:border-zinc-700 transition-all active:scale-[0.99] cursor-pointer group"
+                                            className="w-full bg-bg-subtle p-3 rounded-xl flex items-center justify-between border border-border/60 hover:border-border transition-all active:scale-[0.99] cursor-pointer group"
                                         >
                                             <div className="min-w-0 pr-4 flex-1">
-                                                <h4 className="text-sm font-bold text-slate-800 dark:text-zinc-200 truncate group-hover:text-slate-950 dark:group-hover:text-white transition-colors">{tmpl.name}</h4>
+                                                <h4 className="text-sm font-bold text-text-primary truncate group-hover:text-text-heading transition-colors">{tmpl.name}</h4>
                                                 {renderTemplatePreviewSingleLine(tmpl.content)}
                                             </div>
                                             <div className="flex items-center gap-1.5 shrink-0 pl-2">
                                                 <span className="text-[9px] font-bold text-indigo-600 dark:text-indigo-500 uppercase tracking-widest select-none">SELECT</span>
-                                                <ChevronRight className="w-4 h-4 text-slate-400 dark:text-zinc-600 group-hover:text-indigo-600 dark:group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all" />
+                                                <ChevronRight className="w-4 h-4 text-text-muted group-hover:text-indigo-600 dark:group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all" />
                                             </div>
                                         </div>
                                     ))}
@@ -1936,10 +1942,10 @@ export const AutoAlerts = () => {
                             )}
                         </div>
 
-                        <div className="border-t border-slate-200/60 dark:border-zinc-800/60 p-5 shrink-0 bg-transparent flex items-center justify-end">
+                        <div className="border-t border-border/60 p-5 shrink-0 bg-transparent flex items-center justify-end">
                             <button
                                 onClick={() => setShowTemplatePicker(false)}
-                                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900/50 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800/60 text-slate-600 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white rounded-xl text-xs font-bold transition-colors cursor-pointer outline-none"
+                                className="px-5 py-2.5 bg-bg-subtle hover:bg-bg-hover border border-border/60 text-text-muted hover:text-text-primary rounded-xl text-xs font-bold transition-colors cursor-pointer outline-none"
                             >
                                 Close
                             </button>
@@ -1949,17 +1955,17 @@ export const AutoAlerts = () => {
                     {/* Fullscreen Overlay template selection Preview Modal */}
                     {candidateTemplate && (
                         <div className="fixed inset-0 flex items-center justify-center p-4 animate-in fade-in duration-150" style={{ zIndex: 65 }}>
-                            <div className="absolute inset-0 bg-slate-900/40 dark:bg-zinc-950/90 backdrop-blur-sm" onClick={() => setCandidateTemplate(null)} />
-                            <div className="relative bg-white dark:bg-[#0f0f0f] w-full max-w-md rounded-2xl border border-slate-200/60 dark:border-zinc-800/60 p-6 space-y-5 shadow-2xl overflow-hidden">
-                                <h4 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-b border-slate-200/60 dark:border-zinc-800/60 pb-2 select-none">
+                            <div className="absolute inset-0 bg-overlay backdrop-blur-sm" onClick={() => setCandidateTemplate(null)} />
+                            <div className="relative bg-bg-card w-full max-w-md rounded-2xl border border-border/60 p-6 space-y-5 shadow-2xl overflow-hidden">
+                                <h4 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-b border-border/60 pb-2 select-none">
                                     Confirm selecting this template to: {selectedAlert ? selectedAlert.name : (newAlertName || "New Auto Alert")}
                                 </h4>
                                 <div className="space-y-2.5 text-xs">
-                                    <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 dark:text-zinc-500">
+                                    <div className="flex justify-between items-center text-[10px] font-bold text-text-muted">
                                         <span>Label: {candidateTemplate.name}</span>
                                         <span>ID: {candidateTemplate.id}</span>
                                     </div>
-                                    <div className="p-4 bg-slate-50 dark:bg-zinc-900/50 border border-slate-200/60 dark:border-zinc-800/60 rounded-xl text-slate-800 dark:text-zinc-200 font-sans whitespace-pre-wrap break-all leading-relaxed">
+                                    <div className="p-4 bg-bg-subtle border border-border/60 rounded-xl text-text-primary font-sans whitespace-pre-wrap break-all leading-relaxed">
                                         {renderTemplatePreviewWithPills(candidateTemplate.content)}
                                     </div>
                                 </div>
@@ -1972,7 +1978,7 @@ export const AutoAlerts = () => {
                                     </button>
                                     <button
                                         onClick={() => setCandidateTemplate(null)}
-                                        className="px-5 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900/50 dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-400 rounded-xl text-xs font-bold border border-slate-200 dark:border-zinc-800/60 transition-colors cursor-pointer"
+                                        className="px-5 py-3 bg-bg-subtle hover:bg-bg-hover text-text-muted rounded-xl text-xs font-bold border border-border/60 transition-colors cursor-pointer"
                                     >
                                         Cancel
                                     </button>
@@ -1987,14 +1993,14 @@ export const AutoAlerts = () => {
             {/* ======================================================= */}
             {showTemplateEditModal && (
                 <div className="fixed inset-0 flex items-center justify-center p-4 animate-in fade-in duration-150" style={{ zIndex: 70 }}>
-                    <div className="absolute inset-0 bg-slate-900/40 dark:bg-zinc-950/80 backdrop-blur-sm" onClick={() => setShowTemplateEditModal(false)} />
-                    <div className="relative bg-white dark:bg-[#0f0f0f] w-full max-w-xl rounded-2xl border border-slate-200/60 dark:border-zinc-800/60 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+                    <div className="absolute inset-0 bg-overlay backdrop-blur-sm" onClick={() => setShowTemplateEditModal(false)} />
+                    <div className="relative bg-bg-card w-full max-w-xl rounded-2xl border border-border/60 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
 
-                        <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-zinc-800/60 p-5 shrink-0 bg-transparent">
-                            <h3 className="font-bold text-sm flex items-center gap-2.5 tracking-wider text-slate-800 dark:text-zinc-200 uppercase">
+                        <div className="flex items-center justify-between border-b border-border/60 p-5 shrink-0 bg-transparent">
+                            <h3 className="font-bold text-sm flex items-center gap-2.5 tracking-wider text-text-primary uppercase">
                                 <FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-500" /> Edit Message Template
                             </h3>
-                            <button onClick={() => setShowTemplateEditModal(false)} className="text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-200 transition-colors bg-transparent border-0 outline-none cursor-pointer">
+                            <button onClick={() => setShowTemplateEditModal(false)} className="text-text-muted hover:text-text-primary dark:hover:text-zinc-200 transition-colors bg-transparent border-0 outline-none cursor-pointer">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -2002,25 +2008,25 @@ export const AutoAlerts = () => {
                         <div className="p-6 overflow-y-auto space-y-5 flex-1 scrollbar-none text-xs">
                             {/* Template Name Input */}
                             <div className="space-y-1.5">
-                                <label className="block text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest ml-0.5">Template Label Name</label>
+                                <label className="block text-[10px] font-bold text-text-muted uppercase tracking-widest ml-0.5">Template Label Name</label>
                                 <input
                                     type="text"
                                     value={editTemplateName}
                                     onChange={(e) => setEditTemplateName(e.target.value)}
-                                    className="w-full bg-slate-50 dark:bg-zinc-900/50 text-slate-800 dark:text-white text-xs font-semibold p-3 rounded-xl outline-none border border-slate-200/60 dark:border-zinc-800/60 focus:border-slate-400 dark:focus:border-zinc-700 transition-colors"
+                                    className="w-full bg-bg-subtle text-text-heading text-xs font-semibold p-3 rounded-xl outline-none border border-border/60 focus:border-accent/50 transition-colors"
                                 />
                             </div>
 
                             {/* Variable shortcut badges */}
-                            <div className="space-y-2 bg-slate-50 dark:bg-zinc-900/50 p-4 rounded-xl border border-slate-200/60 dark:border-zinc-800/60">
-                                <span className="block text-[9px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest">Available Variable Tags</span>
+                            <div className="space-y-2 bg-bg-subtle p-4 rounded-xl border border-border/60">
+                                <span className="block text-[9px] font-bold text-text-muted uppercase tracking-widest">Available Variable Tags</span>
                                 <div className="flex flex-wrap gap-1.5 pt-1">
                                     {serverTags.map((tag) => (
                                         <button
                                             key={tag}
                                             type="button"
                                             onClick={() => setEditTemplateContent(prev => prev + `{${tag}}`)}
-                                            className="px-2.5 py-1.5 bg-white hover:bg-slate-50 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-[10px] font-mono font-bold tracking-wide rounded-lg text-emerald-700 dark:text-emerald-400 transition-colors cursor-pointer outline-none shadow-sm"
+                                            className="px-2.5 py-1.5 bg-bg-card hover:bg-bg-hover border border-border text-[10px] font-mono font-bold tracking-wide rounded-lg text-emerald-700 dark:text-emerald-400 transition-colors cursor-pointer outline-none shadow-sm"
                                         >
                                             +{tag}
                                         </button>
@@ -2030,24 +2036,24 @@ export const AutoAlerts = () => {
 
                             {/* Template Body Editor */}
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest block ml-0.5">Template Message Body</label>
+                                <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block ml-0.5">Template Message Body</label>
                                 <textarea
                                     rows={5}
                                     value={editTemplateContent}
                                     onChange={(e) => setEditTemplateContent(e.target.value)}
                                     placeholder="Type notification text content..."
-                                    className="w-full bg-slate-50 dark:bg-zinc-900/50 border border-slate-200/60 dark:border-zinc-800/60 rounded-xl p-3 text-xs font-semibold text-slate-800 dark:text-zinc-200 outline-none focus:border-slate-400 dark:focus:border-zinc-700 leading-relaxed font-sans"
+                                    className="w-full bg-bg-subtle border border-border/60 rounded-xl p-3 text-xs font-semibold text-text-primary outline-none focus:border-accent/50 leading-relaxed font-sans"
                                 />
                             </div>
 
                             {/* Live Text Preview */}
-                            <div className="space-y-1.5 bg-slate-50 dark:bg-zinc-900/50 p-4 rounded-xl border border-slate-200/60 dark:border-zinc-800/60">
-                                <span className="block text-[9px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest mb-1.5">Live Text Preview</span>
+                            <div className="space-y-1.5 bg-bg-subtle p-4 rounded-xl border border-border/60">
+                                <span className="block text-[9px] font-bold text-text-muted uppercase tracking-widest mb-1.5">Live Text Preview</span>
                                 {renderTemplatePreviewWithPills(editTemplateContent)}
                             </div>
                         </div>
 
-                        <div className="border-t border-slate-200/60 dark:border-zinc-800/60 p-5 shrink-0 bg-transparent flex items-center gap-3">
+                        <div className="border-t border-border/60 p-5 shrink-0 bg-transparent flex items-center gap-3">
                             <button
                                 onClick={async () => {
                                     if (!editTemplateName.trim()) {
@@ -2092,7 +2098,7 @@ export const AutoAlerts = () => {
                             </button>
                             <button
                                 onClick={() => setShowTemplateEditModal(false)}
-                                className="px-5 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900/50 border border-slate-200/60 dark:border-zinc-800/60 text-slate-600 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                                className="px-5 py-3 bg-bg-subtle hover:bg-bg-hover border border-border text-text-muted hover:text-text-primary rounded-xl text-xs font-bold transition-colors cursor-pointer"
                             >
                                 Cancel
                             </button>
@@ -2107,26 +2113,26 @@ export const AutoAlerts = () => {
                ========================================== */}
             {showFilterModal && (
                 <div className="fixed inset-0 flex items-end sm:items-center justify-center p-0 animate-in fade-in duration-150" style={{ zIndex: 60 }}>
-                    <div className="absolute inset-0 bg-slate-900/40 dark:bg-zinc-950/80 backdrop-blur-sm" onClick={() => setShowFilterModal(false)} />
-                    <div className="relative bg-white dark:bg-[#0f0f0f] w-full max-w-md rounded-t-3xl sm:rounded-2xl border border-slate-200/60 dark:border-zinc-800/60 p-6 flex flex-col max-h-[85vh] overflow-hidden">
+                    <div className="absolute inset-0 bg-overlay backdrop-blur-sm" onClick={() => setShowFilterModal(false)} />
+                    <div className="relative bg-bg-card w-full max-w-md rounded-t-3xl sm:rounded-2xl border border-border/60 p-6 flex flex-col max-h-[85vh] overflow-hidden">
 
-                        <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-zinc-800/60 pb-4 shrink-0 mb-5">
+                        <div className="flex items-center justify-between border-b border-border/60 pb-4 shrink-0 mb-5">
                             <h3 className="font-bold text-sm flex items-center gap-2 tracking-wider text-slate-900 dark:text-zinc-200 uppercase">
                                 <Filter className="w-4 h-4 text-indigo-600 dark:text-indigo-500" /> Filter Criteria Configuration
                             </h3>
-                            <button onClick={() => setShowFilterModal(false)} className="text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-200 transition-colors bg-transparent border-0 outline-none cursor-pointer">
+                            <button onClick={() => setShowFilterModal(false)} className="text-text-muted hover:text-text-primary dark:hover:text-zinc-200 transition-colors bg-transparent border-0 outline-none cursor-pointer">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <div className="space-y-5 overflow-y-auto pr-1 flex-1 min-h-0 scrollbar-none text-slate-800 dark:text-zinc-200">
+                        <div className="space-y-5 overflow-y-auto pr-1 flex-1 min-h-0 scrollbar-none text-text-primary">
 
                             {/* Section 1: Filters (mainFilters) */}
                             {Object.keys(filterMetadata.mainFilters || {}).length > 0 && (
                                 <div className="space-y-4">
                                     {Object.entries(filterMetadata.mainFilters || {}).map(([category, options]) => (
                                         <div key={category} className="space-y-2">
-                                            <label className="text-[9px] font-bold text-slate-400 dark:text-zinc-400 uppercase tracking-widest block ml-0.5">
+                                            <label className="text-[9px] font-bold text-text-muted uppercase tracking-widest block ml-0.5">
                                                 {category.replace(/([A-Z])/g, ' $1').trim()}
                                             </label>
                                             <div className="grid grid-cols-3 gap-2">
@@ -2139,7 +2145,7 @@ export const AutoAlerts = () => {
                                                             onClick={() => toggleFilterDraftOption(category, val)}
                                                             className={`py-2 px-1 text-center text-xs font-bold rounded-lg transition-colors truncate border cursor-pointer ${isSelected
                                                                     ? 'bg-indigo-600 text-white border-indigo-500'
-                                                                    : 'bg-slate-50 dark:bg-zinc-900/50 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-800/60 hover:text-slate-800 dark:hover:text-zinc-200'
+                                                                    : 'bg-bg-subtle text-text-muted border-border/60 hover:text-text-primary'
                                                                 }`}
                                                         >
                                                             {val}
@@ -2154,11 +2160,11 @@ export const AutoAlerts = () => {
 
                             {/* Section 2: Custom Filter (customFilters) */}
                             {Object.keys(filterMetadata.customFilters || {}).length > 0 && (
-                                <div className="space-y-4 pt-4 border-t border-slate-200/60 dark:border-zinc-800/60">
-                                    <span className="text-[9px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest block ml-0.5 select-none">Custom Configuration Filter</span>
+                                <div className="space-y-4 pt-4 border-t border-border/60">
+                                    <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest block ml-0.5 select-none">Custom Configuration Filter</span>
                                     {Object.entries(filterMetadata.customFilters || {}).map(([category, options]) => (
                                         <div key={category} className="space-y-2">
-                                            <label className="text-[9px] font-bold text-slate-400 dark:text-zinc-400 uppercase tracking-widest block ml-0.5">
+                                            <label className="text-[9px] font-bold text-text-muted uppercase tracking-widest block ml-0.5">
                                                 {category.replace(/([A-Z])/g, ' $1').trim()}
                                             </label>
                                             <div className="grid grid-cols-3 gap-2">
@@ -2171,7 +2177,7 @@ export const AutoAlerts = () => {
                                                             onClick={() => toggleFilterDraftOption(category, val)}
                                                             className={`py-2 px-1 text-center text-xs font-bold rounded-lg transition-colors truncate border cursor-pointer ${isSelected
                                                                     ? 'bg-indigo-600 text-white border-indigo-500'
-                                                                    : 'bg-slate-50 dark:bg-zinc-900/50 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-800/60 hover:text-slate-800 dark:hover:text-zinc-200'
+                                                                    : 'bg-bg-subtle text-text-muted border-border/60 hover:text-text-primary'
                                                                 }`}
                                                         >
                                                             {val}
@@ -2186,7 +2192,7 @@ export const AutoAlerts = () => {
                         </div>
 
                         {/* POLISHED DYNAMIC CUSTOMER SEGMENTS LIVE COUNT INDICATOR */}
-                        <div className="p-4 bg-slate-50 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800/60 rounded-2xl flex items-center justify-between shrink-0 shadow-inner mt-5">
+                        <div className="p-4 bg-bg-subtle border border-border/60 rounded-2xl flex items-center justify-between shrink-0 shadow-inner mt-5">
                             <div className="flex items-center gap-2.5">
                                 <div className="p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl relative shrink-0">
                                     <Users className="w-4 h-4 shrink-0" />
@@ -2196,8 +2202,8 @@ export const AutoAlerts = () => {
                                     </span>
                                 </div>
                                 <div className="min-w-0 pr-2">
-                                    <span className="text-[8px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest block select-none">Matched Segments Count</span>
-                                    <span className="text-xs font-bold text-slate-700 dark:text-zinc-300 font-mono block mt-0.5 tracking-wide truncate">{liveDraftCount} targets</span>
+                                    <span className="text-[8px] font-bold text-text-muted uppercase tracking-widest block select-none">Matched Segments Count</span>
+                                    <span className="text-xs font-bold text-text-primary font-mono block mt-0.5 tracking-wide truncate">{liveDraftCount} targets</span>
                                 </div>
                             </div>
                             <button
@@ -2216,65 +2222,65 @@ export const AutoAlerts = () => {
                ======================================= */}
             {showCustomersOverlay && (
                 <div className="fixed inset-0 flex items-center justify-center p-4 animate-in fade-in duration-150" style={{ zIndex: 55 }}>
-                    <div className="absolute inset-0 bg-slate-900/40 dark:bg-zinc-950/80 backdrop-blur-sm" onClick={() => setShowCustomersOverlay(false)} />
-                    <div className="relative bg-white dark:bg-[#0f0f0f] w-full max-w-4xl rounded-2xl border border-slate-200/60 dark:border-zinc-800/60 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+                    <div className="absolute inset-0 bg-overlay backdrop-blur-sm" onClick={() => setShowCustomersOverlay(false)} />
+                    <div className="relative bg-bg-card w-full max-w-4xl rounded-2xl border border-border/60 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
                         
-                        <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-zinc-800/60 p-5 shrink-0 bg-transparent backdrop-blur-md">
+                        <div className="flex items-center justify-between border-b border-border/60 p-5 shrink-0 bg-transparent backdrop-blur-md">
                             <div>
-                                <h3 className="font-bold text-sm tracking-wider text-slate-800 dark:text-zinc-200 uppercase flex items-center gap-2">
+                                <h3 className="font-bold text-sm tracking-wider text-text-primary uppercase flex items-center gap-2">
                                     <Users className="w-4 h-4 text-indigo-600 dark:text-indigo-500 shrink-0" /> targeted customer segment preview
                                 </h3>
-                                <p className="text-[10px] text-slate-500 dark:text-zinc-500 font-bold tracking-wider uppercase mt-1">
+                                <p className="text-[10px] text-text-muted font-bold tracking-wider uppercase mt-1">
                                     Displays maximum 30 active customer entries mapped to current scheduled filter logic.
                                 </p>
                             </div>
-                            <button onClick={() => setShowCustomersOverlay(false)} className="text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-200 transition-colors bg-transparent border-0 outline-none cursor-pointer">
+                            <button onClick={() => setShowCustomersOverlay(false)} className="text-text-muted hover:text-text-primary dark:hover:text-zinc-200 transition-colors bg-transparent border-0 outline-none cursor-pointer">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-auto p-6 min-h-[300px] scrollbar-none bg-transparent">
+                        <div className="flex-1 overflow-auto p-3 sm:p-6 min-h-[300px] scrollbar-none bg-transparent">
                             {loadingPreviewCustomers ? (
                                 <div className="flex flex-col items-center justify-center py-20 space-y-3">
                                     <Loader2 className="w-7 h-7 text-indigo-600 dark:text-indigo-500 animate-spin" />
-                                    <span className="text-[10px] text-slate-400 dark:text-zinc-500 uppercase tracking-widest animate-pulse select-none">Scanning registry database...</span>
+                                    <span className="text-[10px] text-text-muted uppercase tracking-widest animate-pulse select-none">Scanning registry database...</span>
                                 </div>
                             ) : previewCustomers.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-20 space-y-3 text-slate-400 dark:text-zinc-500 bg-slate-50 dark:bg-zinc-900/40 rounded-2xl border border-slate-200/60 dark:border-zinc-800/60 border-dashed">
+                                <div className="flex flex-col items-center justify-center py-20 space-y-3 text-text-muted bg-bg-subtle rounded-2xl border border-border/60 border-dashed">
                                     <AlertCircle className="w-8 h-8 text-slate-300 dark:text-zinc-600" />
                                     <span className="text-xs font-semibold italic select-none">No customers match the current filter boundary limits.</span>
                                 </div>
                             ) : (
-                                <div className="border border-slate-200/60 dark:border-zinc-800/60 rounded-2xl overflow-hidden bg-slate-50 dark:bg-zinc-900/40 shadow-inner">
+                                <div className="border border-border/60 rounded-2xl overflow-x-auto bg-bg-subtle shadow-inner">
                                     <table className="w-full text-left border-collapse text-xs">
                                         <thead>
-                                            <tr className="bg-slate-100 dark:bg-zinc-900/80 text-slate-500 dark:text-zinc-400 font-bold uppercase text-[9px] tracking-widest border-b border-slate-200/60 dark:border-zinc-800/60 select-none">
-                                                <th className="p-4">Customer Name</th>
-                                                <th className="p-4">Phone Channel</th>
-                                                <th className="p-4">Expiry Date</th>
-                                                <th className="p-4 text-right">Subscription Value</th>
-                                                <th className="p-4 text-center">Payment status</th>
-                                                <th className="p-4 text-center">Status</th>
+                                            <tr className="bg-bg-subtle/80 text-text-muted font-bold uppercase text-[9px] tracking-widest border-b border-border/60 select-none whitespace-nowrap">
+                                                <th className="px-3 py-3 sm:px-4 sm:py-3.5">Customer Name</th>
+                                                <th className="px-3 py-3 sm:px-4 sm:py-3.5">Phone</th>
+                                                <th className="px-3 py-3 sm:px-4 sm:py-3.5">Expiry Date</th>
+                                                <th className="px-3 py-3 sm:px-4 sm:py-3.5 text-right">Amount</th>
+                                                <th className="px-3 py-3 sm:px-4 sm:py-3.5 text-center">Payment status</th>
+                                                <th className="px-3 py-3 sm:px-4 sm:py-3.5 text-center">Status</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-slate-200/60 dark:divide-zinc-800/60 bg-transparent text-slate-700 dark:text-zinc-300">
+                                        <tbody className="divide-y divide-slate-200/60 dark:divide-zinc-800/60 bg-transparent text-text-primary">
                                             {previewCustomers.map((cust) => (
-                                                <tr key={cust.id} className="hover:bg-slate-100/50 dark:hover:bg-zinc-800/40 text-slate-800 dark:text-zinc-300 font-semibold transition-colors">
-                                                    <td className="p-4 font-bold text-slate-900 dark:text-zinc-200">{cust.name}</td>
-                                                    <td className="p-4 font-mono text-slate-500 dark:text-zinc-400">{cust.phone}</td>
-                                                    <td className="p-4 font-sans text-slate-500 dark:text-zinc-400">{formatDateToReadable(cust.expiryDate)}</td>
-                                                    <td className="p-4 text-right text-slate-900 dark:text-zinc-200 font-bold font-mono">₹{cust.amount.toLocaleString()}</td>
-                                                    <td className="p-4 text-center">
+                                                <tr key={cust.id} className="hover:bg-slate-100/50 dark:hover:bg-zinc-800/40 text-text-primary font-semibold transition-colors whitespace-nowrap">
+                                                    <td className="px-3 py-3 sm:px-4 sm:py-3.5 font-bold text-slate-900 dark:text-zinc-200">{cust.name}</td>
+                                                    <td className="px-3 py-3 sm:px-4 sm:py-3.5 font-mono text-text-muted">{cust.phone}</td>
+                                                    <td className="px-3 py-3 sm:px-4 sm:py-3.5 font-sans text-text-muted">{formatDateToReadable(cust.expiryDate)}</td>
+                                                    <td className="px-3 py-3 sm:px-4 sm:py-3.5 text-right text-slate-900 dark:text-zinc-200 font-bold font-regular">₹{cust.amount.toLocaleString()}</td>
+                                                    <td className="px-3 py-3 sm:px-4 sm:py-3.5 text-center">
                                                         <span className={`px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider ${
                                                             cust.paymentStatus === 'PAID' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20' :
                                                             cust.paymentStatus === 'UNPAID' ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20' :
-                                                            'bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20'
+                                                            'bg-rose-500/10 text-rose-700 dark:text-rose-450 border border-rose-500/20'
                                                         }`}>
                                                             {cust.paymentStatus}
                                                         </span>
                                                     </td>
-                                                    <td className="p-4 text-center">
-                                                        <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold ${cust.status === 'ACTIVE' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : 'bg-slate-200 dark:bg-zinc-800 text-slate-500 dark:text-zinc-500'}`}>
+                                                    <td className="px-3 py-3 sm:px-4 sm:py-3.5 text-center">
+                                                        <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold ${cust.status === 'ACTIVE' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : 'bg-border text-text-muted'}`}>
                                                             {cust.status}
                                                         </span>
                                                     </td>
@@ -2296,14 +2302,14 @@ export const AutoAlerts = () => {
             {showStatusDeactivationConfirm && statusToggleAlert && (
                 <div className="fixed inset-0 flex items-center justify-center p-4 animate-in fade-in duration-150" style={{ zIndex: 55 }}>
                     <div className="absolute inset-0 bg-slate-900/40 dark:bg-zinc-950/85 backdrop-blur-sm" onClick={() => setShowStatusDeactivationConfirm(false)} />
-                    <div className="relative bg-white dark:bg-[#0f0f0f] w-full max-w-sm rounded-2xl p-6 space-y-5 text-center shadow-2xl border border-slate-200/60 dark:border-zinc-800/60">
+                    <div className="relative bg-bg-card w-full max-w-sm rounded-2xl p-6 space-y-5 text-center shadow-2xl border border-border/60">
                         <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-500 flex items-center justify-center mx-auto relative">
                             <AlertCircle className="w-5 h-5 absolute animate-ping" />
                             <AlertCircle className="w-5 h-5" />
                         </div>
                         <div className="space-y-2">
                             <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-200">Confirm Deactivation</h3>
-                            <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed">
+                            <p className="text-xs text-text-muted leading-relaxed">
                                 confirm deactivating the <span className="font-bold">{statusToggleAlert.name}</span> auto alert, this won't send the alerts hereafter
                             </p>
                         </div>
@@ -2311,7 +2317,7 @@ export const AutoAlerts = () => {
                             <button
                                 type="button"
                                 onClick={() => setShowStatusDeactivationConfirm(false)}
-                                className="w-1/2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900/50 dark:hover:bg-zinc-800 text-slate-500 dark:text-zinc-400 font-bold py-3 rounded-xl text-xs border border-slate-200 dark:border-zinc-800/60 cursor-pointer"
+                                className="w-1/2 bg-bg-subtle hover:bg-bg-hover text-text-muted font-bold py-3 rounded-xl text-xs border border-border/60 cursor-pointer"
                             >
                                 Cancel
                             </button>
@@ -2335,16 +2341,16 @@ export const AutoAlerts = () => {
                ========================================== */}
             {showDeleteConfirm && (
                 <div className="fixed inset-0 flex items-center justify-center p-4 animate-in fade-in duration-150" style={{ zIndex: 55 }}>
-                    <div className="absolute inset-0 bg-slate-900/40 dark:bg-zinc-950/80 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
-                    <div className="relative bg-white dark:bg-[#0f0f0f] w-full max-w-sm rounded-2xl border border-slate-200/60 dark:border-zinc-800/60 p-6 space-y-6 shadow-2xl overflow-hidden">
+                    <div className="absolute inset-0 bg-overlay backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
+                    <div className="relative bg-bg-card w-full max-w-sm rounded-2xl border border-border/60 p-6 space-y-6 shadow-2xl overflow-hidden">
                         <div className="text-center space-y-3">
                             <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-500 flex items-center justify-center mx-auto relative mb-2">
                                 <AlertCircle className="w-5 h-5 absolute animate-ping" />
                                 <AlertCircle className="w-5 h-5" />
                             </div>
                             <h3 className="font-bold text-sm text-slate-900 dark:text-zinc-200 uppercase tracking-wider select-none">Confirm Alert Deletion?</h3>
-                            <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed font-semibold">
-                                Are you absolutely sure you want to delete the scheduled flow <span className="text-slate-800 dark:text-zinc-300 font-bold">"{selectedAlert?.name}"</span>? This action removes all dynamic trigger schedules forever.
+                            <p className="text-xs text-text-muted leading-relaxed font-semibold">
+                                Are you absolutely sure you want to delete the scheduled flow <span className="text-text-primary font-bold">"{selectedAlert?.name}"</span>? This action removes all dynamic trigger schedules forever.
                             </p>
                         </div>
                         <div className="flex gap-2.5">
@@ -2356,7 +2362,7 @@ export const AutoAlerts = () => {
                             </button>
                             <button
                                 onClick={() => setShowDeleteConfirm(false)}
-                                className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800/60 text-slate-600 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-white rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer"
+                                className="flex-1 py-3.5 bg-bg-subtle hover:bg-bg-hover border border-border text-text-muted hover:text-text-primary rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer"
                             >
                                 Back
                             </button>
@@ -2370,47 +2376,47 @@ export const AutoAlerts = () => {
             {/* ======================================================= */}
             {showPreviewModal && (
                 <div className="fixed inset-0 flex items-center justify-center p-4 animate-in fade-in duration-150" style={{ zIndex: 60 }}>
-                    <div className="absolute inset-0 bg-slate-900/40 dark:bg-zinc-950/80 backdrop-blur-sm" onClick={() => setShowPreviewModal(false)} />
-                    <div className="relative bg-white dark:bg-[#0f0f0f] w-full max-w-lg rounded-2xl border border-slate-200/60 dark:border-zinc-800/60 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-                        <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-zinc-800/60 p-5 shrink-0 bg-transparent">
-                            <h3 className="font-bold text-sm flex items-center gap-2.5 tracking-wider text-slate-800 dark:text-zinc-200 uppercase">
+                    <div className="absolute inset-0 bg-overlay backdrop-blur-sm" onClick={() => setShowPreviewModal(false)} />
+                    <div className="relative bg-bg-card w-full max-w-lg rounded-2xl border border-border/60 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+                        <div className="flex items-center justify-between border-b border-border/60 p-5 shrink-0 bg-transparent">
+                            <h3 className="font-bold text-sm flex items-center gap-2.5 tracking-wider text-text-primary uppercase">
                                 <FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-500" /> Template Preview
                             </h3>
-                            <button onClick={() => setShowPreviewModal(false)} className="text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-200 transition-colors bg-transparent border-0 outline-none cursor-pointer">
+                            <button onClick={() => setShowPreviewModal(false)} className="text-text-muted hover:text-text-primary dark:hover:text-zinc-200 transition-colors bg-transparent border-0 outline-none cursor-pointer">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
                         <div className="p-6 overflow-y-auto space-y-5 flex-1 scrollbar-none text-xs">
                             <div className="space-y-1.5">
-                                <span className="block text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest ml-0.5">Template Name</span>
-                                <div className="text-sm font-bold text-slate-800 dark:text-zinc-200 bg-slate-50 dark:bg-zinc-900/50 px-3 py-2 rounded-xl border border-slate-200/60 dark:border-zinc-800/60">
+                                <span className="block text-[10px] font-bold text-text-muted uppercase tracking-widest ml-0.5">Template Name</span>
+                                <div className="text-sm font-bold text-text-primary bg-bg-subtle px-3 py-2 rounded-xl border border-border/60">
                                     {previewTemplateName}
                                 </div>
                             </div>
 
                             <div className="space-y-1.5">
-                                <span className="block text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest ml-0.5">Message Template (Raw)</span>
-                                <div className="p-4 bg-slate-50 dark:bg-zinc-900/50 border border-slate-200/60 dark:border-zinc-800/60 rounded-xl text-slate-700 dark:text-zinc-300 font-sans whitespace-pre-wrap break-all leading-relaxed">
+                                <span className="block text-[10px] font-bold text-text-muted uppercase tracking-widest ml-0.5">Message Template (Raw)</span>
+                                <div className="p-4 bg-bg-subtle border border-border/60 rounded-xl text-text-primary font-sans whitespace-pre-wrap break-all leading-relaxed">
                                     {renderTemplatePreviewWithPills(previewTemplateRawContent)}
                                 </div>
                             </div>
 
                             <div className="space-y-1.5">
-                                <span className="block text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest ml-0.5">Message Preview (Compiled)</span>
-                                <div className="p-4 bg-slate-50 dark:bg-zinc-900/50 border border-slate-200/60 dark:border-zinc-800/60 rounded-xl text-slate-700 dark:text-zinc-300 font-sans whitespace-pre-wrap break-all leading-relaxed relative min-h-[60px]">
+                                <span className="block text-[10px] font-bold text-text-muted uppercase tracking-widest ml-0.5">Message Preview (Compiled)</span>
+                                <div className="p-4 bg-bg-subtle border border-border/60 rounded-xl text-text-primary font-sans whitespace-pre-wrap break-all leading-relaxed relative min-h-[60px]">
                                     {loadingPreviewTemplate ? (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-[#0f0f0f]/50">
+                                        <div className="absolute inset-0 flex items-center justify-center bg-bg-card/50">
                                             <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
                                         </div>
                                     ) : (
-                                        previewTemplateCompiled || <span className="text-slate-400 dark:text-zinc-500 italic">No compiled text returned.</span>
+                                        previewTemplateCompiled || <span className="text-text-muted italic">No compiled text returned.</span>
                                     )}
                                 </div>
                             </div>
                         </div>
 
-                        <div className="border-t border-slate-200/60 dark:border-zinc-800/60 p-5 shrink-0 bg-transparent flex items-center gap-3">
+                        <div className="border-t border-border/60 p-5 shrink-0 bg-transparent flex items-center gap-3">
                             <button
                                 onClick={handleEditTemplateFromPreview}
                                 className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 active:scale-98 transition-all text-xs font-bold rounded-xl text-white uppercase cursor-pointer border-0 outline-none shadow-lg shadow-indigo-600/10 flex items-center justify-center gap-1.5"
@@ -2419,7 +2425,7 @@ export const AutoAlerts = () => {
                             </button>
                             <button
                                 onClick={() => setShowPreviewModal(false)}
-                                className="px-5 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900/50 border border-slate-200/60 dark:border-zinc-800/60 text-slate-600 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                                className="px-5 py-3 bg-bg-subtle hover:bg-bg-hover border border-border text-text-muted hover:text-text-primary rounded-xl text-xs font-bold transition-colors cursor-pointer"
                             >
                                 Close
                             </button>

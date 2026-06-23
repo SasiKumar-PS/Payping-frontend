@@ -295,7 +295,7 @@ export const AlertHistory = () => {
             case 'FAILED': return <span className="text-rose-600 dark:text-rose-400 flex items-center gap-1 text-[10px] font-bold"><AlertCircle className="w-3 h-3" /> FAILED</span>;
             case 'PENDING': return <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1 text-[10px] font-bold"><Clock className="w-3 h-3 animate-pulse" /> PENDING</span>;
             case 'RETRYING': return <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1 text-[10px] font-bold"><RefreshCw className="w-3 h-3 animate-spin" /> RETRYING ({retryCount || 0})</span>;
-            default: return <span className="text-slate-500 dark:text-zinc-400 flex items-center gap-1 text-[10px] font-bold uppercase">{status}</span>;
+            default: return <span className="text-text-muted flex items-center gap-1 text-[10px] font-bold uppercase">{status}</span>;
         }
     };
 
@@ -305,18 +305,18 @@ export const AlertHistory = () => {
     const renderListView = () => (
         <div className="flex flex-col gap-3 animate-in fade-in duration-300">
             {loadingHistories ? (
-                <div className="py-32 text-center flex flex-col items-center gap-3 text-slate-400 dark:text-zinc-500 text-sm font-sans">
+                <div className="py-32 text-center flex flex-col items-center gap-3 text-text-muted text-sm font-sans">
                     <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
                     <span>FETCHING NOTIFICATION REGISTRY...</span>
                 </div>
             ) : histories.length === 0 ? (
-                <div className="py-32 text-center text-slate-400 dark:text-zinc-500 text-sm border border-dashed border-slate-200 dark:border-zinc-800/60 rounded-2xl">
+                <div className="py-32 text-center text-text-muted text-sm border border-dashed border-border/60 rounded-2xl">
                     No history records found for this period.
                 </div>
             ) : (
                 <div className="flex flex-col gap-2">
                     {histories.map((hist, index) => {
-                        const rowBg = 'bg-white dark:bg-[#09090b]/40 border-slate-200/60 dark:border-zinc-800/40 hover:bg-slate-50 dark:hover:bg-zinc-900/50';
+                        const rowBg = 'bg-bg-elevated/40 border-border/40 hover:bg-bg-hover';
                         return (
                             <div
                                 key={hist.id}
@@ -324,24 +324,23 @@ export const AlertHistory = () => {
                                 className={`p-2.5 rounded-lg border flex flex-row items-center gap-3 transition-all cursor-pointer group justify-between ${rowBg}`}
                             >
                                 <div className="flex flex-col gap-1 min-w-0 flex-1">
-                                    <h4 className="text-xs font-bold text-slate-800 dark:text-zinc-200 leading-tight group-hover:text-slate-950 dark:group-hover:text-white transition-colors truncate">{hist.name}</h4>
-                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] sm:text-xs">
-                                        <span className="text-slate-500 dark:text-zinc-400 flex items-center gap-1.5 shrink-0 font-medium">
+                                    <h4 className="text-xs font-bold text-text-primary leading-tight group-hover:text-text-heading transition-colors truncate">{hist.name}</h4>
+                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] sm:text-xs mt-1.5">
+                                        <span className="text-text-muted flex items-center gap-1.5 shrink-0 font-medium">
                                             {hist.type === 'AUTO' ? <Activity className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-500" /> : <LayoutDashboard className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-500" />}
                                             {hist.type}
                                         </span>
-                                        <span className="text-slate-500 dark:text-zinc-400 flex items-center gap-1.5 shrink-0 font-medium">
-                                            <Users className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" /> {hist.recipientsCount}
+                                        <span className="text-text-muted flex items-center gap-1.5 shrink-0 font-medium">
+                                            <Users className="w-3.5 h-3.5 text-text-muted" /> {hist.recipientsCount}
                                         </span>
-                                        <span className="text-slate-500 dark:text-zinc-500 font-sans flex items-center gap-1.5 shrink-0"><Clock className="w-3.5 h-3.5" />{formatDateToReadable(hist.triggeredAt)}</span>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3 shrink-0 ml-auto pl-2">
                                     <div className="flex flex-col items-end gap-1.5 shrink-0">
                                         {renderStatusBadge(hist.status)}
-                                        {hist.completedAt && <span className="text-slate-500 dark:text-zinc-500 font-sans text-[9px] sm:text-[10px] flex items-center gap-1 whitespace-nowrap"><CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" />{formatDateToReadable(hist.completedAt)}</span>}
+                                        {hist.completedAt && <span className="text-text-muted font-sans text-[9px] sm:text-[10px] flex items-center gap-1 whitespace-nowrap"><CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" />{formatDateToReadable(hist.completedAt)}</span>}
                                     </div>
-                                    <ChevronRight className="w-5 h-5 text-slate-400 dark:text-zinc-600 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors shrink-0" />
+                                    <ChevronRight className="w-5 h-5 text-text-muted group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors shrink-0" />
                                 </div>
                             </div>
                         );
@@ -354,7 +353,7 @@ export const AlertHistory = () => {
     const renderDetailView = () => {
         if (loadingDetails) {
             return (
-                <div className="py-32 text-center flex flex-col items-center gap-3 text-slate-400 dark:text-zinc-500 text-sm font-sans animate-in fade-in">
+                <div className="py-32 text-center flex flex-col items-center gap-3 text-text-muted text-sm font-sans animate-in fade-in">
                     <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
                     <span>LOADING HISTORY DETAILS...</span>
                 </div>
@@ -368,57 +367,57 @@ export const AlertHistory = () => {
         return (
             <div className="flex flex-col gap-3 animate-in slide-in-from-right-4 duration-300 pb-20">
                 {/* Detailed Header Block */}
-                <div className="p-3.5 bg-slate-50 dark:bg-zinc-900/20 border border-slate-200/60 dark:border-zinc-800/60 rounded-2xl shadow-sm relative overflow-hidden">
+                <div className="p-3.5 bg-bg-subtle/20 border border-border/60 rounded-2xl shadow-sm relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none text-slate-400 dark:text-white">
                         <HistoryIcon className="w-32 h-32 sm:w-48 sm:h-48" />
                     </div>
 
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3.5 relative z-10">
-                        <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight leading-tight">{selectedHistory.name}</h3>
+                        <h3 className="text-base font-bold text-text-heading tracking-tight leading-tight">{selectedHistory.name}</h3>
                         <div className="shrink-0">{renderStatusBadge(selectedHistory.status)}</div>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 relative z-10">
                         <div className="space-y-1 sm:space-y-1.5 flex flex-col items-start">
-                            <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest">Alert Type</span>
-                            <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-zinc-200 flex items-center gap-1.5 sm:gap-2">
+                            <span className="text-[9px] sm:text-[10px] font-bold text-text-muted uppercase tracking-widest">Alert Type</span>
+                            <p className="text-xs sm:text-sm font-bold text-text-primary flex items-center gap-1.5 sm:gap-2">
                                 {selectedHistory.type === 'AUTO' ? <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 dark:text-emerald-500" /> : <LayoutDashboard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 dark:text-indigo-500" />}
                                 {selectedHistory.type}
                             </p>
                         </div>
                         <div className="space-y-1 sm:space-y-1.5 flex flex-col items-start min-w-0">
-                            <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest">Template Used</span>
+                            <span className="text-[9px] sm:text-[10px] font-bold text-text-muted uppercase tracking-widest">Template Used</span>
                             <p className="text-xs sm:text-sm font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/10 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg truncate max-w-full border border-indigo-200/60 dark:border-indigo-500/20">{selectedHistory.template?.name || 'Unknown'}</p>
                         </div>
                         <div className="space-y-1 sm:space-y-1.5 flex flex-col items-start">
-                            <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest">Started At</span>
-                            <p className="text-[10px] sm:text-sm font-sans font-bold text-slate-700 dark:text-zinc-300">{formatDateToReadable(selectedHistory.triggeredAt)}</p>
+                            <span className="text-[9px] sm:text-[10px] font-bold text-text-muted uppercase tracking-widest">Started At</span>
+                            <p className="text-[10px] sm:text-sm font-sans font-bold text-text-primary">{formatDateToReadable(selectedHistory.triggeredAt)}</p>
                         </div>
                         <div className="space-y-1 sm:space-y-1.5 flex flex-col items-start">
-                            <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest">Completed At</span>
-                            <p className="text-[10px] sm:text-sm font-sans font-bold text-slate-700 dark:text-zinc-300">{formatDateToReadable(selectedHistory.completedAt) || 'N/A'}</p>
+                            <span className="text-[9px] sm:text-[10px] font-bold text-text-muted uppercase tracking-widest">Completed At</span>
+                            <p className="text-[10px] sm:text-sm font-sans font-bold text-text-primary">{formatDateToReadable(selectedHistory.completedAt) || 'N/A'}</p>
                         </div>
                     </div>
                 </div>
 
                 {/* Customer Logs Table Area */}
-                <div className="flex flex-col bg-white dark:bg-[#0f0f0f]/80 border border-slate-200/60 dark:border-zinc-800/60 rounded-2xl shadow-sm overflow-hidden">
-                    <div className="p-3 border-b border-slate-200/60 dark:border-zinc-800/60 flex items-center justify-between bg-slate-50 dark:bg-zinc-900/30">
-                        <h3 className="font-bold text-xs text-slate-900 dark:text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
+                <div className="flex flex-col bg-bg-card/80 border border-border/60 rounded-2xl shadow-sm overflow-hidden">
+                    <div className="p-3 border-b border-border/60 flex items-center justify-between bg-bg-subtle/30">
+                        <h3 className="font-bold text-xs text-text-primary uppercase tracking-wider flex items-center gap-1.5">
                             <Users className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-500" /> Delivery Telemetry
                         </h3>
-                        <span className="text-[10px] font-bold text-slate-600 dark:text-zinc-400 font-mono bg-slate-100 dark:bg-zinc-950 px-2 py-0.5 rounded-full border border-slate-200 dark:border-zinc-800">
+                        <span className="text-[10px] font-bold text-text-muted font-mono bg-bg-subtle px-2 py-0.5 rounded-full border border-border">
                             TOTAL: {selectedHistory.recipientsCount}
                         </span>
                     </div>
 
                     <div className="p-2 space-y-1.5">
                         {logs.length === 0 ? (
-                            <div className="py-12 text-center text-slate-400 dark:text-zinc-500 text-xs font-medium">No delivery logs registered for this execution.</div>
+                            <div className="py-12 text-center text-text-muted text-xs font-medium">No delivery logs registered for this execution.</div>
                         ) : (
                             <div className="space-y-1.5">
                                 {logs.map((log, index) => {
-                                    const rowBg = 'bg-white dark:bg-[#09090b]/40 border-slate-200/60 dark:border-zinc-800/40 hover:bg-slate-50 dark:hover:bg-zinc-900/50';
+                                    const rowBg = 'bg-bg-elevated/40 border-border/40 hover:bg-bg-hover';
                                     return (
                                         <div
                                             key={log.id}
@@ -427,8 +426,8 @@ export const AlertHistory = () => {
                                         >
                                             {/* Top/Left Section: Serial & Name */}
                                             <div className="flex items-center gap-2 flex-1 min-w-0">
-                                                <div className="text-[10px] font-mono font-bold text-slate-400 dark:text-zinc-500 shrink-0 w-8">{index + 1}</div>
-                                                <p className="text-xs font-bold text-slate-800 dark:text-zinc-200 truncate">{log.customerName}</p>
+                                                <div className="text-[10px] font-mono font-bold text-text-muted shrink-0 w-8">{index + 1}</div>
+                                                <p className="text-xs font-bold text-text-primary truncate">{log.customerName}</p>
                                             </div>
 
                                             {/* Bottom/Right Section: Status, Time, Icon */}
@@ -437,11 +436,11 @@ export const AlertHistory = () => {
                                                     {renderLogStatus(log.status, log.retryCount)}
                                                 </div>
                                                 <div className="w-auto sm:w-32 text-left sm:text-right shrink-0">
-                                                    <span className="text-[9px] font-sans text-slate-500 dark:text-zinc-400">{formatDateToReadable(log.sentAt)}</span>
+                                                    <span className="text-[9px] font-sans text-text-muted">{formatDateToReadable(log.sentAt)}</span>
                                                 </div>
                                                 <div className="w-6 sm:w-8 flex justify-end shrink-0">
-                                                    <div className="p-1 rounded-lg bg-slate-100 dark:bg-zinc-800/55 hover:bg-indigo-500/20 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                                                        <Eye className="w-3.5 h-3.5 text-slate-500 dark:text-zinc-400" />
+                                                    <div className="p-1 rounded-lg bg-bg-subtle/55 hover:bg-indigo-500/20 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                                                        <Eye className="w-3.5 h-3.5 text-text-muted" />
                                                     </div>
                                                 </div>
                                             </div>
@@ -457,20 +456,20 @@ export const AlertHistory = () => {
     };
 
     return (
-        <div className="min-h-screen bg-transparent text-slate-800 dark:text-zinc-200 flex flex-col font-sans select-none overflow-x-hidden pb-20 relative">
+        <div className="min-h-screen bg-transparent text-text-primary flex flex-col font-sans select-none overflow-x-hidden pb-20 relative">
 
             {/* HEADER */}
-            <header className="sticky top-0 z-30 bg-slate-50/80 dark:bg-[#0f0f0f]/80 backdrop-blur-md px-4 md:px-8 pt-4 pb-3 border-b border-slate-200/60 dark:border-zinc-800/60">
+            <header className="sticky top-0 z-30 bg-bg-main/80 backdrop-blur-md px-4 md:px-8 pt-4 pb-3 border-b border-border/60">
                 <div className="max-w-none mx-auto w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 
                     <div className="flex items-center gap-3">
                         {/* Dynamic Back Button based on View State */}
                         {(viewMode === 'DETAIL' || stateParams?.source === 'auto-alerts') && (
-                            <button onClick={handleBackClick} className="p-2 bg-white dark:bg-zinc-900/50 hover:bg-slate-50 dark:hover:bg-zinc-800 rounded-lg border border-slate-200 dark:border-zinc-800/60 transition-colors cursor-pointer text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white shadow-sm">
+                            <button onClick={handleBackClick} className="p-2 bg-bg-card/50 hover:bg-bg-hover rounded-lg border border-border/60 transition-colors cursor-pointer text-text-primary hover:text-text-heading shadow-sm">
                                 <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                             </button>
                         )}
-                        <h2 className="text-2xl font-extrabold uppercase tracking-wider flex items-center gap-2 text-slate-900 dark:text-white">
+                        <h2 className="text-2xl font-extrabold uppercase tracking-wider flex items-center gap-2 text-text-heading">
                             <HistoryIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-500" /> Alert History
                         </h2>
                     </div>
@@ -479,11 +478,11 @@ export const AlertHistory = () => {
                         <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
                             {/* Type Filter Tabs Selector */}
                             <div className="flex gap-0.5 p-0.5 bg-bg-sidebar/55 border border-border/60 rounded-lg animate-in fade-in duration-200 shrink-0">
-                                {[
+                                {([
                                     { value: 'ALL', label: 'All' },
                                     { value: 'AUTO', label: 'Auto' },
                                     { value: 'MANUAL', label: 'Manual' }
-                                ].map((opt) => {
+                                ] as const).map((opt) => {
                                     const isActive = filterType === opt.value;
                                     return (
                                         <button
@@ -491,7 +490,7 @@ export const AlertHistory = () => {
                                             onClick={() => setFilterType(opt.value)}
                                             className={`px-2 py-1 sm:px-3.5 sm:py-1.5 rounded-md text-[9px] sm:text-[10px] font-semibold tracking-wide transition-all cursor-pointer border-0 outline-none ${
                                                 isActive 
-                                                    ? 'bg-white dark:bg-zinc-800 text-accent font-bold shadow-sm' 
+                                                    ? 'bg-bg-elevated text-accent font-bold shadow-sm' 
                                                     : 'text-text-muted hover:text-text-primary'
                                             }`}
                                         >
@@ -502,15 +501,15 @@ export const AlertHistory = () => {
                             </div>
 
                             {/* Month Selector */}
-                            <div className="flex items-center bg-white dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800/60 rounded-lg p-1 shrink-0">
-                                <button onClick={handlePrevMonth} className="p-1 sm:p-1.5 hover:bg-slate-50 dark:hover:bg-zinc-800/60 rounded-lg text-slate-400 dark:text-zinc-400 transition-colors">
+                            <div className="flex items-center bg-bg-card/50 border border-border/60 rounded-lg p-1 shrink-0">
+                                <button onClick={handlePrevMonth} className="p-1 sm:p-1.5 hover:bg-bg-hover/60 rounded-lg text-text-muted transition-colors">
                                     <ChevronLeft className="w-4 h-4" />
                                 </button>
-                                <div className="px-2 sm:px-4 text-[10px] sm:text-xs font-bold text-slate-700 dark:text-zinc-200 tracking-wider w-24 sm:w-32 text-center uppercase flex items-center justify-center gap-1 sm:gap-1.5">
-                                    <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400 dark:text-zinc-500 hidden sm:block" />
+                                <div className="px-2 sm:px-4 text-[10px] sm:text-xs font-bold text-text-primary tracking-wider w-24 sm:w-32 text-center uppercase flex items-center justify-center gap-1 sm:gap-1.5">
+                                    <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-text-muted hidden sm:block" />
                                     {MONTH_NAMES[currentMonth].substring(0, 3)} {currentYear}
                                 </div>
-                                <button onClick={handleNextMonth} className="p-1 sm:p-1.5 hover:bg-slate-50 dark:hover:bg-zinc-800/60 rounded-lg text-slate-400 dark:text-zinc-400 transition-colors">
+                                <button onClick={handleNextMonth} className="p-1 sm:p-1.5 hover:bg-bg-hover/60 rounded-lg text-text-muted transition-colors">
                                     <ChevronRight className="w-4 h-4" />
                                 </button>
                             </div>
@@ -530,41 +529,41 @@ export const AlertHistory = () => {
             {previewLog && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
                     <div className="absolute inset-0 bg-slate-900/40 dark:bg-black/80 backdrop-blur-sm" onClick={() => setPreviewLog(null)} />
-                    <div className="relative bg-white dark:bg-[#0f0f0f] border border-slate-200 dark:border-zinc-800/60 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
-                        <div className="p-5 border-b border-slate-200/60 dark:border-zinc-800/60 bg-slate-50 dark:bg-zinc-900/30 flex items-center justify-between">
-                            <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                    <div className="relative bg-bg-card border border-border/60 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+                        <div className="p-5 border-b border-border/60 bg-bg-subtle/30 flex items-center justify-between">
+                            <h3 className="font-bold text-sm text-text-heading flex items-center gap-2">
                                 <Eye className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Log Inspector
                             </h3>
-                            <button onClick={() => setPreviewLog(null)} className="text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-white transition-colors bg-transparent border-0 cursor-pointer outline-none"><X className="w-5 h-5" /></button>
+                            <button onClick={() => setPreviewLog(null)} className="text-text-muted hover:text-text-primary dark:hover:text-white transition-colors bg-transparent border-0 cursor-pointer outline-none"><X className="w-5 h-5" /></button>
                         </div>
                         <div className="p-6 space-y-5">
-                            <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-zinc-900/40 p-4 rounded-xl border border-slate-200/60 dark:border-zinc-800/40">
+                            <div className="grid grid-cols-2 gap-4 bg-bg-subtle p-4 rounded-xl border border-border/40">
                                 <div>
-                                    <span className="block text-[9px] font-bold text-slate-400 dark:text-zinc-500 uppercase mb-1">Customer</span>
-                                    <span className="text-sm font-bold text-slate-800 dark:text-zinc-200">{previewLog.customerName}</span>
+                                    <span className="block text-[9px] font-bold text-text-muted uppercase mb-1">Customer</span>
+                                    <span className="text-sm font-bold text-text-primary">{previewLog.customerName}</span>
                                 </div>
                                 <div>
-                                    <span className="block text-[9px] font-bold text-slate-400 dark:text-zinc-500 uppercase mb-1">Status</span>
+                                    <span className="block text-[9px] font-bold text-text-muted uppercase mb-1">Status</span>
                                     {renderLogStatus(previewLog.status, previewLog.retryCount)}
                                 </div>
                                 <div>
-                                    <span className="block text-[9px] font-bold text-slate-400 dark:text-zinc-500 uppercase mb-1">Serial</span>
-                                    <span className="text-xs font-mono font-bold text-slate-500 dark:text-zinc-400">#{(selectedHistory?.logs?.findIndex(l => l.id === previewLog.id) ?? 0) + 1}</span>
+                                    <span className="block text-[9px] font-bold text-text-muted uppercase mb-1">Serial</span>
+                                    <span className="text-xs font-mono font-bold text-text-muted">#{(selectedHistory?.logs?.findIndex(l => l.id === previewLog.id) ?? 0) + 1}</span>
                                 </div>
                                 <div>
-                                    <span className="block text-[9px] font-bold text-slate-400 dark:text-zinc-500 uppercase mb-1">Sent At</span>
-                                    <span className="text-xs font-sans font-bold text-slate-500 dark:text-zinc-400">{formatDateToReadable(previewLog.sentAt)}</span>
+                                    <span className="block text-[9px] font-bold text-text-muted uppercase mb-1">Sent At</span>
+                                    <span className="text-xs font-sans font-bold text-text-muted">{formatDateToReadable(previewLog.sentAt)}</span>
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <span className="block text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest pl-1">Message Preview Render</span>
-                                <div className="w-full bg-slate-50 dark:bg-[#050505] border border-slate-200 dark:border-zinc-800/60 p-4 rounded-xl text-slate-700 dark:text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                                <span className="block text-[10px] font-bold text-text-muted uppercase tracking-widest pl-1">Message Preview Render</span>
+                                <div className="w-full bg-bg-input border border-border/60 p-4 rounded-xl text-text-primary text-sm leading-relaxed whitespace-pre-wrap font-medium">
                                     {previewLog.message || 'No message content available.'}
                                 </div>
                             </div>
                         </div>
-                        <div className="p-5 border-t border-slate-200/60 dark:border-zinc-800/60 bg-slate-50 dark:bg-zinc-900/30">
+                        <div className="p-5 border-t border-border/60 bg-bg-subtle/30">
                             <button onClick={() => setPreviewLog(null)} className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white font-bold py-3 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-lg shadow-indigo-600/10 border-0 cursor-pointer outline-none">
                                 Close Inspector
                             </button>

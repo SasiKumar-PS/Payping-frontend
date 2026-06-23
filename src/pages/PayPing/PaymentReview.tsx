@@ -250,7 +250,7 @@ const PaymentReview = () => {
             <div className="flex-1 flex flex-col items-center justify-center p-12 bg-transparent min-h-[60vh] relative overflow-hidden">
                 <div className="absolute w-[300px] h-[300px] bg-indigo-500/5 rounded blur-[100px] animate-pulse pointer-events-none" />
                 <RefreshCw className="w-7 h-7 text-indigo-500 animate-spin mb-4" />
-                <p className="text-slate-500 dark:text-zinc-500 text-xs font-bold uppercase tracking-[0.2em] animate-pulse">Syncing review status...</p>
+                <p className="text-text-muted text-xs font-bold uppercase tracking-[0.2em] animate-pulse">Syncing review status...</p>
             </div>
         );
     }
@@ -286,9 +286,9 @@ const PaymentReview = () => {
             <div className="space-y-1.5 pb-3 border-b border-slate-200/60 dark:border-zinc-900">
                 <div className="flex items-center gap-3">
                     <ClipboardCheck className="w-8 h-8 text-indigo-500" />
-                    <h1 className="text-2xl font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">Payment Review</h1>
+                    <h1 className="text-2xl font-extrabold uppercase tracking-wider text-text-heading">Payment Review</h1>
                 </div>
-                <div className="flex items-center gap-2 text-slate-500 dark:text-zinc-500 pl-1">
+                <div className="flex items-center gap-2 text-text-muted pl-1">
                     <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Billing Verification Portal</span>
                 </div>
             </div>
@@ -307,7 +307,7 @@ const PaymentReview = () => {
                     return (
                         <div
                             key={status}
-                            className="border border-slate-200/60 dark:border-zinc-800/40 rounded bg-slate-50/50 dark:bg-[#09090b]/40 shadow-sm relative"
+                            className="border border-border/40 rounded bg-bg-subtle/50 shadow-sm relative"
                         >
                             {/* Glowing Outline Layer: ONLY when PAID has count > 0 */}
                             {isPulse && (
@@ -317,7 +317,7 @@ const PaymentReview = () => {
                             {/* Accordion Header */}
                             <button
                                 onClick={() => setOpenSection(isExpanded ? null : status)}
-                                className="w-full flex items-center justify-between p-3.5 bg-white dark:bg-[#0f0f0f] hover:bg-slate-50 dark:hover:bg-zinc-900/50 text-left font-bold border-0 rounded outline-none cursor-pointer relative z-20"
+                                className="w-full flex items-center justify-between p-3.5 bg-bg-card hover:bg-bg-hover text-left font-bold border-0 rounded outline-none cursor-pointer relative z-20"
                             >
                                 <div className="flex items-center gap-3">
                                     <div className={`w-2 h-2 rounded ${status === 'PAID' ? 'bg-emerald-500 animate-pulse' :
@@ -325,20 +325,20 @@ const PaymentReview = () => {
                                                 status === 'NOTIFIED' ? 'bg-amber-400' :
                                                     status === 'APPROVED' ? 'bg-indigo-500' : 'bg-rose-500'
                                         }`} />
-                                    <span className="text-xs text-slate-800 dark:text-zinc-200 tracking-wide font-bold uppercase">{label}</span>
-                                    <span className="text-[10px] bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-650 dark:text-zinc-450 px-2 py-0.5 rounded font-semibold">{count}</span>
+                                    <span className="text-xs text-text-primary tracking-wide font-bold uppercase">{label}</span>
+                                    <span className="text-[10px] bg-bg-subtle border border-border text-slate-650 dark:text-zinc-450 px-2 py-0.5 rounded font-semibold">{count}</span>
                                 </div>
-                                {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-500 dark:text-zinc-400" /> : <ChevronDown className="w-4 h-4 text-slate-500 dark:text-zinc-400" />}
+                                {isExpanded ? <ChevronUp className="w-4 h-4 text-text-muted" /> : <ChevronDown className="w-4 h-4 text-text-muted" />}
                             </button>
 
                             {/* Accordion Content (Collapsible) */}
                             <div
-                                className={`overflow-hidden rounded transition-all duration-300 ${isExpanded ? 'max-h-[1000px] border-t border-slate-100 dark:border-zinc-900/50' : 'max-h-0'}`}
+                                className={`overflow-hidden rounded transition-all duration-300 ${isExpanded ? 'max-h-[1000px] border-t border-border-subtle/50' : 'max-h-0'}`}
                             >
-                                <div className="divide-y divide-slate-100 dark:divide-zinc-800/40 bg-slate-50/20 dark:bg-zinc-950/10">
+                                <div className="divide-y divide-border-subtle bg-bg-subtle/10">
                                     {/* Helper Prompt Text: inside expanded PAID section above list */}
                                     {isPaid && (
-                                        <div className="px-3.5 py-2.5 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest bg-indigo-500/5 border-b border-slate-100 dark:border-zinc-900/50">
+                                        <div className="px-3.5 py-2.5 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest bg-indigo-500/5 border-b border-border-subtle/50">
                                             click a customer to confirm the payment
                                         </div>
                                     )}
@@ -351,15 +351,15 @@ const PaymentReview = () => {
                                                     key={customer.id}
                                                     onClick={() => handleCustomerRowClick(customer, status)}
                                                     className={`p-3 flex items-center justify-between transition-all duration-200 min-h-[46px] ${isClickable
-                                                            ? "hover:bg-slate-100 dark:hover:bg-zinc-900/30 cursor-pointer active:bg-slate-200 dark:active:bg-zinc-900/60"
-                                                            : "bg-slate-100/30 dark:bg-[#050506]/15"
+                                                            ? "hover:bg-bg-hover/30 cursor-pointer active:bg-bg-hover"
+                                                            : "bg-bg-subtle/30"
                                                         }`}
                                                 >
                                                     <div className="flex items-center gap-3.5 min-w-0">
-                                                        <span className="font-mono text-slate-400 dark:text-zinc-500 text-xs font-bold w-6">{String(index + 1).padStart(2, '0')}</span>
+                                                        <span className="font-mono text-text-muted text-xs font-bold w-6">{String(index + 1).padStart(2, '0')}</span>
                                                         <div className="min-w-0">
-                                                            <p className="font-bold text-xs text-slate-800 dark:text-zinc-200 tracking-wide truncate">{customer.name}</p>
-                                                            <span className="text-[9px] text-slate-400 dark:text-zinc-500 font-semibold tracking-wider mt-0.5 block">
+                                                            <p className="font-bold text-xs text-text-primary tracking-wide truncate">{customer.name}</p>
+                                                            <span className="text-[9px] text-text-muted font-semibold tracking-wider mt-0.5 block">
                                                                 {customer.phone}
                                                             </span>
                                                         </div>
@@ -384,8 +384,8 @@ const PaymentReview = () => {
                                             );
                                         })
                                     ) : (
-                                        <div className="text-center py-6 bg-slate-50/50 dark:bg-zinc-950/10 flex flex-col items-center justify-center gap-1.5">
-                                            <p className="text-slate-500 dark:text-zinc-500 text-[10px] uppercase tracking-widest font-bold">No customers in queue</p>
+                                        <div className="text-center py-6 bg-bg-subtle/25 flex flex-col items-center justify-center gap-1.5">
+                                            <p className="text-text-muted text-[10px] uppercase tracking-widest font-bold">No customers in queue</p>
                                         </div>
                                     )}
                                 </div>
@@ -401,17 +401,17 @@ const PaymentReview = () => {
             {confirmingCustomer && !showPaymentModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     {/* Backdrop */}
-                    <div className="absolute inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm" onClick={() => setConfirmingCustomer(null)} />
+                    <div className="absolute inset-0 bg-overlay backdrop-blur-sm" onClick={() => setConfirmingCustomer(null)} />
 
                     {/* Container */}
-                    <div className="relative bg-white dark:bg-[#09090b] border border-slate-200 dark:border-zinc-800/80 w-full max-w-sm rounded shadow-xl p-6 space-y-6 text-center animate-in fade-in zoom-in-95 duration-200 flex flex-col">
+                    <div className="relative bg-bg-elevated border border-border/80 w-full max-w-sm rounded shadow-xl p-6 space-y-6 text-center animate-in fade-in zoom-in-95 duration-200 flex flex-col">
                         <div className="space-y-3">
                             <div className="w-12 h-12 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto shadow-sm">
                                 <HelpCircle className="w-6 h-6" />
                             </div>
-                            <h3 className="font-extrabold text-sm uppercase tracking-widest text-slate-500 dark:text-zinc-400">Confirm Payment Status</h3>
-                            <p className="text-sm text-slate-800 dark:text-zinc-200 leading-relaxed max-w-[280px] mx-auto">
-                                Confirm <span className="font-bold text-indigo-600 dark:text-indigo-400">{confirmingCustomer.name}</span> payment of <span className="font-bold text-slate-900 dark:text-white font-mono">₹{confirmingCustomer.amount}</span>
+                            <h3 className="font-extrabold text-sm uppercase tracking-widest text-text-muted">Confirm Payment Status</h3>
+                            <p className="text-sm text-text-primary leading-relaxed max-w-[280px] mx-auto">
+                                Confirm <span className="font-bold text-indigo-600 dark:text-indigo-400">{confirmingCustomer.name}</span> payment of <span className="font-bold text-text-heading font-mono">₹{confirmingCustomer.amount}</span>
                             </p>
                         </div>
 
@@ -420,7 +420,7 @@ const PaymentReview = () => {
                                 type="button"
                                 disabled={actionLoading}
                                 onClick={handleRejectPayment}
-                                className="flex-1 py-3 bg-slate-100 hover:bg-rose-50/50 dark:bg-[#0f0f0f] dark:hover:bg-rose-950/20 text-slate-600 hover:text-rose-600 dark:text-zinc-400 dark:hover:text-rose-500 border border-slate-200 dark:border-zinc-800 dark:hover:border-rose-900/30 rounded font-bold text-xs transition-all duration-200 cursor-pointer active:scale-95 flex items-center justify-center gap-1.5"
+                                className="flex-1 py-3 bg-bg-subtle hover:bg-negative/10 dark:hover:bg-negative/20 text-text-muted hover:text-negative dark:hover:text-negative border border-border rounded font-bold text-xs transition-all duration-200 cursor-pointer active:scale-95 flex items-center justify-center gap-1.5"
                             >
                                 <XCircle className="w-4 h-4" /> Reject
                             </button>
@@ -443,13 +443,13 @@ const PaymentReview = () => {
             {showPaymentModal && confirmingCustomer && (
                 <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0">
                     {/* Backdrop */}
-                    <div className="absolute inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm" onClick={() => setShowPaymentModal(false)} />
+                    <div className="absolute inset-0 bg-overlay backdrop-blur-sm" onClick={() => setShowPaymentModal(false)} />
 
                     {/* Form Container */}
-                    <div className="relative bg-white dark:bg-[#09090b] border border-slate-200 dark:border-zinc-800/80 w-full max-w-sm rounded sm:rounded shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
+                    <div className="relative bg-bg-elevated border border-border/80 w-full max-w-sm rounded sm:rounded shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
                         {/* Header */}
-                        <div className="p-4 flex items-center justify-between border-b border-slate-100 dark:border-zinc-900 bg-slate-50 dark:bg-[#0f0f0f]/30">
-                            <h3 className="font-bold text-sm text-slate-800 dark:text-zinc-200">
+                        <div className="p-4 flex items-center justify-between border-b border-border-subtle bg-bg-subtle">
+                            <h3 className="font-bold text-sm text-text-primary">
                                 Update {confirmingCustomer.name} payment status
                             </h3>
                             <button type="button" onClick={() => setShowPaymentModal(false)} className="text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-white outline-none border-0 bg-transparent cursor-pointer"><X className="w-5 h-5" /></button>
@@ -464,13 +464,13 @@ const PaymentReview = () => {
 
                             {/* Expiry Date */}
                             <div className="space-y-1.5">
-                                <label className="block text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest ml-1">New Expiry Date <span className="text-rose-500">*</span></label>
+                                <label className="block text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">New Expiry Date <span className="text-rose-500">*</span></label>
                                 <input
                                     type="date"
                                     required
                                     value={paymentForm.expiryDate}
                                     onChange={(e) => setPaymentForm(prev => ({ ...prev, expiryDate: e.target.value }))}
-                                    className="w-full bg-slate-50 dark:bg-[#050506] border border-slate-200 dark:border-zinc-800 p-2.5 rounded text-slate-800 dark:text-white font-mono font-bold outline-none focus:border-indigo-500 transition-colors"
+                                    className="w-full bg-bg-input border border-border p-2.5 rounded text-text-heading font-mono font-bold outline-none focus:border-indigo-500 transition-colors"
                                 />
                                 {!isFutureDate(paymentForm.expiryDate) && paymentForm.expiryDate && (
                                     <p className="text-[10px] text-rose-600 dark:text-rose-400 font-bold ml-1">Expiry date must be in the future.</p>
@@ -479,23 +479,23 @@ const PaymentReview = () => {
 
                             {/* Amount */}
                             <div className="space-y-1.5">
-                                <label className="block text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest ml-1">Paid Amount (₹)</label>
+                                <label className="block text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Paid Amount (₹)</label>
                                 <input
                                     type="number"
                                     required
                                     value={paymentForm.amount || ''}
                                     onChange={(e) => setPaymentForm(prev => ({ ...prev, amount: Number(e.target.value) }))}
-                                    className="w-full bg-slate-50 dark:bg-[#050506] border border-slate-200 dark:border-zinc-800 p-2.5 rounded text-slate-800 dark:text-white font-mono font-bold outline-none focus:border-indigo-500 transition-colors"
+                                    className="w-full bg-bg-input border border-border p-2.5 rounded text-text-heading font-mono font-bold outline-none focus:border-indigo-500 transition-colors"
                                 />
                             </div>
 
                             {/* Payment Mode */}
                             <div className="space-y-1.5">
-                                <label className="block text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest ml-1">Payment Mode</label>
+                                <label className="block text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Payment Mode</label>
                                 <select
                                     value={paymentForm.paymentMode}
                                     onChange={(e) => setPaymentForm(prev => ({ ...prev, paymentMode: e.target.value }))}
-                                    className="w-full bg-slate-50 dark:bg-[#050506] border border-slate-200 dark:border-zinc-800 p-2.5 rounded text-slate-800 dark:text-white font-bold outline-none focus:border-indigo-500 transition-colors cursor-pointer"
+                                    className="w-full bg-bg-input border border-border p-2.5 rounded text-text-heading font-bold outline-none focus:border-indigo-500 transition-colors cursor-pointer"
                                 >
                                     {paymentModes.map(mode => (
                                         <option key={mode} value={mode}>{mode}</option>
@@ -505,13 +505,13 @@ const PaymentReview = () => {
 
                             {/* Comments */}
                             <div className="space-y-1.5">
-                                <label className="block text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest ml-1 font-bold">Comments</label>
+                                <label className="block text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1 font-bold">Comments</label>
                                 <textarea
                                     value={paymentForm.comments}
                                     onChange={(e) => setPaymentForm(prev => ({ ...prev, comments: e.target.value }))}
                                     placeholder="Add payment comments (e.g. transaction ref, cash notes)..."
                                     rows={3}
-                                    className="w-full bg-slate-50 dark:bg-[#050506] border border-slate-200 dark:border-zinc-800 p-2.5 rounded text-slate-800 dark:text-white outline-none focus:border-indigo-5 transition-colors resize-none"
+                                    className="w-full bg-bg-input border border-border p-2.5 rounded text-text-heading outline-none focus:border-indigo-5 transition-colors resize-none"
                                 />
                             </div>
 
@@ -520,7 +520,7 @@ const PaymentReview = () => {
                                 <button
                                     type="button"
                                     onClick={() => setShowPaymentModal(false)}
-                                    className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white font-bold py-2.5 rounded text-xs transition-colors cursor-pointer outline-none border-0"
+                                    className="flex-1 bg-bg-subtle hover:bg-bg-hover text-text-muted hover:text-text-primary font-bold py-2.5 rounded text-xs transition-colors cursor-pointer outline-none border-0"
                                 >
                                     Cancel
                                 </button>
@@ -528,7 +528,7 @@ const PaymentReview = () => {
                                     type="submit"
                                     disabled={actionLoading || !paymentForm.amount || !paymentForm.expiryDate || !isFutureDate(paymentForm.expiryDate)}
                                     className={`flex-1 font-bold py-2.5 rounded text-xs transition-all cursor-pointer ${(actionLoading || !paymentForm.amount || !paymentForm.expiryDate || !isFutureDate(paymentForm.expiryDate))
-                                            ? 'bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500 cursor-not-allowed border border-slate-200 dark:border-transparent'
+                                            ? 'bg-bg-subtle text-text-muted cursor-not-allowed border border-border dark:border-transparent'
                                             : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm'
                                         }`}
                                 >

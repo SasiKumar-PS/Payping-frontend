@@ -100,7 +100,7 @@ const Dashboard = () => {
     const fetchAccounts = async () => {
         try {
             setLoadingAccounts(true);
-            const res = await api.get('/payping/getAccounts');
+            const res = await api.get('/payping/accounts/getAll');
             const data = Array.isArray(res.data) ? res.data : [];
             setAccounts(data);
         } catch (err) {
@@ -157,8 +157,8 @@ const Dashboard = () => {
 
             {/* Page Header */}
             <div className="mb-2">
-                <h1 className="text-3xl font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">Dashboard</h1>
-                <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">Real-time business performance metrics & action vectors.</p>
+                <h1 className="text-3xl font-extrabold uppercase tracking-wider text-text-heading">Dashboard</h1>
+                <p className="text-xs text-text-muted mt-1">Real-time business performance metrics & action vectors.</p>
             </div>
 
             {/* ALERT BOXES AT THE TOP */}
@@ -179,9 +179,9 @@ const Dashboard = () => {
                                     {metrics.paymentStatus === 'GRACE_PERIOD' ? 'Action Required: Subscription Grace Period' : 'Account Dues Penalty: System Inactive'}
                                 </h4>
                                 {loadingPaymentMessage ? (
-                                    <div className="h-4 w-48 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse" />
+                                    <div className="h-4 w-48 bg-border rounded animate-pulse" />
                                 ) : (
-                                    <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
+                                    <p className="text-xs text-text-muted leading-relaxed">
                                         {paymentMessage || (metrics.paymentStatus === 'GRACE_PERIOD'
                                             ? 'Your subscription is currently in a grace period. Please settle pending dues to avoid interruption.'
                                             : 'Please clear your billing dues to restore automatic text relays and system configurations.')}
@@ -211,7 +211,7 @@ const Dashboard = () => {
                             </div>
                             <div className="space-y-1">
                                 <h4 className="text-sm font-bold tracking-tight">WhatsApp Link Disconnected</h4>
-                                <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
+                                <p className="text-xs text-text-muted leading-relaxed">
                                     Your WhatsApp is disconnected. Please click the connect button to link your device.
                                 </p>
                             </div>
@@ -234,7 +234,7 @@ const Dashboard = () => {
                             </div>
                             <div className="space-y-1">
                                 <h4 className="text-sm font-bold tracking-tight">Complete Business Details</h4>
-                                <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
+                                <p className="text-xs text-text-muted leading-relaxed">
                                     Your business profile is incomplete. Please provide the necessary details to configure automated reminders.
                                 </p>
                             </div>
@@ -257,7 +257,7 @@ const Dashboard = () => {
                             </div>
                             <div className="space-y-1">
                                 <h4 className="text-sm font-bold tracking-tight">Add Your Customers</h4>
-                                <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
+                                <p className="text-xs text-text-muted leading-relaxed">
                                     You have no customers in your registry. Add customers to start tracking and sending reminders.
                                 </p>
                             </div>
@@ -274,42 +274,42 @@ const Dashboard = () => {
 
             {/* BLOCK 1: INTEGRATED BUSINESS METRICS SUMMARY */}
             <section className="space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-zinc-500 ml-1">Business Summary</h3>
+                <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted ml-1">Business Summary</h3>
 
                 {/* Unified, Borderless Stats Row & Ledger Switcher */}
-                <div className="bg-white dark:bg-[#0f0f0f] border border-slate-200/50 dark:border-zinc-800/40 rounded-2xl p-4 md:p-5 shadow-sm space-y-4">
+                <div className="bg-bg-card border border-border/50 rounded-2xl p-4 md:p-5 shadow-sm space-y-4">
                     {/* Seamless Stats Row */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 relative">
                         <div className="space-y-1">
-                            <span className="text-[9px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider block">Est. Revenue</span>
-                            <div className="text-2xl font-sans font-semibold text-slate-900 dark:text-white">
+                            <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider block">Est. Revenue</span>
+                            <div className="text-2xl font-sans font-semibold text-text-heading">
                                 ₹{metrics?.estimatedRevenue?.toLocaleString('en-IN') || '0'}
                             </div>
                         </div>
 
                         {/* Divider lines on wide screen */}
-                        <div className="absolute top-1/2 -translate-y-1/2 left-[25%] w-px h-8 bg-slate-200 dark:bg-zinc-800/40 hidden lg:block" />
+                        <div className="absolute top-1/2 -translate-y-1/2 left-[25%] w-px h-8 bg-border/40 hidden lg:block" />
 
                         <div className="space-y-1 lg:pl-6">
-                            <span className="text-[9px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider block">Collected Vol</span>
+                            <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider block">Collected Vol</span>
                             <div className="text-2xl font-sans font-semibold text-emerald-600 dark:text-emerald-400">
                                 ₹{metrics?.totalPaidAmount?.toLocaleString('en-IN') || '0'}
                             </div>
                         </div>
 
-                        <div className="absolute top-1/2 -translate-y-1/2 left-[50%] w-px h-8 bg-slate-200 dark:bg-zinc-800/40 hidden lg:block" />
+                        <div className="absolute top-1/2 -translate-y-1/2 left-[50%] w-px h-8 bg-border/40 hidden lg:block" />
 
                         <div className="space-y-1 lg:pl-6">
-                            <span className="text-[9px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider block">Outstanding Due</span>
+                            <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider block">Outstanding Due</span>
                             <div className="text-2xl font-sans font-semibold text-amber-600 dark:text-amber-500">
                                 ₹{metrics?.dueAmount?.toLocaleString('en-IN') || '0'}
                             </div>
                         </div>
 
-                        <div className="absolute top-1/2 -translate-y-1/2 left-[75%] w-px h-8 bg-slate-200 dark:bg-zinc-800/40 hidden lg:block" />
+                        <div className="absolute top-1/2 -translate-y-1/2 left-[75%] w-px h-8 bg-border/40 hidden lg:block" />
 
                         <div className="space-y-1 lg:pl-6">
-                            <span className="text-[9px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider block flex items-center gap-1">
+                            <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider block flex items-center gap-1">
                                 Leakage <ShieldAlert className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
                             </span>
                             <div className="text-2xl font-sans font-semibold text-rose-600 dark:text-rose-500">
@@ -318,31 +318,31 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    <div className="h-px bg-slate-200 dark:bg-zinc-800/40" />
+                    <div className="h-px bg-border/40" />
 
                     {/* Integrated Clickable Ledger Status Segment Controller */}
-                    <div className="grid grid-cols-3 gap-3 bg-slate-50 dark:bg-zinc-900/50 p-1.5 rounded-xl border border-slate-200/50 dark:border-zinc-800/40">
+                    <div className="grid grid-cols-3 gap-3 bg-bg-subtle p-1.5 rounded-xl border border-border/50">
                         <button
                             onClick={() => navigate('/payping/customers', { state: { filter: 'PAID' } })}
-                            className="bg-transparent hover:bg-slate-200/50 dark:hover:bg-zinc-900/50 py-3 rounded-lg text-center transition-all cursor-pointer group active:scale-[0.98] flex flex-col items-center border-0 outline-none"
+                            className="bg-transparent hover:bg-bg-hover py-3 rounded-lg text-center transition-all cursor-pointer group active:scale-[0.98] flex flex-col items-center border-0 outline-none"
                         >
-                            <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider block mb-1 group-hover:text-emerald-500 transition-colors">Paid Users</span>
-                            <span className="text-2xl font-sans font-semibold text-slate-900 dark:text-white">{metrics?.paidCustomersCount || 0}</span>
+                            <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block mb-1 group-hover:text-emerald-500 transition-colors">Paid Users</span>
+                            <span className="text-2xl font-sans font-semibold text-text-heading">{metrics?.paidCustomersCount || 0}</span>
                         </button>
 
                         <button
                             onClick={() => navigate('/payping/customers', { state: { filter: 'UNPAID' } })}
-                            className="bg-transparent hover:bg-slate-200/50 dark:hover:bg-zinc-900/50 py-3 rounded-lg text-center transition-all cursor-pointer group active:scale-[0.98] flex flex-col items-center border-0 outline-none"
+                            className="bg-transparent hover:bg-bg-hover py-3 rounded-lg text-center transition-all cursor-pointer group active:scale-[0.98] flex flex-col items-center border-0 outline-none"
                         >
-                            <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider block mb-1 group-hover:text-amber-500 transition-colors">Unpaid</span>
-                            <span className="text-2xl font-sans font-semibold text-slate-900 dark:text-white">{metrics?.unpaidCustomersCount || 0}</span>
+                            <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block mb-1 group-hover:text-amber-500 transition-colors">Unpaid</span>
+                            <span className="text-2xl font-sans font-semibold text-text-heading">{metrics?.unpaidCustomersCount || 0}</span>
                         </button>
 
                         <button
                             onClick={() => navigate('/payping/customers', { state: { filter: 'OVERDUE' } })}
-                            className="bg-transparent hover:bg-slate-200/50 dark:hover:bg-zinc-900/50 py-3 rounded-lg text-center transition-all cursor-pointer group active:scale-[0.98] flex flex-col items-center border-0 outline-none"
+                            className="bg-transparent hover:bg-bg-hover py-3 rounded-lg text-center transition-all cursor-pointer group active:scale-[0.98] flex flex-col items-center border-0 outline-none"
                         >
-                            <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider block mb-1 group-hover:text-rose-500 transition-colors">Overdue</span>
+                            <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block mb-1 group-hover:text-rose-500 transition-colors">Overdue</span>
                             <span className="text-2xl font-sans font-semibold text-rose-600 dark:text-rose-400">{metrics?.overdueCustomersCount || 0}</span>
                         </button>
                     </div>
@@ -350,22 +350,22 @@ const Dashboard = () => {
             </section>
 
             {/* BLOCK 2: HISTORICAL CHARTS */}
-            <section className="bg-white dark:bg-[#0f0f0f] border border-slate-200/50 dark:border-zinc-800/40 rounded-2xl p-4 md:p-5 space-y-4 shadow-sm">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/50 dark:border-zinc-800/30 pb-4">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400">Business Performance</h3>
+            <section className="bg-bg-card border border-border/50 rounded-2xl p-4 md:p-5 space-y-4 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/50 pb-4">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted">Business Performance</h3>
 
                     <div className="flex items-center gap-3 self-end sm:self-center">
                         {/* Chart Toggle */}
-                        <div className="flex p-0.5 bg-slate-50 dark:bg-zinc-900/50 border border-slate-200/60 dark:border-zinc-800/40 rounded-lg text-[10px] font-bold shadow-inner">
+                        <div className="flex p-0.5 bg-bg-subtle border border-border/40 rounded-lg text-[10px] font-bold shadow-inner">
                             <button
                                 onClick={() => setChartMode('financial')}
-                                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer border-0 outline-none ${chartMode === 'financial' ? 'bg-indigo-600 dark:bg-indigo-600 text-white shadow' : 'text-slate-500 dark:text-zinc-400'}`}
+                                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer border-0 outline-none ${chartMode === 'financial' ? 'bg-indigo-600 dark:bg-indigo-600 text-white shadow' : 'text-text-muted'}`}
                             >
                                 Valuation
                             </button>
                             <button
                                 onClick={() => setChartMode('customers')}
-                                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer border-0 outline-none ${chartMode === 'customers' ? 'bg-indigo-600 dark:bg-indigo-600 text-white shadow' : 'text-slate-500 dark:text-zinc-400'}`}
+                                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer border-0 outline-none ${chartMode === 'customers' ? 'bg-indigo-600 dark:bg-indigo-600 text-white shadow' : 'text-text-muted'}`}
                             >
                                 Volumes
                             </button>
@@ -374,26 +374,26 @@ const Dashboard = () => {
                 </div>
 
                 {/* Dynamic Chart Container */}
-                <div className="w-full h-72 bg-slate-100/50 dark:bg-[#0f0f0f]/30 border border-slate-200/40 dark:border-transparent rounded-xl p-4 pt-14 relative flex items-center justify-center font-mono text-xs shadow-inner">
+                <div className="w-full h-72 bg-bg-subtle border border-slate-200/40 dark:border-transparent rounded-xl p-4 pt-14 relative flex items-center justify-center font-mono text-xs shadow-inner">
                     {/* Range Delta Selector Inside Chart Container Block */}
-                    <div className="absolute top-3 right-3 z-10 flex p-0.5 bg-white/90 dark:bg-zinc-900/90 border border-slate-200/50 dark:border-zinc-800/40 rounded-lg text-[10px] font-bold shadow-lg">
+                    <div className="absolute top-3 right-3 z-10 flex p-0.5 bg-bg-elevated/90 border border-border/50 rounded-lg text-[10px] font-bold shadow-lg">
                         {(['3M', '6M', '1Y'] as const).map((range) => (
                             <button
                                 key={range}
                                 onClick={() => setTimeFrame(range)}
-                                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer border-0 outline-none ${timeFrame === range ? 'bg-slate-100 dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-zinc-300'}`}
+                                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer border-0 outline-none ${timeFrame === range ? 'bg-bg-subtle text-text-heading shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
                             >
                                 {range}
                             </button>
                         ))}
                     </div>
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center gap-2 text-slate-500 dark:text-zinc-400">
+                        <div className="flex flex-col items-center justify-center gap-2 text-text-muted">
                             <div className="w-5 h-5 border-2 border-t-transparent border-indigo-500 rounded-full animate-spin" />
                             <span className="text-[10px] uppercase font-bold tracking-wider">Syncing historical performance...</span>
                         </div>
                     ) : chartData.length === 0 ? (
-                        <span className="text-slate-500 dark:text-zinc-600 italic">No historical traces available</span>
+                        <span className="text-text-muted italic">No historical traces available</span>
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
                             {chartMode === 'financial' ? (
@@ -430,33 +430,33 @@ const Dashboard = () => {
             </section>
             {/* BLOCK 3: QUICK RELAYS */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <section className="bg-white dark:bg-[#0f0f0f] border border-slate-200/50 dark:border-zinc-800/40 rounded-2xl p-4 md:p-5 space-y-3 shadow-sm">
-                    <h4 className="text-xs font-bold uppercase tracking-widest text-slate-550 dark:text-zinc-400 mb-1">Quick Vector Relays</h4>
+                <section className="bg-bg-card border border-border/50 rounded-2xl p-4 md:p-5 space-y-3 shadow-sm">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-text-muted dark:text-zinc-400 mb-1">Quick Vector Relays</h4>
 
                     <div className="flex gap-3">
                         <button
                             onClick={() => navigate('/payping/customers', { state: { action: 'add' } })}
-                            className="flex-1 bg-slate-50 dark:bg-zinc-900/40 hover:bg-slate-100/50 dark:hover:bg-zinc-800/60 p-5 rounded-xl border border-slate-200/60 dark:border-zinc-800/40 flex flex-col items-center justify-center text-center gap-2 transition-all cursor-pointer group outline-none"
+                            className="flex-1 bg-bg-subtle hover:bg-bg-hover p-5 rounded-xl border border-border/40 flex flex-col items-center justify-center text-center gap-2 transition-all cursor-pointer group outline-none"
                         >
                             <UserPlus className="w-5 h-5 text-indigo-500" />
-                            <span className="text-xs font-bold text-slate-700 dark:text-zinc-300">Add Customer</span>
+                            <span className="text-xs font-bold text-text-primary">Add Customer</span>
                         </button>
 
                         <button
                             onClick={() => navigate('/payping/message-templates')}
-                            className="flex-1 bg-slate-50 dark:bg-zinc-900/40 hover:bg-slate-100/50 dark:hover:bg-zinc-800/60 p-5 rounded-xl border border-slate-200/60 dark:border-zinc-800/40 flex flex-col items-center justify-center text-center gap-2 transition-all cursor-pointer group outline-none"
+                            className="flex-1 bg-bg-subtle hover:bg-bg-hover p-5 rounded-xl border border-border/40 flex flex-col items-center justify-center text-center gap-2 transition-all cursor-pointer group outline-none"
                         >
                             <Send className="w-5 h-5 text-emerald-500" />
-                            <span className="text-xs font-bold text-slate-700 dark:text-zinc-300">Manage Templates</span>
+                            <span className="text-xs font-bold text-text-primary">Manage Templates</span>
                         </button>
                     </div>
                 </section>
 
                 {/* BLOCK 4: OPERATIONAL METADATA & SUPPORT */}
-                <section className="bg-white dark:bg-[#0f0f0f] border border-slate-200/50 dark:border-zinc-800/40 rounded-2xl p-4 md:p-5 flex flex-col justify-between gap-3 shadow-sm">
+                <section className="bg-bg-card border border-border/50 rounded-2xl p-4 md:p-5 flex flex-col justify-between gap-3 shadow-sm">
                     <div className="space-y-1">
-                        <span className="text-[9px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-wider block">Operational Payment Router VPA</span>
-                        <span className="text-sm font-mono font-bold text-slate-800 dark:text-zinc-300 block truncate mt-1">
+                        <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider block">Operational Payment Router VPA</span>
+                        <span className="text-sm font-mono font-bold text-text-primary block truncate mt-1">
                             {metrics?.upiUrl || "No Active Routing Channel Registered"}
                         </span>
                     </div>
@@ -466,27 +466,27 @@ const Dashboard = () => {
                             href="https://wa.me/919876543210"
                             target="_blank"
                             rel="noreferrer"
-                            className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-zinc-900/40 hover:bg-slate-100/50 dark:hover:bg-zinc-800/60 rounded-xl border border-slate-200/60 dark:border-zinc-800/40 active:scale-[0.98] transition-all group shrink-0"
+                            className="flex items-center gap-3 p-3 bg-bg-subtle hover:bg-bg-hover rounded-xl border border-border/40 active:scale-[0.98] transition-all group shrink-0"
                         >
                             <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500/20 transition-colors shrink-0">
                                 <MessageCircle className="w-4 h-4" />
                             </div>
                             <div className="min-w-0">
-                                <span className="text-xs font-bold block text-slate-800 dark:text-zinc-200">WhatsApp Help</span>
-                                <span className="text-[9px] text-slate-500 dark:text-zinc-500 block truncate">Support Node</span>
+                                <span className="text-xs font-bold block text-text-primary">WhatsApp Help</span>
+                                <span className="text-[9px] text-text-muted block truncate">Support Node</span>
                             </div>
                         </a>
 
                         <a
                             href="mailto:support@payping.in"
-                            className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-zinc-900/40 hover:bg-slate-100/50 dark:hover:bg-zinc-800/60 rounded-xl border border-slate-200/60 dark:border-zinc-800/40 active:scale-[0.98] transition-all group shrink-0"
+                            className="flex items-center gap-3 p-3 bg-bg-subtle hover:bg-bg-hover rounded-xl border border-border/40 active:scale-[0.98] transition-all group shrink-0"
                         >
                             <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-500/20 transition-colors shrink-0">
                                 <Mail className="w-4 h-4" />
                             </div>
                             <div className="min-w-0">
-                                <span className="text-xs font-bold block text-slate-800 dark:text-zinc-200">Email Desk</span>
-                                <span className="text-[9px] text-slate-500 dark:text-zinc-500 block truncate">Support Desk</span>
+                                <span className="text-xs font-bold block text-text-primary">Email Desk</span>
+                                <span className="text-[9px] text-text-muted block truncate">Support Desk</span>
                             </div>
                         </a>
                     </div>
@@ -496,9 +496,9 @@ const Dashboard = () => {
             {/* BLOCK 5: PAYPING WORKSPACES */}
             {(accounts.length > 0 || loadingAccounts) && (
                 <section className="space-y-3">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-zinc-500 ml-1">PayPing Workspaces</h3>
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted ml-1">PayPing Workspaces</h3>
                     {loadingAccounts ? (
-                        <div className="flex items-center gap-2 text-slate-400 dark:text-zinc-500 py-4">
+                        <div className="flex items-center gap-2 text-text-muted py-4">
                             <div className="w-4 h-4 border-2 border-t-transparent border-indigo-500 rounded-full animate-spin" />
                             <span className="text-xs">Loading workspaces...</span>
                         </div>
@@ -511,10 +511,10 @@ const Dashboard = () => {
                                     <div
                                         key={account.id}
                                         onClick={() => !isActive && handleSwitchWorkspace(account.id, account.businessName || account.accountName)}
-                                        className={`bg-white dark:bg-[#0f0f0f] border rounded-xl p-4 flex flex-col gap-3 shadow-sm transition-all ${
+                                        className={`bg-bg-card border rounded-xl p-4 flex flex-col gap-3 shadow-sm transition-all ${
                                             isActive
                                                 ? 'border-indigo-400/60 dark:border-indigo-500/40'
-                                                : 'border-slate-200/60 dark:border-zinc-800/40 cursor-pointer hover:border-indigo-400/60 dark:hover:border-indigo-500/40'
+                                                : 'border-border/40 cursor-pointer hover:border-indigo-400/60 dark:hover:border-indigo-500/40'
                                         }`}
                                     >
                                         <div className="flex items-start justify-between gap-2">
@@ -523,10 +523,10 @@ const Dashboard = () => {
                                                     <Building2 className="w-4 h-4" />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="text-xs font-bold text-slate-800 dark:text-zinc-200 truncate">
+                                                    <p className="text-xs font-bold text-text-primary truncate">
                                                         {account.businessName || account.accountName || `Workspace`}
                                                     </p>
-                                                    <p className="text-[9px] text-slate-400 dark:text-zinc-500 font-mono truncate">
+                                                    <p className="text-[9px] text-text-muted font-mono truncate">
                                                         {account.id?.slice(0, 12)}...
                                                     </p>
                                                 </div>
@@ -536,16 +536,16 @@ const Dashboard = () => {
                                                     ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20'
                                                     : account.status === 'ACTIVE'
                                                         ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                                                        : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-500 border-slate-200 dark:border-zinc-700'
+                                                        : 'bg-bg-subtle text-text-muted border-border'
                                             }`}>
                                                 {isActive ? 'Current' : (account.status || 'Active')}
                                             </span>
                                         </div>
 
                                         {/* Customer count row */}
-                                        <div className="flex items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-zinc-800/50">
-                                            <Users className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" />
-                                            <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+                                        <div className="flex items-center gap-1.5 pt-2 border-t border-border-subtle">
+                                            <Users className="w-3.5 h-3.5 text-text-muted" />
+                                            <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
                                                 {customerCount} Customers
                                             </span>
                                         </div>

@@ -7,42 +7,64 @@
   --color-bg-main: #FAF9F6;
   --color-bg-sidebar: #F9F9F7;
   --color-bg-card: #FFFFFF;
+  --color-bg-elevated: #FFFFFF;
+  --color-bg-subtle: #F8FAFC;
+  --color-bg-input: #FFFFFF;
+  --color-bg-hover: rgba(0,0,0,0.03);
   --color-border: #E5E7EB;
+  --color-border-subtle: #F1F5F9;
   --color-text-primary: #111827;
+  --color-text-heading: #0F172A;
   --color-text-muted: #6B7280;
-  --color-accent: #4F46E5; /* Indigo accent color for light mode */
-  --color-accent-tint: #EEF2F6; /* Indigo tint */
+  --color-accent: #4F46E5;
+  --color-accent-tint: #EEF2F6;
   --color-negative: #EF4444;
   --color-positive: #10B981;
+  --color-overlay: rgba(15,23,42,0.4);
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
 }
 
 .dark {
-  --color-bg-main: #161A1A;
-  --color-bg-sidebar: #0E1111;
-  --color-bg-card: #1E2222;
-  --color-border: #2E3232;
-  --color-text-primary: #FFFFFF;
-  --color-text-muted: #9CA3AF;
-  --color-accent: #6366F1; /* Indigo accent color for dark mode */
-  --color-accent-tint: rgba(99, 102, 241, 0.1);
-  --color-negative: #F87171;
-  --color-positive: #34D399;
+  --color-bg-main: #0C0E0E;
+  --color-bg-sidebar: #080A0A;
+  --color-bg-card: #141717;
+  --color-bg-elevated: #181B1B;
+  --color-bg-subtle: #111414;
+  --color-bg-input: #0E1111;
+  --color-bg-hover: rgba(255,255,255,0.04);
+  --color-border: #1E2424;
+  --color-border-subtle: #1A1E1E;
+  --color-text-primary: #E8EAEA;
+  --color-text-heading: #F5F5F5;
+  --color-text-muted: #7A8585;
+  --color-accent: #818CF8;
+  --color-accent-tint: rgba(129,140,248,0.1);
+  --color-negative: #FB7185;
+  --color-positive: #4ADE80;
+  --color-overlay: rgba(0,0,0,0.7);
 }
 
 @theme {
   --font-sans: Inter, system-ui, -apple-system, sans-serif;
   --font-display: Inter, system-ui, -apple-system, sans-serif;
+  --font-montserrat: Montserrat, system-ui, -apple-system, sans-serif;
   --color-bg-main: var(--color-bg-main);
   --color-bg-sidebar: var(--color-bg-sidebar);
   --color-bg-card: var(--color-bg-card);
+  --color-bg-elevated: var(--color-bg-elevated);
+  --color-bg-subtle: var(--color-bg-subtle);
+  --color-bg-input: var(--color-bg-input);
+  --color-bg-hover: var(--color-bg-hover);
   --color-border: var(--color-border);
+  --color-border-subtle: var(--color-border-subtle);
   --color-text-primary: var(--color-text-primary);
+  --color-text-heading: var(--color-text-heading);
   --color-text-muted: var(--color-text-muted);
   --color-accent: var(--color-accent);
   --color-accent-tint: var(--color-accent-tint);
   --color-negative: var(--color-negative);
   --color-positive: var(--color-positive);
+  --color-overlay: var(--color-overlay);
 }
 
 html {
@@ -174,7 +196,7 @@ input[type="submit"] {
 
 /* Input elements styling */
 .premium-input {
-  background-color: var(--color-bg-card);
+  background-color: var(--color-bg-input);
   border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 10px 14px;

@@ -596,12 +596,12 @@ const MessageTemplates = () => {
 
 
     return (
-        <div className="min-h-screen bg-transparent text-slate-800 dark:text-zinc-200 flex flex-col font-sans select-none overflow-x-hidden pb-28 relative">
+        <div className="min-h-screen bg-transparent text-text-primary flex flex-col font-sans select-none overflow-x-hidden pb-28 relative">
 
             {/* ======================================================= */}
             {/* MAIN HEADER WINDOW PORT (ZONES 1 & 2 CONTROL ARRAYS)     */}
             {/* ======================================================= */}
-            <header className="sticky top-0 z-20 bg-slate-50 dark:bg-[#0f0f0f] px-4 md:px-8 pt-4 pb-3 max-w-none mx-auto w-full border-b border-slate-200/60 dark:border-zinc-800/40">
+            <header className="sticky top-0 z-20 bg-bg-subtle px-4 md:px-8 pt-4 pb-3 max-w-none mx-auto w-full border-b border-border/40">
                 <div className="flex items-center justify-between h-10">
                     <div className="flex items-center gap-3">
                         {location.state?.returnToAlertId && (
@@ -616,13 +616,13 @@ const MessageTemplates = () => {
                                         }
                                     });
                                 }}
-                                className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900/50 dark:hover:bg-zinc-800 rounded-lg border border-slate-200 dark:border-zinc-800/60 transition-colors cursor-pointer text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white shadow-sm outline-none shrink-0"
+                                className="p-2 bg-bg-subtle hover:bg-bg-hover rounded-lg border border-border/60 transition-colors cursor-pointer text-text-primary hover:text-text-heading shadow-sm outline-none shrink-0"
                                 title="Back to Alerts"
                             >
                                 <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                             </button>
                         )}
-                        <h2 className="text-2xl font-extrabold uppercase tracking-wider flex items-center gap-2 text-slate-900 dark:text-white">
+                        <h2 className="text-2xl font-extrabold uppercase tracking-wider flex items-center gap-2 text-text-heading">
                             <MessageSquare className="w-5 h-5 text-emerald-500" /> Templates
                         </h2>
                     </div>
@@ -637,7 +637,7 @@ const MessageTemplates = () => {
                     ) : (
                         <button
                             onClick={() => setSelectedTemplateIds(new Set())}
-                            className="text-xs font-bold text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white"
+                            className="text-xs font-bold text-text-muted hover:text-text-primary"
                         >
                             Cancel Selection
                         </button>
@@ -660,11 +660,11 @@ const MessageTemplates = () => {
             {/* MAIN SYSTEM CATALOGUE DIRECTORY WORKSPACE */}
             <main className="flex-1 px-4 md:px-8 max-w-none mx-auto w-full pt-3 space-y-2.5 animate-in fade-in duration-300">
                 {loadingLedger ? (
-                    <div className="py-24 text-center flex flex-col items-center justify-center gap-2 text-slate-500 dark:text-zinc-500 text-xs font-mono">
+                    <div className="py-24 text-center flex flex-col items-center justify-center gap-2 text-text-muted text-xs font-mono">
                         <RefreshCw className="w-4 h-4 animate-spin text-emerald-500" /> SYNCHRONIZING TEMPLATE REGISTRY...
                     </div>
                 ) : templates.length === 0 ? (
-                    <div className="py-20 text-center text-slate-400 dark:text-zinc-500 text-xs space-y-2">
+                    <div className="py-20 text-center text-text-muted text-xs space-y-2">
                         <FileText className="w-8 h-8 mx-auto opacity-10" />
                         <p>No operational templates cataloged in workspace.</p>
                     </div>
@@ -674,7 +674,7 @@ const MessageTemplates = () => {
                             const isChecked = selectedTemplateIds.has(tmpl.id);
                             const rowBg = isChecked
                                 ? 'bg-rose-500/5 dark:bg-rose-500/10 border-rose-500/30'
-                                : 'bg-white dark:bg-[#09090b]/40 border-slate-200/60 dark:border-zinc-800/40 hover:bg-slate-50 dark:hover:bg-zinc-900/50';
+                                : 'bg-bg-elevated/40 border-border/40 hover:bg-bg-hover';
                             return (
                                 <div
                                     key={tmpl.id}
@@ -688,15 +688,15 @@ const MessageTemplates = () => {
                                     <div className="flex items-center gap-3 min-w-0 pr-2">
                                         {isTemplateSelectionMode && (
                                             <div className="shrink-0">
-                                                {isChecked ? <CheckSquare className="w-4 h-4 text-red-500" /> : <Square className="w-4 h-4 text-slate-400 dark:text-zinc-600" />}
+                                                {isChecked ? <CheckSquare className="w-4 h-4 text-red-500" /> : <Square className="w-4 h-4 text-text-muted" />}
                                             </div>
                                         )}
                                         <div className="min-w-0">
-                                            <h4 className="font-sans text-sm font-semibold text-slate-800 dark:text-zinc-200 truncate">{tmpl.name}</h4>
-                                            <p className="text-[11px] text-slate-500 dark:text-zinc-400 truncate mt-0.5 font-medium">{renderTemplateWithPills(tmpl.content, false)}</p>
+                                            <h4 className="font-sans text-sm font-semibold text-text-primary truncate">{tmpl.name}</h4>
+                                            <p className="text-[11px] text-text-muted truncate mt-0.5 font-medium">{renderTemplateWithPills(tmpl.content, false)}</p>
                                         </div>
                                     </div>
-                                    <ChevronLeft className="w-4 h-4 text-slate-400 dark:text-zinc-600 rotate-180 shrink-0" />
+                                    <ChevronLeft className="w-4 h-4 text-text-muted rotate-180 shrink-0" />
                                 </div>
                             );
                         })}
@@ -711,7 +711,7 @@ const MessageTemplates = () => {
                     <div className="w-full px-4 max-w-md pointer-events-auto">
                         <button
                             onClick={() => navigate('/payping/customers')}
-                            className="w-full bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 font-bold py-3 rounded-lg flex items-center justify-center gap-2 text-xs border border-slate-200 dark:border-zinc-800 transition-colors shadow-xl"
+                            className="w-full bg-bg-card hover:bg-bg-hover text-text-primary font-bold py-3 rounded-lg flex items-center justify-center gap-2 text-xs border border-border transition-colors shadow-xl"
                         >
                             <X className="w-4 h-4 text-slate-500" /> Cancel Template Selection
                         </button>
@@ -724,19 +724,21 @@ const MessageTemplates = () => {
             {/* ======================================================= */}
             {showDeleteConfirmation && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/40 dark:bg-[#0f0f0f]/90 backdrop-blur-sm" onClick={() => setShowDeleteConfirmation(false)} />
-                    <div className="relative bg-white dark:bg-[#09090b] border border-slate-200 dark:border-zinc-800/60 w-full max-w-sm rounded-2xl p-6 space-y-5 text-center animate-in zoom-in-95 duration-150 shadow-2xl">
+                    <div className="absolute inset-0 bg-overlay backdrop-blur-sm" onClick={() => setShowDeleteConfirmation(false)} />
+                    <div className="relative bg-bg-elevated border border-border/60 w-full max-w-sm rounded-2xl p-6 space-y-5 text-center animate-in zoom-in-95 duration-150 shadow-2xl">
                         <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto">
                             <Trash2 className="w-5 h-5" />
                         </div>
                         <div className="space-y-1.5">
-                            <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-200 first-letter:uppercase">{deleteModalHeader}</h3>
-                            <p className="text-xs text-slate-500 dark:text-zinc-500">Action is not reversible. Data will be dropped completely.</p>
+                            <h3 className="text-sm font-bold text-text-heading first-letter:uppercase">{deleteModalHeader}</h3>
+                        </div>
+                        <div className="space-y-1.5">
+                            <p className="text-xs text-text-muted">Action is not reversible. Data will be dropped completely.</p>
                         </div>
                         <div className="flex gap-3 pt-2">
                             <button
                                 onClick={() => setShowDeleteConfirmation(false)}
-                                className="w-1/2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900/60 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-400 font-bold py-3 rounded-lg text-xs border-0 outline-none"
+                                className="w-1/2 bg-bg-subtle hover:bg-bg-hover text-text-muted font-bold py-3 rounded-lg text-xs border border-border outline-none"
                             >
                                 Cancel
                             </button>
@@ -755,39 +757,39 @@ const MessageTemplates = () => {
             {/* UPSERT OVERLAY WINDOW SYSTEM (ADD / EDIT ARCHITECTURE)  */}
             {/* ======================================================= */}
             {showUpsertModal && (
-                <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center p-0 sm:p-4">
-                    <div className="absolute inset-0 bg-slate-900/40 dark:bg-[#0f0f0f]/80 backdrop-blur-md" onClick={closeUpsertModal} />
-                    <div className="relative bg-white dark:bg-[#09090b] border border-slate-200/60 dark:border-zinc-800/60 w-full max-w-2xl rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[92vh] text-sm overflow-hidden animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200">
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+                    <div className="absolute inset-0 bg-overlay backdrop-blur-md" onClick={closeUpsertModal} />
+                    <div className="relative bg-bg-elevated border border-border/60 w-full max-w-2xl rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[92vh] text-sm overflow-hidden animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200">
 
-                        <div className="p-5 border-b border-slate-100 dark:border-zinc-800/60 flex items-center justify-between bg-slate-50/50 dark:bg-[#0f0f0f]/30 shrink-0">
+                        <div className="p-5 border-b border-slate-100 dark:border-zinc-800/60 flex items-center justify-between bg-bg-subtle/30 shrink-0">
                             <h3 className="font-semibold text-sm text-slate-900 dark:text-zinc-200 tracking-tight">
                                 {isEditMode ? "Modify Message Template" : "Add New Message Template"}
                             </h3>
-                            <button onClick={closeUpsertModal} className="text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 border-0 outline-none bg-transparent"><X className="w-5 h-5" /></button>
+                            <button onClick={closeUpsertModal} className="text-slate-400 hover:text-text-primary border-0 outline-none bg-transparent"><X className="w-5 h-5" /></button>
                         </div>
 
                         <div className="p-5 overflow-y-auto flex-1 space-y-5 pb-8">
                             <div className="space-y-1.5">
-                                <label className="block text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest ml-1">Template Label Identity Name</label>
+                                <label className="block text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Template Label Identity Name</label>
                                 <input
                                     type="text"
                                     placeholder="e.g., Late Fee Penalty Reminder"
                                     value={templateName}
                                     onChange={(e) => setTemplateName(e.target.value)}
-                                    className="w-full bg-slate-50 dark:bg-[#050505] text-slate-900 dark:text-white text-sm font-semibold p-3.5 rounded-lg outline-none border border-slate-200 dark:border-zinc-800 focus:border-indigo-500 dark:focus:border-indigo-500 transition-colors"
+                                    className="w-full bg-bg-input text-text-heading text-sm font-semibold p-3.5 rounded-lg outline-none border border-border focus:border-indigo-500 dark:focus:border-indigo-500 transition-colors"
                                 />
                             </div>
 
                             {/* BLOCK 1: DYNAMIC TOKEN INJECTION PILLS */}
-                            <div className="space-y-2 bg-slate-50/50 dark:bg-[#0f0f0f]/40 p-4 rounded-2xl border border-slate-200/60 dark:border-zinc-800/30">
-                                <span className="block text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest">Inline Tags</span>
+                            <div className="space-y-2 bg-bg-subtle/40 p-4 rounded-2xl border border-border/30">
+                                <span className="block text-[10px] font-bold text-text-muted uppercase tracking-widest">Inline Tags</span>
                                 <div className="flex flex-wrap gap-1.5 pt-1">
                                     {serverTags.map((tag) => {
                                         const textContainsPill = templateContent.includes(`{${tag}}`);
                                         return (
                                             <div
                                                 key={tag}
-                                                className={`inline-flex items-center text-[10px] font-mono font-bold tracking-wide rounded-lg overflow-hidden transition-all duration-150 ${textContainsPill ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : 'bg-slate-100 dark:bg-[#0f0f0f] text-slate-600 dark:text-zinc-400'}`}
+                                                className={`inline-flex items-center text-[10px] font-mono font-bold tracking-wide rounded-lg overflow-hidden transition-all duration-150 ${textContainsPill ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : 'bg-bg-subtle text-text-muted border border-border/40'}`}
                                             >
                                                 <button type="button" onClick={() => injectTagPillShortcut(tag)} className="px-2.5 py-1.5 font-bold border-0 bg-transparent text-inherit outline-none">
                                                     {tag}
@@ -801,14 +803,14 @@ const MessageTemplates = () => {
                                         );
                                     })}
                                 </div>
-                                <p className="text-[10px] leading-relaxed text-slate-400 dark:text-zinc-500 font-medium pt-1.5 border-t border-slate-100 dark:border-zinc-950/60">
+                                <p className="text-[10px] leading-relaxed text-text-muted font-medium pt-1.5 border-t border-slate-100 dark:border-zinc-950/60">
                                     Tap dynamic parameter badges to safely append vectors straight into text cursor ranges. You can safely clear links using individual cancel crosses.
                                 </p>
                             </div>
 
                             {/* BLOCK 2: BLUEPRINT INPUT BOX FRAME */}
                             <div className="space-y-1.5">
-                                <label className="block text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest ml-1">Message Template Editor</label>
+                                <label className="block text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Message Template Editor</label>
                                 <div
                                     ref={contentEditableRef}
                                     contentEditable
@@ -816,7 +818,7 @@ const MessageTemplates = () => {
                                     onKeyDown={handleContentEditableKeyDown}
                                     onClick={handleContentEditableClick}
                                     data-placeholder="Type data string contents here..."
-                                    className="w-full h-32 bg-slate-50 dark:bg-[#050505] text-slate-900 dark:text-white text-sm font-medium p-3.5 rounded-lg outline-none border border-slate-200 dark:border-zinc-800 focus:border-indigo-500 dark:focus:border-indigo-500 overflow-y-auto leading-relaxed whitespace-pre-wrap break-words select-text focus:outline-none empty:before:content-[attr(placeholder)] empty:before:text-slate-400 dark:empty:before:text-zinc-500 empty:before:font-medium empty:before:pointer-events-none transition-colors"
+                                    className="w-full h-32 bg-bg-input text-text-heading text-sm font-medium p-3.5 rounded-lg outline-none border border-border focus:border-indigo-500 dark:focus:border-indigo-500 overflow-y-auto leading-relaxed whitespace-pre-wrap break-words select-text focus:outline-none empty:before:content-[attr(placeholder)] empty:before:text-slate-400 dark:empty:before:text-zinc-500 empty:before:font-medium empty:before:pointer-events-none transition-colors"
                                     style={{
                                         boxSizing: 'border-box'
                                     }}
@@ -827,10 +829,10 @@ const MessageTemplates = () => {
                             {/* BLOCK 3: RENDERING LOG OVERVIEW PREVIEW BOX */}
                             {isPreviewed && (
                                 <div className="space-y-2 animate-in fade-in slide-in-from-top-3 duration-200">
-                                    <label className="block text-[10px] font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-widest ml-1 flex items-center gap-1.5">
+                                    <label className="block text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1 flex items-center gap-1.5">
                                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Message Preview
                                     </label>
-                                    <div className={`w-full p-4 rounded-lg font-medium text-xs leading-relaxed whitespace-pre-wrap transition-all duration-150 border ${loadingPreview ? 'bg-slate-50 dark:bg-[#050505]/40 text-slate-400 dark:text-zinc-600 border-slate-200 dark:border-zinc-800 select-none animate-pulse' : isContentDull ? 'bg-slate-50/70 dark:bg-[#050505]/70 text-slate-500 dark:text-zinc-500 border-slate-200 dark:border-zinc-800 line-clamp-none' : 'bg-slate-50 dark:bg-[#050505] text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-800'}`}>
+                                    <div className={`w-full p-4 rounded-lg font-medium text-xs leading-relaxed whitespace-pre-wrap transition-all duration-150 border ${loadingPreview ? 'bg-bg-input/40 text-text-muted border-border select-none animate-pulse' : isContentDull ? 'bg-bg-subtle/70 text-text-muted border-border line-clamp-none' : 'bg-bg-input text-text-primary border-border'}`}>
                                         {loadingPreview ? (
                                             <span className="flex items-center gap-1.5 font-mono text-[10px] text-indigo-600 dark:text-indigo-400">
                                                 <RefreshCw className="w-3 h-3 animate-spin" /> Connecting rendering pipeline over remote structures...
@@ -846,7 +848,7 @@ const MessageTemplates = () => {
                             )}
                         </div>
 
-                        <div className="p-5 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-[#0f0f0f]/60 shrink-0">
+                        <div className="p-5 border-t border-slate-100 dark:border-zinc-800 bg-bg-subtle/60 shrink-0">
                             {(!isPreviewed || isContentDull) ? (
                                 <button
                                     type="button"
@@ -874,33 +876,33 @@ const MessageTemplates = () => {
             {/* COMPREHENSIVE DOSSIER DETAILED TEMPLATE POPUP VIEW      */}
             {/* ======================================================= */}
             {showDetailModal && selectedTemplate && (
-                <div className="fixed inset-0 z-30 flex items-end sm:items-center justify-center p-0 sm:p-4">
-                    <div className="absolute inset-0 bg-slate-900/40 dark:bg-[#0f0f0f]/80 backdrop-blur-md" onClick={() => { setShowDetailModal(false); setSelectedTemplate(null); }} />
-                    <div className="relative bg-white dark:bg-[#09090b] border border-slate-200/60 dark:border-zinc-800/60 w-full max-w-2xl rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[88vh] animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200 overflow-hidden">
+                <div className="fixed inset-0 z-55 flex items-end sm:items-center justify-center p-0 sm:p-4">
+                    <div className="absolute inset-0 bg-overlay backdrop-blur-md" onClick={() => { setShowDetailModal(false); setSelectedTemplate(null); }} />
+                    <div className="relative bg-bg-elevated border border-border/60 w-full max-w-2xl rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[88vh] animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200 overflow-hidden">
 
-                        <div className="p-5 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between bg-slate-50/50 dark:bg-[#0f0f0f]/30">
+                        <div className="p-5 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between bg-bg-subtle/30">
                             <div className="min-w-0 pr-4">
-                                <h3 className="font-bold text-base text-slate-900 dark:text-zinc-100 truncate tracking-tight">{selectedTemplate.name}</h3>
+                                <h3 className="font-bold text-base text-text-heading truncate tracking-tight">{selectedTemplate.name}</h3>
                             </div>
 
-                            <div className="flex items-center gap-5 shrink-0 text-slate-400 dark:text-zinc-400">
+                            <div className="flex items-center gap-5 shrink-0 text-text-muted">
                                 <button onClick={triggerEditWorkflow} className="p-0 bg-transparent border-0 text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 outline-none"><Pencil className="w-4 h-4" /></button>
                                 <button onClick={() => initSingleDeleteWorkflow(selectedTemplate)} className="p-0 bg-transparent border-0 text-red-600 hover:text-red-500 dark:text-red-400 dark:hover:text-red-300 outline-none"><Trash2 className="w-4 h-4" /></button>
-                                <button onClick={() => { setShowDetailModal(false); setSelectedTemplate(null); }} className="p-0 bg-transparent border-0 text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 outline-none"><X className="w-5 h-5" /></button>
+                                <button onClick={() => { setShowDetailModal(false); setSelectedTemplate(null); }} className="p-0 bg-transparent border-0 text-slate-400 hover:text-text-primary outline-none"><X className="w-5 h-5" /></button>
                             </div>
                         </div>
 
                         <div className="p-6 space-y-5 overflow-y-auto flex-1 text-xs">
                             <div className="space-y-1.5">
-                                <span className="block text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest">Message Template</span>
-                                <div className="w-full bg-slate-50/40 dark:bg-[#0f0f0f] p-4 rounded-lg text-slate-700 dark:text-zinc-400 font-regular whitespace-pre-wrap border border-slate-200/60 dark:border-zinc-800/40">
+                                <span className="block text-[10px] font-bold text-text-muted uppercase tracking-widest">Message Template</span>
+                                <div className="w-full bg-bg-subtle/50 p-4 rounded-lg text-text-muted font-regular whitespace-pre-wrap border border-border/40">
                                     {renderTemplateWithPills(selectedTemplate.content, false)}
                                 </div>
                             </div>
 
                             <div className="space-y-1.5">
-                                <span className="block text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest">Message Preview</span>
-                                <div className={`w-full p-4 rounded-lg leading-relaxed font-mono text-[11px] whitespace-pre-wrap transition-all duration-150 border border-slate-200/60 dark:border-zinc-800/40 ${loadingDetailPreview ? 'bg-slate-50 dark:bg-[#0f0f0f]/40 text-slate-400 dark:text-zinc-600 select-none animate-pulse' : 'bg-slate-50/50 dark:bg-[#0f0f0f]/50 text-slate-800 dark:text-zinc-300'}`}>
+                                <span className="block text-[10px] font-bold text-text-muted uppercase tracking-widest">Message Preview</span>
+                                <div className={`w-full p-4 rounded-lg leading-relaxed font-mono text-[11px] whitespace-pre-wrap transition-all duration-150 border border-border/40 ${loadingDetailPreview ? 'bg-bg-subtle/40 text-text-muted select-none animate-pulse' : 'bg-bg-subtle/50 text-text-primary'}`}>
                                     {loadingDetailPreview ? (
                                         <span className="flex items-center gap-1.5 font-mono text-[10px] text-indigo-600 dark:text-indigo-400">
                                             <RefreshCw className="w-3 h-3 animate-spin" /> Connecting rendering pipeline over remote structures...
@@ -911,7 +913,7 @@ const MessageTemplates = () => {
                         </div>
 
                         {/* INTERACTION DISPATCH SELECTION ACTIONS FOOTER CORE COMPONENT */}
-                        <div className="p-5 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-[#0f0f0f]/50">
+                        <div className="p-5 border-t border-slate-100 dark:border-zinc-800 bg-bg-subtle/50">
                             {preSelectedCustomerIds.length === 0 ? (
                                 <button
                                     onClick={() => navigate('/payping/customers', { state: { preSelectedTemplate: selectedTemplate } })}
@@ -938,13 +940,13 @@ const MessageTemplates = () => {
             {/* FINAL CONFIRMATION MODAL */}
             {showConfirmationModal && selectedTemplate && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/40 dark:bg-[#0f0f0f]/90 backdrop-blur-sm" onClick={() => setShowConfirmationModal(false)} />
-                    <div className="relative bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl p-6 shadow-2xl border border-slate-200/60 dark:border-zinc-800 z-50 animate-in zoom-in-95 duration-200">
+                    <div className="absolute inset-0 bg-overlay backdrop-blur-sm" onClick={() => setShowConfirmationModal(false)} />
+                    <div className="relative bg-bg-card w-full max-w-md rounded-2xl p-6 shadow-2xl border border-border z-50 animate-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between mb-6">
-                            <h3 className="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                            <h3 className="font-bold text-lg text-text-heading flex items-center gap-2">
                                 <MessageCircle className="w-5 h-5 text-[#128C7E]" /> Confirm Dispatch
                             </h3>
-                            <button onClick={() => setShowConfirmationModal(false)} className="text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-white transition-colors">
+                            <button onClick={() => setShowConfirmationModal(false)} className="text-text-muted hover:text-text-primary dark:hover:text-white transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -962,7 +964,7 @@ const MessageTemplates = () => {
                                                     <AlertCircle className="w-5 h-5 text-amber-500 dark:text-amber-400 shrink-0 mt-0.5 animate-pulse" />
                                                     <div className="space-y-1 text-left">
                                                         <h4 className="font-bold text-amber-600 dark:text-amber-400">WhatsApp Gateway Connection Issue</h4>
-                                                        <p className="text-slate-600 dark:text-zinc-400 leading-relaxed">
+                                                        <p className="text-text-muted leading-relaxed">
                                                             Our WhatsApp delivery channel is currently experiencing connectivity issues. You can proceed to queue your messages; they will be automatically dispatched once connection is restored. You can track progress in the Alert History log.
                                                         </p>
                                                     </div>
@@ -978,21 +980,21 @@ const MessageTemplates = () => {
 
                             {/* Alert Name Input */}
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Alert Name <span className="text-red-500">*</span></label>
+                                <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Alert Name <span className="text-red-500">*</span></label>
                                 <input
                                     type="text"
                                     value={alertName}
                                     onChange={(e) => setAlertName(e.target.value)}
                                     placeholder="e.g. Monthly Payment Reminder"
-                                    className="w-full bg-slate-50 dark:bg-[#050505] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white rounded-lg p-3 text-sm focus:border-indigo-500 dark:focus:border-indigo-500 outline-none transition-colors"
+                                    className="w-full bg-bg-input border border-border text-text-heading rounded-lg p-3 text-sm focus:border-indigo-500 dark:focus:border-indigo-500 outline-none transition-colors"
                                 />
                             </div>
 
                             {/* Selected Template Info */}
-                            <div className="bg-slate-50 dark:bg-[#050505] border border-slate-200 dark:border-zinc-800 rounded-lg p-4 flex items-center justify-between">
+                            <div className="bg-bg-input border border-border rounded-lg p-4 flex items-center justify-between">
                                 <div className="min-w-0 pr-4">
-                                    <p className="text-[10px] text-slate-400 dark:text-zinc-500 font-bold uppercase tracking-widest mb-1">Template</p>
-                                    <p className="text-sm text-slate-800 dark:text-zinc-200 font-medium truncate">{selectedTemplate.name}</p>
+                                    <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest mb-1">Template</p>
+                                    <p className="text-sm text-text-primary font-medium truncate">{selectedTemplate.name}</p>
                                 </div>
                                 <button
                                     onClick={() => setShowConfirmationModal(false)}
@@ -1003,10 +1005,10 @@ const MessageTemplates = () => {
                             </div>
 
                             {/* Selected Customers Info */}
-                            <div className="bg-slate-50 dark:bg-[#050505] border border-slate-200 dark:border-zinc-800 rounded-lg p-4 flex items-center justify-between">
+                            <div className="bg-bg-input border border-border rounded-lg p-4 flex items-center justify-between">
                                 <div className="min-w-0 pr-4">
-                                    <p className="text-[10px] text-slate-400 dark:text-zinc-500 font-bold uppercase tracking-widest mb-1">Customers</p>
-                                    <p className="text-sm text-slate-800 dark:text-zinc-200 font-medium">{preSelectedCustomerIds.length} recipient(s) selected</p>
+                                    <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest mb-1">Customers</p>
+                                    <p className="text-sm text-text-primary font-medium">{preSelectedCustomerIds.length} recipient(s) selected</p>
                                 </div>
                                 <button
                                     onClick={() => navigate('/payping/customers', { state: { preSelectedTemplate: selectedTemplate } })}
@@ -1038,7 +1040,7 @@ const MessageTemplates = () => {
                                     }
                                 }}
                                 className={`w-full font-bold py-4 rounded-lg flex items-center justify-center gap-2 transition-all ${!alertName.trim() || isSending
-                                    ? 'bg-slate-200 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500 cursor-not-allowed'
+                                    ? 'bg-border text-text-muted cursor-not-allowed'
                                     : 'bg-[#128C7E] hover:bg-[#0e7569] text-white shadow-lg shadow-[#128C7E]/20'
                                     }`}
                             >
@@ -1065,9 +1067,9 @@ const MessageTemplates = () => {
                                     }
                                 });
                             }}
-                            className="w-full bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-350 font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-xs transition-colors shadow-xl cursor-pointer"
+                            className="w-full bg-bg-card hover:bg-bg-hover border border-border text-text-primary font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-xs transition-colors shadow-xl cursor-pointer"
                         >
-                            <ArrowLeft className="w-4 h-4 text-slate-400 dark:text-zinc-500" /> Go Back
+                            <ArrowLeft className="w-4 h-4 text-text-muted" /> Go Back
                         </button>
                     </div>
                 </div>

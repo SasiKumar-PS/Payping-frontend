@@ -197,7 +197,7 @@ const Gatekeeper = () => {
                             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-left font-semibold transition-all border border-transparent outline-none cursor-pointer ${
                                 isActive 
                                     ? 'text-accent bg-accent-tint/15 font-bold shadow-sm'
-                                    : 'text-text-muted hover:text-text-primary hover:bg-slate-100/40 dark:hover:bg-zinc-800/10'
+                                    : 'text-text-muted hover:text-text-primary hover:bg-bg-hover'
                             }`}
                         >
                             <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-accent' : 'text-text-muted'}`} />
@@ -284,7 +284,7 @@ const Gatekeeper = () => {
                 <div className={`fixed inset-0 z-50 transition-all duration-300 ${isRightPanelOpen ? 'visible pointer-events-auto' : 'invisible pointer-events-none'}`}>
                     <div
                         onClick={() => setIsRightPanelOpen(false)}
-                        className={`absolute inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${isRightPanelOpen ? 'opacity-100' : 'opacity-0'}`}
+                        className={`absolute inset-0 bg-overlay backdrop-blur-sm transition-opacity duration-300 ${isRightPanelOpen ? 'opacity-100' : 'opacity-0'}`}
                     />
                     <aside className={`absolute top-0 bottom-0 right-0 w-[300px] bg-bg-card border-l border-border flex flex-col justify-between p-6 transition-transform duration-300 transform ${isRightPanelOpen ? 'translate-x-0' : 'translate-x-full'} shadow-2xl z-50`}>
                         <div className="space-y-6">
@@ -292,7 +292,7 @@ const Gatekeeper = () => {
                                 <h3 className="text-base font-bold">Account Drawer</h3>
                                 <button
                                     onClick={() => setIsRightPanelOpen(false)}
-                                    className="p-1 hover:bg-slate-100 dark:hover:bg-zinc-800/25 rounded text-text-muted border-0 bg-transparent cursor-pointer"
+                                    className="p-1 hover:bg-bg-hover/25 rounded text-text-muted border-0 bg-transparent cursor-pointer"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
@@ -349,14 +349,14 @@ const Gatekeeper = () => {
                 <div className={`fixed inset-0 z-50 transition-all duration-300 ${isMobileMoreOpen ? 'visible pointer-events-auto' : 'invisible pointer-events-none'}`}>
                     <div
                         onClick={() => setIsMobileMoreOpen(false)}
-                        className={`absolute inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${isMobileMoreOpen ? 'opacity-100' : 'opacity-0'}`}
+                        className={`absolute inset-0 bg-overlay backdrop-blur-sm transition-opacity duration-300 ${isMobileMoreOpen ? 'opacity-100' : 'opacity-0'}`}
                     />
                     <div className={`absolute bottom-0 left-0 right-0 bg-bg-card border-t border-border rounded-t-2xl p-6 transition-transform duration-300 transform ${isMobileMoreOpen ? 'translate-y-0' : 'translate-y-full'} shadow-2xl space-y-4 z-50`}>
                         <div className="flex items-center justify-between border-b border-border pb-3">
                             <span className="category-label">Operational Menu</span>
                             <button
                                 onClick={() => setIsMobileMoreOpen(false)}
-                                className="p-1 hover:bg-slate-100 dark:hover:bg-zinc-800/20 rounded text-text-muted border-0 bg-transparent cursor-pointer"
+                                className="p-1 hover:bg-bg-hover/20 rounded text-text-muted border-0 bg-transparent cursor-pointer"
                             >
                                 <X className="w-4 h-4" />
                             </button>
@@ -395,10 +395,6 @@ const Gatekeeper = () => {
                                     PayPing
                                 </span>
                             </div>
-
-                            <span className="hidden lg:inline text-xs font-bold text-text-muted uppercase tracking-wider">
-                                Operational Workspace
-                            </span>
                         </div>
 
                         {/* Top Bar Right Items */}
@@ -406,7 +402,7 @@ const Gatekeeper = () => {
                             {/* Theme Toggle Button */}
                             <button
                                 onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
-                                className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded text-text-muted hover:text-text-primary transition-all cursor-pointer border-0 bg-transparent outline-none"
+                                className="p-2 hover:bg-bg-hover rounded text-text-muted hover:text-text-primary transition-all cursor-pointer border-0 bg-transparent outline-none"
                                 title="Toggle Theme"
                             >
                                 {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}

@@ -189,7 +189,7 @@ const PayPingConnect = () => {
 
     if (loadingData) {
         return (
-            <div className="min-h-screen bg-transparent text-slate-800 dark:text-zinc-200 flex items-center justify-center p-6">
+            <div className="min-h-screen bg-transparent text-text-primary flex items-center justify-center p-6">
                 <Loader2 className="w-10 h-10 animate-spin text-emerald-500" />
             </div>
         );
@@ -197,12 +197,12 @@ const PayPingConnect = () => {
 
     if (data?.whatsappStatus === 'CONNECTED') {
         return (
-            <div className="min-h-screen bg-transparent text-slate-800 dark:text-zinc-200 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+            <div className="min-h-screen bg-transparent text-text-primary flex flex-col items-center justify-center p-6 relative overflow-hidden">
                 <div className="absolute inset-0 bg-emerald-900/5 backdrop-blur-3xl" />
-                <div className="z-10 bg-white dark:bg-[#0f0f0f] p-8 sm:p-12 rounded-2xl border border-slate-200/50 dark:border-zinc-800/40 shadow-sm text-center max-w-lg w-full">
+                <div className="z-10 bg-bg-card p-8 sm:p-12 rounded-2xl border border-border/50 shadow-sm text-center max-w-lg w-full">
                     <img src="/src/assets/whatsapp-connected.png" alt="Connected Node" className="w-48 h-48 mx-auto mb-8 rounded-full shadow-[0_0_40px_rgba(16,185,129,0.2)] animate-pulse object-cover mix-blend-screen" />
                     <h2 className="text-3xl font-extrabold uppercase tracking-wider mb-4 bg-gradient-to-r from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-200 bg-clip-text text-transparent">System Synchronized</h2>
-                    <p className="text-slate-600 dark:text-zinc-400 leading-relaxed mb-8 font-medium">Your WhatsApp gateway is actively connected and ready to broadcast alerts to your customers.</p>
+                    <p className="text-text-muted leading-relaxed mb-8 font-medium">Your WhatsApp gateway is actively connected and ready to broadcast alerts to your customers.</p>
 
                     {loadingStats ? (
                         <div className="flex justify-center items-center py-6 mb-8">
@@ -210,17 +210,17 @@ const PayPingConnect = () => {
                         </div>
                     ) : stats ? (
                         <div className="grid grid-cols-3 gap-4 mb-8">
-                            <div className="bg-slate-50 dark:bg-[#050505] border border-slate-200/60 dark:border-zinc-800/60 p-4 rounded-lg flex flex-col items-center shadow-sm">
+                            <div className="bg-bg-input border border-border/60 p-4 rounded-lg flex flex-col items-center shadow-sm">
                                 <span className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.totalSentMonth || 0}</span>
-                                <span className="text-[9px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest mt-1 text-center">Month<br />Volume</span>
+                                <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest mt-1 text-center">Month<br />Volume</span>
                             </div>
-                            <div className="bg-slate-50 dark:bg-[#050505] border border-slate-200/60 dark:border-zinc-800/60 p-4 rounded-lg flex flex-col items-center shadow-sm">
+                            <div className="bg-bg-input border border-border/60 p-4 rounded-lg flex flex-col items-center shadow-sm">
                                 <span className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.totalSentOverall || 0}</span>
-                                <span className="text-[9px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest mt-1 text-center">Total<br />Volume</span>
+                                <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest mt-1 text-center">Total<br />Volume</span>
                             </div>
-                            <div className="bg-slate-50 dark:bg-[#050505] border border-slate-200/60 dark:border-zinc-800/60 p-4 rounded-lg flex flex-col items-center shadow-sm">
+                            <div className="bg-bg-input border border-border/60 p-4 rounded-lg flex flex-col items-center shadow-sm">
                                 <span className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.customerInteractions || 0}</span>
-                                <span className="text-[9px] font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest mt-1 text-center">Active<br />Chats</span>
+                                <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest mt-1 text-center">Active<br />Chats</span>
                             </div>
                         </div>
                     ) : null}
@@ -230,13 +230,13 @@ const PayPingConnect = () => {
     }
 
     return (
-        <div className="min-h-screen bg-transparent text-slate-800 dark:text-zinc-200 flex flex-col items-center justify-center p-6">
+        <div className="min-h-screen bg-transparent text-text-primary flex flex-col items-center justify-center p-6">
 
             {/* 1. SELECTION METHOD VIEW */}
             {connectionMethod === 'selection' && (
-                <div className="bg-white dark:bg-[#0f0f0f] p-6 sm:p-10 rounded-2xl border border-slate-200/50 dark:border-zinc-800/40 shadow-sm text-center max-w-md w-full animate-in fade-in slide-in-from-bottom-6 duration-500">
+                <div className="bg-bg-card p-6 sm:p-10 rounded-2xl border border-border/50 shadow-sm text-center max-w-md w-full animate-in fade-in slide-in-from-bottom-6 duration-500">
                     <h2 className="text-3xl font-extrabold uppercase tracking-wider mb-2 bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-zinc-400 bg-clip-text text-transparent">Connect WhatsApp</h2>
-                    <p className="text-sm text-slate-500 dark:text-zinc-400 mb-8">Choose your preferred way to link your WhatsApp business account.</p>
+                    <p className="text-sm text-text-muted mb-8">Choose your preferred way to link your WhatsApp business account.</p>
 
                     <div className="space-y-4 mb-4 text-left">
                         {/* Method 1: Pairing Code */}
@@ -250,14 +250,14 @@ const PayPingConnect = () => {
                             )}
                             <button
                                 onClick={() => setConnectionMethod('code')}
-                                className="w-full text-left bg-slate-50/50 dark:bg-[#050505]/40 hover:bg-slate-100/80 dark:hover:bg-zinc-800 p-5 rounded-lg border border-slate-200/60 dark:border-zinc-800/80 hover:border-indigo-500/40 dark:hover:border-indigo-500/40 hover:border-emerald-500/40 dark:hover:border-emerald-500/40 transition-all duration-300 group flex items-start space-x-4 shadow-sm"
+                                className="w-full text-left bg-bg-subtle/50 hover:bg-bg-hover p-5 rounded-lg border border-border/80 hover:border-indigo-500/40 dark:hover:border-indigo-500/40 hover:border-emerald-500/40 dark:hover:border-emerald-500/40 transition-all duration-300 group flex items-start space-x-4 shadow-sm"
                             >
                                 <div className="bg-emerald-500/10 p-3 rounded-lg text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition-transform duration-300">
                                     <Smartphone className="w-6 h-6" />
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="text-base font-bold text-slate-800 dark:text-zinc-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Connect with Phone Code</h3>
-                                    <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed mt-1">Displays an 8-digit code. Place this value in your WhatsApp app on your phone to connect easily without a camera.</p>
+                                    <h3 className="text-base font-bold text-text-heading group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Connect with Phone Code</h3>
+                                    <p className="text-xs text-text-muted leading-relaxed mt-1">Displays an 8-digit code. Place this value in your WhatsApp app on your phone to connect easily without a camera.</p>
                                 </div>
                             </button>
                         </div>
@@ -273,14 +273,14 @@ const PayPingConnect = () => {
                             )}
                             <button
                                 onClick={() => setConnectionMethod('qr')}
-                                className="w-full text-left bg-slate-50/50 dark:bg-[#050505]/40 hover:bg-slate-100/80 dark:hover:bg-zinc-800 p-5 rounded-lg border border-slate-200/60 dark:border-zinc-800/80 hover:border-indigo-500/40 dark:hover:border-indigo-500/40 hover:border-emerald-500/40 dark:hover:border-emerald-500/40 transition-all duration-300 group flex items-start space-x-4 shadow-sm"
+                                className="w-full text-left bg-bg-subtle/50 hover:bg-bg-hover p-5 rounded-lg border border-border/80 hover:border-indigo-500/40 dark:hover:border-indigo-500/40 hover:border-emerald-500/40 dark:hover:border-emerald-500/40 transition-all duration-300 group flex items-start space-x-4 shadow-sm"
                             >
                                 <div className="bg-emerald-500/10 p-3 rounded-lg text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition-transform duration-300">
                                     <QrCode className="w-6 h-6" />
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="text-base font-bold text-slate-800 dark:text-zinc-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Connect with QR Code</h3>
-                                    <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed mt-1">Generates a QR code on your screen. Scan it with WhatsApp's built-in camera to link instantly.</p>
+                                    <h3 className="text-base font-bold text-text-heading group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Connect with QR Code</h3>
+                                    <p className="text-xs text-text-muted leading-relaxed mt-1">Generates a QR code on your screen. Scan it with WhatsApp's built-in camera to link instantly.</p>
                                 </div>
                             </button>
                         </div>
@@ -290,7 +290,7 @@ const PayPingConnect = () => {
 
             {/* 2. QR CODE VIEW */}
             {connectionMethod === 'qr' && (
-                <div className="bg-white dark:bg-[#0f0f0f] p-6 sm:p-10 rounded-2xl border border-slate-200/50 dark:border-zinc-800/40 shadow-sm text-center max-w-sm w-full relative animate-in fade-in slide-in-from-bottom-6 duration-300">
+                <div className="bg-bg-card p-6 sm:p-10 rounded-2xl border border-border/50 shadow-sm text-center max-w-sm w-full relative animate-in fade-in slide-in-from-bottom-6 duration-300">
                     <button
                         onClick={() => setConnectionMethod('selection')}
                         className="absolute top-6 left-6 text-slate-400 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-white flex items-center text-xs font-semibold gap-1 hover:underline transition"
@@ -298,13 +298,13 @@ const PayPingConnect = () => {
                         <ArrowLeft className="w-4 h-4" /> Back
                     </button>
 
-                    <h2 className="text-2xl font-extrabold uppercase tracking-wider mb-6 mt-4 text-slate-900 dark:text-white">Connect QR Code</h2>
+                    <h2 className="text-2xl font-extrabold uppercase tracking-wider mb-6 mt-4 text-text-heading">Connect QR Code</h2>
 
-                    <div className="bg-[#F8FAFC] dark:bg-white p-4 rounded-lg inline-block mb-8 shadow-md border border-slate-200 dark:border-zinc-200">
+                    <div className="bg-white p-4 rounded-lg inline-block mb-8 shadow-md border border-border">
                         {status === 'waiting' && (
-                            <div className="w-64 h-64 flex flex-col items-center justify-center text-zinc-900">
+                            <div className="w-64 h-64 flex flex-col items-center justify-center text-text-primary">
                                 <Loader2 className="w-10 h-10 animate-spin mb-2 text-emerald-600" />
-                                <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Generating QR...</p>
+                                <p className="text-xs font-bold uppercase tracking-widest text-text-muted">Generating QR...</p>
                             </div>
                         )}
 
@@ -323,16 +323,16 @@ const PayPingConnect = () => {
                     </div>
 
                     <div className="space-y-4 text-left">
-                        <p className="text-sm text-slate-600 dark:text-zinc-400">1. Open WhatsApp on your phone</p>
-                        <p className="text-sm text-slate-600 dark:text-zinc-400">2. Tap <span className="text-slate-800 dark:text-white font-bold">Menu</span> or <span className="text-slate-800 dark:text-white font-bold">Settings</span> and select <span className="text-slate-800 dark:text-white font-bold">Linked Devices</span></p>
-                        <p className="text-sm text-slate-600 dark:text-zinc-400">3. Point your phone to this screen to capture the code</p>
+                        <p className="text-sm text-text-muted">1. Open WhatsApp on your phone</p>
+                        <p className="text-sm text-text-muted">2. Tap <span className="text-text-heading font-bold">Menu</span> or <span className="text-text-heading font-bold">Settings</span> and select <span className="text-text-heading font-bold">Linked Devices</span></p>
+                        <p className="text-sm text-text-muted">3. Point your phone to this screen to capture the code</p>
                     </div>
                 </div>
             )}
 
             {/* 3. PAIRING CODE VIEW */}
             {connectionMethod === 'code' && (
-                <div className="bg-white dark:bg-[#0f0f0f] p-6 sm:p-10 rounded-2xl border border-slate-200/50 dark:border-zinc-800/40 shadow-sm text-center max-w-md sm:max-w-[490px] w-full relative animate-in fade-in slide-in-from-bottom-6 duration-300">
+                <div className="bg-bg-card p-6 sm:p-10 rounded-2xl border border-border/50 shadow-sm text-center max-w-md sm:max-w-[490px] w-full relative animate-in fade-in slide-in-from-bottom-6 duration-300">
                     <button
                         onClick={() => setConnectionMethod('selection')}
                         className="absolute top-6 left-6 text-slate-400 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-white flex items-center text-xs font-semibold gap-1 hover:underline transition"
@@ -340,17 +340,17 @@ const PayPingConnect = () => {
                         <ArrowLeft className="w-4 h-4" /> Back
                     </button>
 
-                    <h2 className="text-2xl font-extrabold uppercase tracking-wider mb-1 mt-4 text-slate-900 dark:text-white">Connect with Code</h2>
+                    <h2 className="text-2xl font-extrabold uppercase tracking-wider mb-1 mt-4 text-text-heading">Connect with Code</h2>
 
                     {data?.phone && (
-                        <p className="text-xs text-slate-500 dark:text-zinc-400 mb-6 font-semibold">
+                        <p className="text-xs text-text-muted mb-6 font-semibold">
                             Linking phone number: <span className="text-emerald-600 dark:text-emerald-400 font-bold">{formatPhoneNumber(data.phone)}</span>
                         </p>
                     )}
 
-                    <div className="bg-slate-50 dark:bg-[#050505] p-4 px-2 sm:p-6 rounded-lg inline-block mb-4 border border-slate-200 dark:border-zinc-800/40 w-full min-h-[160px] flex flex-col justify-center items-center">
+                    <div className="bg-bg-input p-4 px-2 sm:p-6 rounded-lg inline-block mb-4 border border-border/40 w-full min-h-[160px] flex flex-col justify-center items-center">
                         {status === 'waiting' && (
-                            <div className="flex flex-col items-center justify-center text-slate-500 dark:text-zinc-400 py-6">
+                            <div className="flex flex-col items-center justify-center text-text-muted py-6">
                                 <Loader2 className="w-10 h-10 animate-spin mb-3 text-emerald-500" />
                                 <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Requesting Pairing Code...</p>
                             </div>
@@ -361,10 +361,10 @@ const PayPingConnect = () => {
                                 <div className="flex items-center justify-center gap-1 sm:gap-1.5 my-2 select-all w-full">
                                     {pairingCode.split('').map((char, index) => (
                                         <div key={index} className="flex items-center">
-                                            <div className="w-[30px] h-[44px] sm:w-[38px] sm:h-[54px] bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-indigo-600 dark:text-indigo-400 text-lg sm:text-2xl font-bold flex items-center justify-center rounded-lg shadow-sm">
+                                            <div className="w-[30px] h-[44px] sm:w-[38px] sm:h-[54px] bg-bg-subtle border border-border text-indigo-600 dark:text-indigo-400 text-lg sm:text-2xl font-bold flex items-center justify-center rounded-lg shadow-sm">
                                                 {char}
                                             </div>
-                                            {index === 3 && <div className="text-slate-400 dark:text-zinc-600 text-xl sm:text-2xl font-bold px-0.5 sm:px-1">-</div>}
+                                            {index === 3 && <div className="text-text-muted text-xl sm:text-2xl font-bold px-0.5 sm:px-1">-</div>}
                                         </div>
                                     ))}
                                 </div>
@@ -373,7 +373,7 @@ const PayPingConnect = () => {
                                     onClick={handleCopy}
                                     className={`flex items-center justify-center gap-2 px-4 py-2 mx-auto mt-6 rounded-lg font-bold text-xs uppercase transition-all duration-300 ${copied
                                             ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/40 shadow-sm'
-                                            : 'bg-slate-200/80 hover:bg-slate-300 dark:bg-zinc-800/80 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 border border-slate-300/60 dark:border-zinc-700/60'
+                                            : 'bg-bg-subtle hover:bg-bg-hover text-text-primary border border-border'
                                         }`}
                                 >
                                     {copied ? (
@@ -382,7 +382,7 @@ const PayPingConnect = () => {
                                         </>
                                     ) : (
                                         <>
-                                            <Copy className="w-4 h-4 text-slate-500 dark:text-zinc-400" /> Copy Pairing Code
+                                            <Copy className="w-4 h-4 text-text-muted" /> Copy Pairing Code
                                         </>
                                     )}
                                 </button>
@@ -397,12 +397,12 @@ const PayPingConnect = () => {
                         )}
                     </div>
 
-                    <div className="space-y-3 text-left bg-slate-50 dark:bg-zinc-950/40 p-6 rounded-lg border border-slate-200/60 dark:border-zinc-900/60">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 mb-2">Instructions:</h4>
-                        <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">1. Open <span className="text-slate-800 dark:text-white font-semibold">WhatsApp</span> on your phone.</p>
-                        <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">2. Tap <span className="text-slate-800 dark:text-white font-semibold">Menu</span> or <span className="text-slate-800 dark:text-white font-semibold">Settings</span> and select <span className="text-slate-800 dark:text-white font-semibold">Linked Devices</span>.</p>
-                        <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">3. Tap <span className="text-slate-800 dark:text-white font-semibold">Link a Device</span>, then choose <span className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline cursor-pointer">Link with phone number instead</span>.</p>
-                        <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">4. Enter the 8-character pairing code shown above on your phone to link.</p>
+                    <div className="space-y-3 text-left bg-bg-subtle p-6 rounded-lg border border-slate-200/60 dark:border-zinc-900/60">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2">Instructions:</h4>
+                        <p className="text-xs text-text-muted leading-relaxed">1. Open <span className="text-text-heading font-semibold">WhatsApp</span> on your phone.</p>
+                        <p className="text-xs text-text-muted leading-relaxed">2. Tap <span className="text-text-heading font-semibold">Menu</span> or <span className="text-text-heading font-semibold">Settings</span> and select <span className="text-text-heading font-semibold">Linked Devices</span>.</p>
+                        <p className="text-xs text-text-muted leading-relaxed">3. Tap <span className="text-text-heading font-semibold">Link a Device</span>, then choose <span className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline cursor-pointer">Link with phone number instead</span>.</p>
+                        <p className="text-xs text-text-muted leading-relaxed">4. Enter the 8-character pairing code shown above on your phone to link.</p>
                     </div>
                 </div>
             )}

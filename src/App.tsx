@@ -58,7 +58,6 @@ function App() {
 
             {/* <Route path="/payping/onboard" element={<Onboard />} />
             <Route path="/payping/connect" element={<WhatsAppConnect />} />
-            <Route path="/payping/business-details" element={<BusinessDetails />} />
 
             <Route path="/payping/dashboard" element={<Dashboard />} /> */}
         </Route>
